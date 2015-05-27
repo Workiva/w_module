@@ -5,7 +5,6 @@ import 'dart:async';
 import 'lifecycle_module.dart';
 
 abstract class ProviderModule extends LifecycleModule {
-
   Object get data;
 
   StreamController<ProviderModule> _streamController;
@@ -32,7 +31,9 @@ abstract class ProviderModule extends LifecycleModule {
 
   // Pass-through listen function to save some typing
   // (provider.listen(...) instead of provider.stream.listen(...))
-  StreamSubscription<ProviderModule> listen(void onData(ProviderModule event), { Function onError, void onDone(), bool cancelOnError}) {
-    return _stream.listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+  StreamSubscription<ProviderModule> listen(void onData(ProviderModule event),
+      {Function onError, void onDone(), bool cancelOnError}) {
+    return _stream.listen(onData,
+        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 }
