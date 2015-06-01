@@ -13,7 +13,7 @@ pub get
 pub run dart_codecov_generator --report-on=lib/ "$@"
 
 # Open HTML report if successful
-if [ $? -eq 0 ]; then
+if [ $? -eq 0 ] && [ -f "./coverage_report/index.html" ]; then
     open coverage_report/index.html
 fi
 
