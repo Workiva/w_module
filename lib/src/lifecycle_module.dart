@@ -18,9 +18,7 @@ abstract class LifecycleModule {
   /// To be optionally implemented by subclasses.
   /// Initial data queries & interactions with the server should be triggered here.
   /// Completes a future with no payload indicating that the module has finished loading.
-  Future onLoad() {
-    return new Future.value();
-  }
+  Future onLoad() async {}
 
   /// Public method to trigger the Module unload cycle.
   /// Calls shouldUnload(), and if that completes with true it continues to call onUnload().
@@ -45,17 +43,16 @@ abstract class LifecycleModule {
   /// To be optionally implemented by subclasses.
   /// Returns a future. Complete the future with [false] to prevent the module from unloading.
   /// Complete with [true] to continue the lifecycle.
-  Future<bool> shouldUnload() {
-    return new Future.value(true);
+  Future<bool> shouldUnload() async {
+    return true;
   }
 
   /// To be optionally implemented by subclasses.
   /// Called on unload if shouldUnload completes with true.
   /// Use this for cleanup.
   /// Completes a future with no payload indicating that the module has finished unloading.
-  Future onUnload() {
-    return new Future.value();
-  }
+  Future onUnload() async {}
+
 }
 
 class ModuleUnloadCanceledException implements Exception {
