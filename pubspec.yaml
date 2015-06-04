@@ -1,4 +1,5 @@
 name: w_module
+version: 0.1.0
 dependencies:
 dev_dependencies:
   browser: '>=0.10.0+2 <0.11.0'
