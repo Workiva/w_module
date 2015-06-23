@@ -35,8 +35,7 @@ abstract class LifecycleModule {
     if (should) {
       return onUnload();
     } else {
-      throw new ModuleUnloadCanceledException(
-          '${name} canceled the unload cycle.');
+      throw new ModuleUnloadCanceledException('${name} canceled the unload cycle.');
     }
   }
 
@@ -52,7 +51,6 @@ abstract class LifecycleModule {
   /// Use this for cleanup.
   /// Completes a future with no payload indicating that the module has finished unloading.
   Future onUnload() async {}
-
 }
 
 class ModuleUnloadCanceledException implements Exception {
