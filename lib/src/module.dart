@@ -4,5 +4,6 @@ import 'lifecycle_module.dart';
 
 abstract class Module extends LifecycleModule {
   Object get api;
+  Object get components;
   Object get events;
 }
