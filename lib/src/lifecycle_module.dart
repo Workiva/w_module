@@ -111,10 +111,10 @@ abstract class LifecycleModule {
 
   // Callbacks that can be overridden to be notified of lifecycle changes
   // TODO - make these streams so multiple people can listen for the events?
-  Function willLoad = (){};
-  Function didLoad = (){};
-  Function willUnload = (){};
-  Function didUnload = (){};
+  Function willLoad = () {};
+  Function didLoad = () {};
+  Function willUnload = () {};
+  Function didUnload = () {};
 }
 
 class ModuleUnloadCanceledException implements Exception {

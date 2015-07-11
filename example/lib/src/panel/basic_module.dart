@@ -1,25 +1,24 @@
 library w_module.example.panel.basic_module;
 
-import 'package:w_module/w_module.dart';
 import 'package:react/react.dart' as react;
 
+import './panel_content.dart';
 
-class BasicModule extends ViewModule {
-
+class BasicModule extends PanelContent {
   final String name = 'BasicModule';
 
-  // TODO - remove once updated
-  get api => null;
-  get events => null;
+  BasicModuleComponents _components;
+  BasicModuleComponents get components => _components;
 
-  buildComponent() => react.div({
-    'style': {
-      'padding': '50px',
-      'backgroundColor': 'lightgray',
-      'color': 'black'
-    }
+  BasicModule() {
+    _components = new BasicModuleComponents();
+  }
+}
+
+class BasicModuleComponents implements PanelContentComponents {
+  BasicModuleComponents();
+
+  content() => react.div({
+    'style': {'padding': '50px', 'backgroundColor': 'lightgray', 'color': 'black'}
   }, 'This module does almost nothing.');
-
-  BasicModule() {}
-
 }

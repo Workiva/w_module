@@ -8,9 +8,7 @@ import 'package:w_module/w_module.dart';
 
 import '../lib/src/panel/panel_module.dart';
 
-
 main() async {
-
   Element container = querySelector('#panel-container');
   react_client.setClientConfiguration();
 
@@ -27,10 +25,8 @@ main() async {
       // return the supplied error message to block close
       return res.messagesAsString();
     }
-
   });
 
   // render the app into the browser
-  react.render(panelModule.buildComponent(), container);
-
+  react.render(panelModule.components.content(), container);
 }

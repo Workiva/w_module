@@ -7,6 +7,7 @@ import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
 import 'package:web_skin_react/web_skin_react.dart' as WSR;
 
+import './panel_content.dart';
 import './basic_module.dart';
 import './flux_module.dart';
 import './reject_module.dart';
@@ -16,38 +17,38 @@ import './deferred_module.dart';
 import './lifecycleEcho_module.dart';
 import './hierarchy_module.dart';
 
-
-class PanelModule extends ViewModule {
-
+class PanelModule extends PanelContent {
   final String name = 'PanelModule';
-
-  get api => null;
-  get events => null;
-
-  buildComponent() => PanelComponent({
-    'actions': _actions,
-    'stores': _stores
-  });
 
   PanelActions _actions;
   PanelStore _stores;
 
+  PanelComponents _components;
+  PanelComponents get components => _components;
+
   PanelModule() {
     _actions = new PanelActions();
     _stores = new PanelStore(_actions, this);
+    _components = new PanelComponents(_actions, _stores);
   }
 
   onLoad() {
     _actions.changeToPanel(0);
   }
-
 }
 
+class PanelComponents implements PanelContentComponents {
+  PanelActions _actions;
+  PanelStore _stores;
+
+  PanelComponents(this._actions, this._stores);
+
+  content() => PanelComponent({'actions': _actions, 'stores': _stores});
+}
 
 class PanelActions {
   final Action<num> changeToPanel = new Action<num>();
 }
-
 
 class PanelStore extends Store {
 
@@ -58,7 +59,7 @@ class PanelStore extends Store {
   /// Internals
   PanelActions _actions;
   LifecycleModule _parentModule;
-  ViewModule _panelModule;
+  PanelContent _panelModule;
 
   // TODO - don't manage panelContent in the store this way
   var panelContent = null;
@@ -86,11 +87,8 @@ class PanelStore extends Store {
 
     // show a loading indicator while loading the module
     _panelIndex = newPanelIndex;
-    panelContent = WSR.ProgressBar({
-      'wsStyle': 'success',
-      'indeterminate': true,
-      'label': 'Loading New Panel Module...'
-    });
+    panelContent = WSR.ProgressBar(
+        {'wsStyle': 'success', 'indeterminate': true, 'label': 'Loading New Panel Module...'});
     trigger();
 
     // load the new panel
@@ -118,39 +116,26 @@ class PanelStore extends Store {
     if (_panelIndex == 8) {
       // add some border for the recursive case
       panelContent = react.div({
-        'style': {
-          'padding': '5px',
-          'backgroundColor': 'white',
-          'color': 'black'
-        }
-      }, _panelModule.buildComponent());
+        'style': {'padding': '5px', 'backgroundColor': 'white', 'color': 'black'}
+      }, _panelModule.components.content());
     } else {
-      panelContent = _panelModule.buildComponent();
+      panelContent = _panelModule.components.content();
     }
   }
-
 }
-
 
 var PanelComponent = react.registerComponent(() => new _PanelComponent());
 class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
-
   num get panelIndex => state['panelIndex'];
   get panelContent => state['panelContent'];
 
-  getStoreHandlers() => {
-    stores: _updatePanelStore
-  };
+  getStoreHandlers() => {stores: _updatePanelStore};
 
   getInitialState() {
-    return {
-      'panelIndex': 0,
-      'panelContent': null
-    };
+    return {'panelIndex': 0, 'panelContent': null};
   }
 
   render() {
-
     var toolbar = WSR.ButtonGroup({}, [
       WSR.Button({
         'wsStyle': 'light',
@@ -186,27 +171,15 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
         'active': panelIndex == 6,
         'onClick': (_) => actions.changeToPanel(6)
       }, 'Lifecycle Echo'),
-      WSR.Button({
-        'active': panelIndex == 7,
-        'onClick': (_) => actions.changeToPanel(7)
-      }, 'All of them'),
-      WSR.Button({
-        'active': panelIndex == 8,
-        'onClick': (_) => actions.changeToPanel(8)
-      }, 'Recurse')
+      WSR.Button(
+          {'active': panelIndex == 7, 'onClick': (_) => actions.changeToPanel(7)}, 'All of them'),
+      WSR.Button({'active': panelIndex == 8, 'onClick': (_) => actions.changeToPanel(8)}, 'Recurse')
     ]);
 
-    return react.div({}, [
-      toolbar,
-      panelContent
-    ]);
+    return react.div({}, [toolbar, panelContent]);
   }
 
   _updatePanelStore(PanelStore store) {
-    setState({
-      'panelIndex': store.panelIndex,
-      'panelContent': store.panelContent
-    });
+    setState({'panelIndex': store.panelIndex, 'panelContent': store.panelContent});
   }
 }
-

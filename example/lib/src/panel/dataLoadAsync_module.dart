@@ -1,47 +1,46 @@
-
 library w_module.example.panel.dataLoadAsync_module;
 
 import 'dart:async';
 
-import 'package:w_module/w_module.dart';
 import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
 import 'package:web_skin_react/web_skin_react.dart' as WSR;
 
+import './panel_content.dart';
 
-class DataLoadAsyncModule extends ViewModule {
-
+class DataLoadAsyncModule extends PanelContent {
   final String name = 'DataLoadAsyncModule';
-
-  // TODO - remove once updated
-  get api => null;
-  get events => null;
-
-  buildComponent() => DataLoadAsyncComponent({
-    'actions': _actions,
-    'stores': _stores
-  });
 
   DataLoadAsyncActions _actions;
   DataLoadAsyncStore _stores;
 
+  DataLoadAsyncComponents _components;
+  DataLoadAsyncComponents get components => _components;
+
   DataLoadAsyncModule() {
     _actions = new DataLoadAsyncActions();
     _stores = new DataLoadAsyncStore(_actions);
+    _components = new DataLoadAsyncComponents(_actions, _stores);
   }
 
   onLoad() {
     // trigger non-blocking async load of data
     _actions.loadData();
   }
-
 }
 
+class DataLoadAsyncComponents implements PanelContentComponents {
+  DataLoadAsyncActions _actions;
+  DataLoadAsyncStore _stores;
+
+  DataLoadAsyncComponents(this._actions, this._stores);
+
+  content() => DataLoadAsyncComponent({'actions': _actions, 'stores': _stores});
+}
 
 class DataLoadAsyncActions {
   final Action loadData = new Action();
 }
-
 
 class DataLoadAsyncStore extends Store {
 
@@ -70,67 +69,37 @@ class DataLoadAsyncStore extends Store {
     await new Future.delayed(new Duration(seconds: 1));
 
     // trigger on return of final data
-    _data = [
-      'Aaron',
-      'Dustin',
-      'Evan',
-      'Jay',
-      'Max',
-      'Trent'
-    ];
+    _data = ['Aaron', 'Dustin', 'Evan', 'Jay', 'Max', 'Trent'];
     _isLoading = false;
   }
-
 }
-
 
 var DataLoadAsyncComponent = react.registerComponent(() => new _DataLoadAsyncComponent());
 class _DataLoadAsyncComponent extends FluxComponent<DataLoadAsyncActions, DataLoadAsyncStore> {
-
   bool get isLoading => state['isLoading'];
   List<String> get data => state['data'];
 
-  getStoreHandlers() => {
-    stores: _updateDataLoadAsyncStore
-  };
+  getStoreHandlers() => {stores: _updateDataLoadAsyncStore};
 
   getInitialState() {
-    return {
-      'isLoading': stores.isLoading,
-      'data': stores.data
-    };
+    return {'isLoading': stores.isLoading, 'data': stores.data};
   }
 
   render() {
     var content;
     if (isLoading) {
-      content = WSR.ProgressBar({
-        'wsStyle': 'info',
-        'indeterminate': true,
-        'label': 'Loading Data...'
-      });
+      content =
+          WSR.ProgressBar({'wsStyle': 'info', 'indeterminate': true, 'label': 'Loading Data...'});
     } else {
-      content = WSR.ListGroup({},
-        data.map((item) => WSR.ListGroupItem({}, item))
-      );
+      content = WSR.ListGroup({}, data.map((item) => WSR.ListGroupItem({}, item)));
     }
 
     return react.div({
-      'style': {
-        'padding': '50px',
-        'backgroundColor': 'orange',
-        'color': 'white'
-      }
-    }, [
-      'This module renders a loading spinner until data is ready for display.',
-      content
-    ]);
+      'style': {'padding': '50px', 'backgroundColor': 'orange', 'color': 'white'}
+    }, ['This module renders a loading spinner until data is ready for display.', content]);
   }
 
   _updateDataLoadAsyncStore(DataLoadAsyncStore store) {
-    setState({
-      'isLoading': store.isLoading,
-      'data': store.data
-    });
+    setState({'isLoading': store.isLoading, 'data': store.data});
   }
 }

@@ -5,26 +5,21 @@ import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
 import 'package:web_skin_react/web_skin_react.dart' as WSR;
 
+import './panel_content.dart';
 
-class RejectModule extends ViewModule {
-
+class RejectModule extends PanelContent {
   final String name = 'RejectModule';
-
-  // TODO - remove once updated
-  get api => null;
-  get events => null;
-
-  buildComponent() => RejectComponent({
-    'actions': _actions,
-    'stores': _stores
-  });
 
   RejectActions _actions;
   RejectStore _stores;
 
+  RejectComponents _components;
+  RejectComponents get components => _components;
+
   RejectModule() {
     _actions = new RejectActions();
     _stores = new RejectStore(_actions);
+    _components = new RejectComponents(_actions, _stores);
   }
 
   onShouldUnload() {
@@ -33,14 +28,20 @@ class RejectModule extends ViewModule {
     }
     return new ShouldUnloadResult(false, '${name} won\'t let you leave!');
   }
-
 }
 
+class RejectComponents implements PanelContentComponents {
+  RejectActions _actions;
+  RejectStore _stores;
+
+  RejectComponents(this._actions, this._stores);
+
+  content() => RejectComponent({'actions': _actions, 'stores': _stores});
+}
 
 class RejectActions {
   final Action toggleShouldUnload = new Action();
 }
-
 
 class RejectStore extends Store {
 
@@ -58,33 +59,20 @@ class RejectStore extends Store {
   _toggleShouldUnload(_) {
     _shouldUnload = !_shouldUnload;
   }
-
 }
-
 
 var RejectComponent = react.registerComponent(() => new _RejectComponent());
 class _RejectComponent extends FluxComponent<RejectActions, RejectStore> {
-
   bool get shouldUnload => state['shouldUnload'];
 
-  getStoreHandlers() => {
-    stores: _updateRejectStore
-  };
+  getStoreHandlers() => {stores: _updateRejectStore};
 
   getInitialState() {
-    return {
-      'shouldUnload': true
-    };
+    return {'shouldUnload': true};
   }
 
   render() {
-    return react.div({
-      'style': {
-        'padding': '50px',
-        'backgroundColor': 'green',
-        'color': 'white'
-      }
-    }, [
+    return react.div({'style': {'padding': '50px', 'backgroundColor': 'green', 'color': 'white'}}, [
       'This module will reject unloading if the checkbox is cleared.',
       WSR.Input({
         'id': 'rejectModuleCheckbox',
