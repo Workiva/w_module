@@ -35,6 +35,7 @@ abstract class LifecycleModule {
   /// for lifecycle management
   Future loadModule(LifecycleModule newModule) async {
     _childModules.add(newModule);
+    // TODO - register a handler for newModule.willUnload to remove it from this module's children list
     await newModule.load();
   }
 
@@ -109,6 +110,7 @@ abstract class LifecycleModule {
   Future onUnload() async {}
 
   // Callbacks that can be overridden to be notified of lifecycle changes
+  // TODO - make these streams so multiple people can listen for the events?
   Function willLoad = (){};
   Function didLoad = (){};
   Function willUnload = (){};
