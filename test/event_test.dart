@@ -19,8 +19,7 @@ void main() {
       expect(event is Stream, isTrue);
     });
 
-    test('should provide means to listen to the stream it was created from',
-        () async {
+    test('should provide means to listen to the stream it was created from', () async {
       Completer completer = new Completer();
 
       event.listen((payload) {
