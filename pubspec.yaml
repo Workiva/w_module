@@ -15,9 +15,7 @@ dev_dependencies:
   mockito: '>=0.10.0 <0.11.0'
   test: '0.12.2'
   w_flux:
-    git:
-      url: git@github.com:Workiva/w_flux.git
-      ref: 0.2.0
+    path: ../w_flux
   web_skin_react:
     git:
       url: git@github.com:Workiva/web-skin-react.git

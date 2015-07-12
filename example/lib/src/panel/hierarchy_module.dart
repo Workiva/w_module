@@ -141,10 +141,12 @@ class _HierarchyComponent extends FluxComponent<HierarchyActions, HierarchyStore
 
   render() {
     return react.div({
-      'style': {'padding': '20px', 'backgroundColor': 'gray', 'color': 'black'}
-    }, childModules.map((child) => react.div({}, [
+      'style': {'padding': '10px', 'backgroundColor': 'lightgray', 'color': 'black'}
+    }, childModules.map((child) => react.div({
+      'style': {'border': '3px dashed gray', 'margin': '5px'}
+    }, [
       WSR.Button({
-        'style': {'float': 'right'},
+        'style': {'float': 'right', 'margin': '5px'},
         'onClick': (_) {
           actions.removeChildModule(child);
         }

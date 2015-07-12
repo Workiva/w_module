@@ -112,15 +112,7 @@ class PanelStore extends Store {
       _panelModule = new PanelModule();
     }
     await _parentModule.loadModule(_panelModule);
-
-    if (_panelIndex == 8) {
-      // add some border for the recursive case
-      panelContent = react.div({
-        'style': {'padding': '5px', 'backgroundColor': 'white', 'color': 'black'}
-      }, _panelModule.components.content());
-    } else {
-      panelContent = _panelModule.components.content();
-    }
+    panelContent = _panelModule.components.content();
   }
 }
 
@@ -136,47 +128,28 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
   }
 
   render() {
-    var toolbar = WSR.ButtonGroup({}, [
-      WSR.Button({
-        'wsStyle': 'light',
-        'active': panelIndex == 0,
-        'onClick': (_) => actions.changeToPanel(0)
-      }, 'Basic'),
-      WSR.Button({
-        'wsStyle': 'inverse',
-        'active': panelIndex == 1,
-        'onClick': (_) => actions.changeToPanel(1)
-      }, 'Flux'),
-      WSR.Button({
-        'wsStyle': 'success',
-        'active': panelIndex == 2,
-        'onClick': (_) => actions.changeToPanel(2)
-      }, 'Reject'),
-      WSR.Button({
-        'wsStyle': 'warning',
-        'active': panelIndex == 3,
-        'onClick': (_) => actions.changeToPanel(3)
-      }, 'Data Load (async)'),
-      WSR.Button({
-        'wsStyle': 'danger',
-        'active': panelIndex == 4,
-        'onClick': (_) => actions.changeToPanel(4)
-      }, 'Data Load (blocking)'),
-      WSR.Button({
-        'wsStyle': 'info',
-        'active': panelIndex == 5,
-        'onClick': (_) => actions.changeToPanel(5)
-      }, 'Deferred'),
-      WSR.Button({
-        'active': panelIndex == 6,
-        'onClick': (_) => actions.changeToPanel(6)
-      }, 'Lifecycle Echo'),
-      WSR.Button(
-          {'active': panelIndex == 7, 'onClick': (_) => actions.changeToPanel(7)}, 'All of them'),
-      WSR.Button({'active': panelIndex == 8, 'onClick': (_) => actions.changeToPanel(8)}, 'Recurse')
+
+    var tabBar = WSR.Nav({
+      'wsStyle': 'pills',
+      'justified': true,
+      'activeKey': panelIndex,
+      'onSelect': (newIndex, _, __) => actions.changeToPanel(newIndex),
+      'style': { 'paddingBottom': '5px' }
+    }, [
+      WSR.NavItem({ 'eventKey': 0 }, 'Basic'),
+      WSR.NavItem({ 'eventKey': 1 }, 'Flux'),
+      WSR.NavItem({ 'eventKey': 2 }, 'Reject'),
+      WSR.NavItem({ 'eventKey': 3 }, 'Data Load (async)'),
+      WSR.NavItem({ 'eventKey': 4 }, 'Data Load (blocking)'),
+      WSR.NavItem({ 'eventKey': 5 }, 'Deferred'),
+      WSR.NavItem({ 'eventKey': 6 }, 'Lifecycle Echo'),
+      WSR.NavItem({ 'eventKey': 7 }, 'All of them'),
+      WSR.NavItem({ 'eventKey': 8 }, 'Recursive')
     ]);
 
-    return react.div({}, [toolbar, panelContent]);
+    return react.div({
+      'style': {'padding': '5px', 'backgroundColor': 'white', 'color': 'black', 'border': '1px solid lightgreen'}
+    }, [tabBar, panelContent]);
   }
 
   _updatePanelStore(PanelStore store) {
