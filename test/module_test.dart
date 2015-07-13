@@ -1,7 +1,5 @@
 library w_module.test.lifecycle_module_test;
 
-import 'dart:async';
-
 import 'package:w_module/w_module.dart';
 import 'package:test/test.dart';
 

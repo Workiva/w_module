@@ -14,4 +14,9 @@ dev_dependencies:
   dart_style: '>=0.1.8 <0.2.0'
   mockito: '>=0.10.0 <0.11.0'
   test: '0.12.2'
-
+  w_flux:
+    path: ../w_flux
+  web_skin_react:
+    git:
+      url: git@github.com:Workiva/web-skin-react.git
+      ref: 2.1.4
