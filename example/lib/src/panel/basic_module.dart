@@ -16,8 +16,6 @@ class BasicModule extends PanelContent {
 }
 
 class BasicModuleComponents implements PanelContentComponents {
-  BasicModuleComponents();
-
   content() => react.div({
     'style': {'padding': '50px', 'backgroundColor': 'lightgray', 'color': 'black'}
   }, 'This module does almost nothing.');

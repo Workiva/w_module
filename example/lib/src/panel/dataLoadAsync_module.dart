@@ -91,7 +91,9 @@ class _DataLoadAsyncComponent extends FluxComponent<DataLoadAsyncActions, DataLo
       content =
           WSR.ProgressBar({'wsStyle': 'info', 'indeterminate': true, 'label': 'Loading Data...'});
     } else {
-      content = WSR.ListGroup({}, data.map((item) => WSR.ListGroupItem({}, item)));
+      int keyCounter = 0;
+      content =
+          WSR.ListGroup({}, data.map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)));
     }
 
     return react.div({

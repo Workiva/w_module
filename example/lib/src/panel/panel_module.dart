@@ -55,14 +55,14 @@ class PanelStore extends Store {
   /// Public data
   num _panelIndex = 0;
   num get panelIndex => _panelIndex;
+  bool _isRenderable = false;
+  bool get isRenderable => _isRenderable;
+  PanelContent _panelModule;
+  PanelContent get panelModule => _panelModule;
 
   /// Internals
   PanelActions _actions;
   LifecycleModule _parentModule;
-  PanelContent _panelModule;
-
-  // TODO - don't manage panelContent in the store this way
-  var panelContent = null;
 
   PanelStore(PanelActions this._actions, LifecycleModule this._parentModule) {
     triggerOnAction(_actions.changeToPanel, _changeToPanel);
@@ -82,13 +82,12 @@ class PanelStore extends Store {
       }
 
       // unload the existing panel
+      _isRenderable = false;
       _panelModule.unload();
     }
 
-    // show a loading indicator while loading the module
+    // extra trigger to show loading indicator
     _panelIndex = newPanelIndex;
-    panelContent = WSR.ProgressBar(
-        {'wsStyle': 'success', 'indeterminate': true, 'label': 'Loading New Panel Module...'});
     trigger();
 
     // load the new panel
@@ -112,7 +111,7 @@ class PanelStore extends Store {
       _panelModule = new PanelModule();
     }
     await _parentModule.loadModule(_panelModule);
-    panelContent = _panelModule.components.content();
+    _isRenderable = true;
   }
 }
 
@@ -128,31 +127,40 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
   }
 
   render() {
-
     var tabBar = WSR.Nav({
       'wsStyle': 'pills',
       'justified': true,
       'activeKey': panelIndex,
       'onSelect': (newIndex, _, __) => actions.changeToPanel(newIndex),
-      'style': { 'paddingBottom': '5px' }
+      'style': {'paddingBottom': '5px'}
     }, [
-      WSR.NavItem({ 'eventKey': 0 }, 'Basic'),
-      WSR.NavItem({ 'eventKey': 1 }, 'Flux'),
-      WSR.NavItem({ 'eventKey': 2 }, 'Reject'),
-      WSR.NavItem({ 'eventKey': 3 }, 'Data Load (async)'),
-      WSR.NavItem({ 'eventKey': 4 }, 'Data Load (blocking)'),
-      WSR.NavItem({ 'eventKey': 5 }, 'Deferred'),
-      WSR.NavItem({ 'eventKey': 6 }, 'Lifecycle Echo'),
-      WSR.NavItem({ 'eventKey': 7 }, 'All of them'),
-      WSR.NavItem({ 'eventKey': 8 }, 'Recursive')
+      WSR.NavItem({'eventKey': 0}, 'Basic'),
+      WSR.NavItem({'eventKey': 1}, 'Flux'),
+      WSR.NavItem({'eventKey': 2}, 'Reject'),
+      WSR.NavItem({'eventKey': 3}, 'Data Load (async)'),
+      WSR.NavItem({'eventKey': 4}, 'Data Load (blocking)'),
+      WSR.NavItem({'eventKey': 5}, 'Deferred'),
+      WSR.NavItem({'eventKey': 6}, 'Lifecycle Echo'),
+      WSR.NavItem({'eventKey': 7}, 'All of them'),
+      WSR.NavItem({'eventKey': 8}, 'Recursive')
     ]);
 
     return react.div({
-      'style': {'padding': '5px', 'backgroundColor': 'white', 'color': 'black', 'border': '1px solid lightgreen'}
+      'style': {
+        'padding': '5px',
+        'backgroundColor': 'white',
+        'color': 'black',
+        'border': '1px solid lightgreen'
+      }
     }, [tabBar, panelContent]);
   }
 
   _updatePanelStore(PanelStore store) {
-    setState({'panelIndex': store.panelIndex, 'panelContent': store.panelContent});
+    // display a loading placeholder if the module isn't ready for rendering
+    var content = store.isRenderable
+        ? store.panelModule.components.content()
+        : WSR.ProgressBar(
+            {'wsStyle': 'success', 'indeterminate': true, 'label': 'Loading New Panel Module...'});
+    setState({'panelIndex': store.panelIndex, 'panelContent': content});
   }
 }

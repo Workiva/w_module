@@ -37,47 +37,22 @@ class HierarchyModule extends PanelContent {
     // to force all children to load before this module
     // completes loading (not recommended)
 
-    BasicModule basicMod = new BasicModule();
-    basicMod.didLoad.listen((_) {
-      _actions.addChildModule(basicMod);
-    });
-    loadModule(basicMod);
+    List<LifecycleModule> allOfThem = [
+      new BasicModule(),
+      new FluxModule(),
+      new RejectModule(),
+      new DataLoadAsyncModule(),
+      new DataLoadBlockingModule(),
+      new DeferredModule(),
+      new LifecycleEchoModule()
+    ];
 
-    FluxModule fluxMod = new FluxModule();
-    fluxMod.didLoad.listen((_) {
-      _actions.addChildModule(fluxMod);
+    allOfThem.forEach((module) {
+      module.didLoad.listen((_) {
+        _actions.addChildModule(module);
+      });
+      loadModule(module);
     });
-    loadModule(fluxMod);
-
-    RejectModule rejectMod = new RejectModule();
-    rejectMod.didLoad.listen((_) {
-      _actions.addChildModule(rejectMod);
-    });
-    loadModule(rejectMod);
-
-    DataLoadAsyncModule dataLoadAsyncMod = new DataLoadAsyncModule();
-    dataLoadAsyncMod.didLoad.listen((_) {
-      _actions.addChildModule(dataLoadAsyncMod);
-    });
-    loadModule(dataLoadAsyncMod);
-
-    DataLoadBlockingModule dataLoadBlockingMod = new DataLoadBlockingModule();
-    dataLoadBlockingMod.didLoad.listen((_) {
-      _actions.addChildModule(dataLoadBlockingMod);
-    });
-    loadModule(dataLoadBlockingMod);
-
-    DeferredModule deferredMod = new DeferredModule();
-    deferredMod.didLoad.listen((_) {
-      _actions.addChildModule(deferredMod);
-    });
-    loadModule(deferredMod);
-
-    LifecycleEchoModule lifecycleEchoMod = new LifecycleEchoModule();
-    lifecycleEchoMod.didLoad.listen((_) {
-      _actions.addChildModule(lifecycleEchoMod);
-    });
-    loadModule(lifecycleEchoMod);
   }
 }
 

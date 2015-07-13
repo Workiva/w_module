@@ -14,7 +14,6 @@ abstract class LifecycleModule {
 
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
-
     _willLoadController = new StreamController<LifecycleModule>();
     _willLoad = _willLoadController.stream.asBroadcastStream();
 
@@ -26,7 +25,6 @@ abstract class LifecycleModule {
 
     _didUnloadController = new StreamController<LifecycleModule>();
     _didUnload = _didUnloadController.stream.asBroadcastStream();
-
   }
 
   //--------------------------------------------------------
@@ -138,7 +136,6 @@ abstract class LifecycleModule {
   StreamController<LifecycleModule> _didUnloadController;
   Stream<LifecycleModule> _didUnload;
   Stream<LifecycleModule> get didUnload => _didUnload;
-
 }
 
 class ModuleUnloadCanceledException implements Exception {

@@ -53,8 +53,6 @@ class LifecycleEchoModule extends PanelContent {
 }
 
 class LifecycleEchoComponents implements PanelContentComponents {
-  LifecycleEchoComponents();
-
   content() => react.div({
     'style': {'padding': '50px', 'backgroundColor': 'lightGray', 'color': 'black'}
   }, ['This module echoes all of its lifecycle events to the dev console.']);

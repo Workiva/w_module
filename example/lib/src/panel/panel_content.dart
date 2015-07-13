@@ -8,6 +8,5 @@ abstract class PanelContent extends Module {
 }
 
 abstract class PanelContentComponents {
-  PanelContentComponents();
   content() {}
 }

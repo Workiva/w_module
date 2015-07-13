@@ -29,10 +29,12 @@ class DeferredComponents implements PanelContentComponents {
   DeferredModule _module;
   DeferredComponents(this._module);
 
-  content() => react.div({
-    'style': {'padding': '50px', 'backgroundColor': 'blue', 'color': 'white'}
-  }, [
-    'This module gets its data from a deferred implementation.',
-    WSR.ListGroup({}, _module.data.competitors.map((item) => WSR.ListGroupItem({}, item)))
-  ]);
+  content() {
+    int keyCounter = 0;
+    return react.div({'style': {'padding': '50px', 'backgroundColor': 'blue', 'color': 'white'}}, [
+      'This module gets its data from a deferred implementation.',
+      WSR.ListGroup({},
+          _module.data.competitors.map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)))
+    ]);
+  }
 }
