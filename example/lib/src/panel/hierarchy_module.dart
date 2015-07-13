@@ -38,45 +38,45 @@ class HierarchyModule extends PanelContent {
     // completes loading (not recommended)
 
     BasicModule basicMod = new BasicModule();
-    basicMod.didLoad = () {
+    basicMod.didLoad.listen((_) {
       _actions.addChildModule(basicMod);
-    };
+    });
     loadModule(basicMod);
 
     FluxModule fluxMod = new FluxModule();
-    fluxMod.didLoad = () {
+    fluxMod.didLoad.listen((_) {
       _actions.addChildModule(fluxMod);
-    };
+    });
     loadModule(fluxMod);
 
     RejectModule rejectMod = new RejectModule();
-    rejectMod.didLoad = () {
+    rejectMod.didLoad.listen((_) {
       _actions.addChildModule(rejectMod);
-    };
+    });
     loadModule(rejectMod);
 
     DataLoadAsyncModule dataLoadAsyncMod = new DataLoadAsyncModule();
-    dataLoadAsyncMod.didLoad = () {
+    dataLoadAsyncMod.didLoad.listen((_) {
       _actions.addChildModule(dataLoadAsyncMod);
-    };
+    });
     loadModule(dataLoadAsyncMod);
 
     DataLoadBlockingModule dataLoadBlockingMod = new DataLoadBlockingModule();
-    dataLoadBlockingMod.didLoad = () {
+    dataLoadBlockingMod.didLoad.listen((_) {
       _actions.addChildModule(dataLoadBlockingMod);
-    };
+    });
     loadModule(dataLoadBlockingMod);
 
     DeferredModule deferredMod = new DeferredModule();
-    deferredMod.didLoad = () {
+    deferredMod.didLoad.listen((_) {
       _actions.addChildModule(deferredMod);
-    };
+    });
     loadModule(deferredMod);
 
     LifecycleEchoModule lifecycleEchoMod = new LifecycleEchoModule();
-    lifecycleEchoMod.didLoad = () {
+    lifecycleEchoMod.didLoad.listen((_) {
       _actions.addChildModule(lifecycleEchoMod);
-    };
+    });
     loadModule(lifecycleEchoMod);
   }
 }

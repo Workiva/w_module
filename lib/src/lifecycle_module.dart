@@ -9,12 +9,25 @@ abstract class LifecycleModule {
   /// Name of the module for identification within exceptions and while debugging.
   String name = 'Module';
 
-  // current loaded state
-  bool _isLoaded = false;
-  bool get isLoaded => _isLoaded;
-
   /// List of child components so that lifecycle can iterate over them as needed
   List<LifecycleModule> _childModules = [];
+
+  // constructor necessary to init load / unload state stream
+  LifecycleModule() {
+
+    _willLoadController = new StreamController<LifecycleModule>();
+    _willLoad = _willLoadController.stream.asBroadcastStream();
+
+    _didLoadController = new StreamController<LifecycleModule>();
+    _didLoad = _didLoadController.stream.asBroadcastStream();
+
+    _willUnloadController = new StreamController<LifecycleModule>();
+    _willUnload = _willUnloadController.stream.asBroadcastStream();
+
+    _didUnloadController = new StreamController<LifecycleModule>();
+    _didUnload = _didUnloadController.stream.asBroadcastStream();
+
+  }
 
   //--------------------------------------------------------
   // Public methods that can be used directly to trigger
@@ -23,23 +36,24 @@ abstract class LifecycleModule {
 
   /// Public method to trigger the loading of a Module.
   /// Calls the onLoad() method, which can be implemented on a Module.
-  /// Executes the willLoad() and didLoad() callbacks, which can be implemented on a Module.
+  /// Executes the willLoad and didLoad event streams.
   Future load() async {
-    willLoad();
+    _willLoadController.add(this);
     await onLoad();
-    _isLoaded = true;
-    didLoad();
+    _didLoadController.add(this);
   }
 
   /// Public method to async load a child module and register it
   /// for lifecycle management
   Future loadModule(LifecycleModule newModule) async {
-    _childModules.add(newModule);
-    // TODO - register a handler for newModule.willUnload to remove it from this module's children list
+    newModule.willUnload.listen((_) {
+      _childModules.remove(newModule);
+    });
+    newModule.didLoad.listen((_) {
+      _childModules.add(newModule);
+    });
     await newModule.load();
   }
-
-  // TODO - do we need an explicit unloadModule too? - YES
 
   /// Public method to query the unloadable state of the Module.
   /// Calls the onShouldUnload() method, which can be implemented on a Module.
@@ -71,7 +85,7 @@ abstract class LifecycleModule {
   Future unload() async {
     ShouldUnloadResult canUnload = shouldUnload();
     if (canUnload.shouldUnload) {
-      willUnload();
+      _willUnloadController.add(this);
       List<Future> unloadChildren = [];
       for (num i = 0; i < _childModules.length; i++) {
         unloadChildren.add(_childModules[i].unload());
@@ -79,8 +93,7 @@ abstract class LifecycleModule {
       await Future.wait(unloadChildren);
       _childModules.clear();
       await onUnload();
-      _isLoaded = false;
-      didUnload();
+      _didUnloadController.add(this);
     } else {
       //  reject with shouldUnload messages
       throw new ModuleUnloadCanceledException(canUnload.messagesAsString());
@@ -109,12 +122,23 @@ abstract class LifecycleModule {
   /// Completes a future with no payload indicating that the module has finished unloading.
   Future onUnload() async {}
 
-  // Callbacks that can be overridden to be notified of lifecycle changes
-  // TODO - make these streams so multiple people can listen for the events?
-  Function willLoad = () {};
-  Function didLoad = () {};
-  Function willUnload = () {};
-  Function didUnload = () {};
+  // Broadcast streams for load / unload lifecycle events
+  StreamController<LifecycleModule> _willLoadController;
+  Stream<LifecycleModule> _willLoad;
+  Stream<LifecycleModule> get willLoad => _willLoad;
+
+  StreamController<LifecycleModule> _didLoadController;
+  Stream<LifecycleModule> _didLoad;
+  Stream<LifecycleModule> get didLoad => _didLoad;
+
+  StreamController<LifecycleModule> _willUnloadController;
+  Stream<LifecycleModule> _willUnload;
+  Stream<LifecycleModule> get willUnload => _willUnload;
+
+  StreamController<LifecycleModule> _didUnloadController;
+  Stream<LifecycleModule> _didUnload;
+  Stream<LifecycleModule> get didUnload => _didUnload;
+
 }
 
 class ModuleUnloadCanceledException implements Exception {

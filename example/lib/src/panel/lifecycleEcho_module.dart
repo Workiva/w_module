@@ -14,19 +14,19 @@ class LifecycleEchoModule extends PanelContent {
   LifecycleEchoComponents get components => _components;
 
   LifecycleEchoModule() {
-    // Callbacks that can be overridden to be notified of lifecycle changes
-    willLoad = () {
+    // load / unload state streams
+    willLoad.listen((_) {
       print('${name}: willLoad');
-    };
-    didLoad = () {
+    });
+    didLoad.listen((_) {
       print('${name}: didLoad');
-    };
-    willUnload = () {
+    });
+    willUnload.listen((_) {
       print('${name}: willUnload');
-    };
-    didUnload = () {
+    });
+    didUnload.listen((_) {
       print('${name}: didUnload');
-    };
+    });
     _components = new LifecycleEchoComponents();
   }
 
