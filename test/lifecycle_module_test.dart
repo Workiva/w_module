@@ -5,7 +5,55 @@ import 'dart:async';
 import 'package:w_module/w_module.dart';
 import 'package:test/test.dart';
 
-class TestLifecycleModule extends LifecycleModule {}
+const String shouldUnloadError = 'Mock shouldUnload false message';
+
+class TestLifecycleModule extends LifecycleModule {
+  final String name = 'TestLifecycleModule';
+
+  // mock data to be used for test validation
+  List<String> eventList;
+  bool mockShouldUnload;
+
+  TestLifecycleModule() {
+
+    // init test validation data
+    eventList = [];
+    mockShouldUnload = true;
+
+    // load / unload state streams
+    willLoad.listen((_) {
+      eventList.add('willLoad');
+    });
+    didLoad.listen((_) {
+      eventList.add('didLoad');
+    });
+    willUnload.listen((_) {
+      eventList.add('willUnload');
+    });
+    didUnload.listen((_) {
+      eventList.add('didUnload');
+    });
+  }
+
+  Future onLoad() async {
+    await new Future.delayed(new Duration(milliseconds: 1));
+    eventList.add('onLoad');
+  }
+
+  ShouldUnloadResult onShouldUnload() {
+    eventList.add('onShouldUnload');
+    if (mockShouldUnload) {
+      return new ShouldUnloadResult();
+    } else {
+      return new ShouldUnloadResult(false, shouldUnloadError);
+    }
+  }
+
+  Future onUnload() async {
+    await new Future.delayed(new Duration(milliseconds: 1));
+    eventList.add('onUnload');
+  }
+}
 
 void main() {
   group('LifecycleModule', () {
@@ -15,31 +63,137 @@ void main() {
       module = new TestLifecycleModule();
     });
 
-    test('should call onLoad when module is loaded', () async {
-      Completer completer = new Completer();
-
-      // TODO how to test?
-      completer.complete();
-
-      return completer.future;
+    test('should trigger loading events and call onLoad when module is loaded', () async {
+      await module.load();
+      expect(module.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
     });
 
-    test('should call onUnload when module is unloaded', () async {
-      Completer completer = new Completer();
-
-      // TODO how to test?
-      completer.complete();
-
-      return completer.future;
+    test(
+        'should trigger unloading events and call onShouldUnload and onUnload when module is unloaded',
+        () async {
+      await module.unload();
+      expect(module.eventList, equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
     });
 
-    test('should not unload module if shouldUnload completes false', () async {
-      Completer completer = new Completer();
+    test(
+        'should throw an exception if attempting to unload module and shouldUnload completes false',
+        () async {
+      module.mockShouldUnload = false;
+      var error;
+      try {
+        await module.unload();
+      } on ModuleUnloadCanceledException catch (e) {
+        error = e;
+      }
+      expect(error, isNotNull);
+      expect(error.message, equals(shouldUnloadError));
+      expect(module.eventList, equals(['onShouldUnload']));
+    });
+  });
 
-      // TODO how to test?
-      completer.complete();
+  group('LifecycleModule with children', () {
+    TestLifecycleModule parentModule;
+    TestLifecycleModule childModule;
 
-      return completer.future;
+    setUp(() {
+      parentModule = new TestLifecycleModule();
+      childModule = new TestLifecycleModule();
+    });
+
+    test('loadModule loads a child module', () async {
+      await parentModule.loadModule(childModule);
+      expect(parentModule.eventList, equals([]));
+      expect(childModule.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
+    });
+
+    test('should unload child modules when parent in unloaded', () async {
+      await parentModule.loadModule(childModule);
+      childModule.eventList = [];
+      await parentModule.unload();
+      expect(parentModule.eventList,
+          equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      expect(childModule.eventList,
+          equals(['onShouldUnload', 'onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+    });
+
+    test('unloaded child module should be removed from parent module\'s lifecycle', () async {
+      await parentModule.loadModule(childModule);
+      childModule.eventList = [];
+      await childModule.unload();
+      expect(parentModule.eventList, equals([]));
+      expect(
+          childModule.eventList, equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      childModule.eventList = [];
+      await parentModule.unload();
+      expect(parentModule.eventList,
+          equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      expect(childModule.eventList, equals([]));
+    });
+
+    test('shouldUnload should reject if a child module rejects', () async {
+      childModule.mockShouldUnload = false;
+      ShouldUnloadResult parentShouldUnload = parentModule.shouldUnload();
+      expect(parentShouldUnload.shouldUnload, equals(true));
+      expect(parentShouldUnload.messages, equals([]));
+
+      await parentModule.loadModule(childModule);
+      parentModule.eventList = [];
+      childModule.eventList = [];
+
+      parentShouldUnload = parentModule.shouldUnload();
+      expect(parentShouldUnload.shouldUnload, equals(false));
+      expect(parentShouldUnload.messages, equals([shouldUnloadError]));
+      expect(parentModule.eventList, equals(['onShouldUnload']));
+      expect(childModule.eventList, equals(['onShouldUnload']));
+    });
+
+    test('shouldUnload should return parent and child rejection messages', () async {
+      parentModule.mockShouldUnload = false;
+      ShouldUnloadResult shouldUnloadRes = parentModule.shouldUnload();
+      expect(shouldUnloadRes.shouldUnload, equals(false));
+      expect(shouldUnloadRes.messages, equals([shouldUnloadError]));
+
+      childModule.mockShouldUnload = false;
+      shouldUnloadRes = childModule.shouldUnload();
+      expect(shouldUnloadRes.shouldUnload, equals(false));
+      expect(shouldUnloadRes.messages, equals([shouldUnloadError]));
+
+      await parentModule.loadModule(childModule);
+      parentModule.eventList = [];
+      childModule.eventList = [];
+
+      shouldUnloadRes = parentModule.shouldUnload();
+      expect(shouldUnloadRes.shouldUnload, equals(false));
+      expect(shouldUnloadRes.messages, equals([shouldUnloadError, shouldUnloadError]));
+      expect(parentModule.eventList, equals(['onShouldUnload']));
+      expect(childModule.eventList, equals(['onShouldUnload']));
+    });
+  });
+
+  group('shouldUnloadResult', () {
+    test('should default to a successful result with a blank message list', () async {
+      ShouldUnloadResult result = new ShouldUnloadResult();
+      expect(result.shouldUnload, equals(true));
+      expect(result.messages, equals([]));
+    });
+
+    test('should support optional initial result and message', () async {
+      ShouldUnloadResult result = new ShouldUnloadResult(false, 'mock message');
+      expect(result.shouldUnload, equals(false));
+      expect(result.messages, equals(['mock message']));
+    });
+
+    test('should return the boolean result on call', () async {
+      ShouldUnloadResult result = new ShouldUnloadResult();
+      expect(result(), equals(true));
+    });
+
+    test(
+        'should return a newline delimited string of all messages in the list via messagesAsString',
+        () async {
+      ShouldUnloadResult result = new ShouldUnloadResult(false, 'mock message');
+      result.messages.add('mock message 2');
+      expect(result.messagesAsString(), equals('mock message\nmock message 2'));
     });
   });
 }
