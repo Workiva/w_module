@@ -108,9 +108,11 @@ abstract class LifecycleModule {
   /// Completes a future with no payload indicating that the module has finished loading.
   Future onLoad() async {}
 
-  /// Returns a bool.
-  /// [false] indicates that the module should not be unloaded
-  /// [true] indicates that the module is safe to unload
+  /// Returns a ShouldUnloadResult.
+  /// [ShouldUnloadResult.shouldUnload == true] indicates that the module is safe to unload.
+  /// [ShouldUnloadResult.shouldUnload == false] indicates that the module should not be unloaded.
+  /// In this case, ShouldUnloadResult.messages contains a list of string messages indicating
+  /// why unload was rejected.
   ShouldUnloadResult onShouldUnload() {
     return new ShouldUnloadResult();
   }
