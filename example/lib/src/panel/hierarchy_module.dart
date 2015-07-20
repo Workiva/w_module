@@ -8,7 +8,6 @@ import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
 import 'package:web_skin_react/web_skin_react.dart' as WSR;
 
-import './panel_content.dart';
 import './basic_module.dart';
 import './flux_module.dart';
 import './reject_module.dart';
@@ -17,7 +16,7 @@ import './dataLoadBlocking_module.dart';
 import './deferred_module.dart';
 import './lifecycleEcho_module.dart';
 
-class HierarchyModule extends PanelContent {
+class HierarchyModule extends Module {
   final String name = 'HierarchyModule';
 
   HierarchyActions _actions;
@@ -57,7 +56,7 @@ class HierarchyModule extends PanelContent {
   }
 }
 
-class HierarchyComponents implements PanelContentComponents {
+class HierarchyComponents implements ModuleComponents {
   HierarchyActions _actions;
   HierarchyStore _stores;
 
@@ -67,15 +66,15 @@ class HierarchyComponents implements PanelContentComponents {
 }
 
 class HierarchyActions {
-  final Action<PanelContent> addChildModule = new Action<PanelContent>();
-  final Action<PanelContent> removeChildModule = new Action<PanelContent>();
+  final Action<Module> addChildModule = new Action<Module>();
+  final Action<Module> removeChildModule = new Action<Module>();
 }
 
 class HierarchyStore extends Store {
 
   /// Public data
-  List<PanelContent> _childModules = [];
-  List<PanelContent> get childModules => _childModules;
+  List<Module> _childModules = [];
+  List<Module> get childModules => _childModules;
 
   /// Internals
   HierarchyActions _actions;
@@ -85,11 +84,11 @@ class HierarchyStore extends Store {
     triggerOnAction(_actions.removeChildModule, _removeChildModule);
   }
 
-  _addChildModule(PanelContent newModule) {
+  _addChildModule(Module newModule) {
     _childModules.add(newModule);
   }
 
-  _removeChildModule(PanelContent oldModule) {
+  _removeChildModule(Module oldModule) {
 
     // do we need to reject the unload?
     ShouldUnloadResult canUnload = oldModule.shouldUnload();
@@ -107,7 +106,7 @@ class HierarchyStore extends Store {
 
 var HierarchyComponent = react.registerComponent(() => new _HierarchyComponent());
 class _HierarchyComponent extends FluxComponent<HierarchyActions, HierarchyStore> {
-  List<PanelContent> get childModules => state['childModules'];
+  List<Module> get childModules => state['childModules'];
 
   getStoreHandlers() => {stores: _updateHierarchyStore};
 

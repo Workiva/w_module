@@ -5,10 +5,9 @@ import 'dart:async';
 import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
 import 'package:web_skin_react/web_skin_react.dart' as WSR;
+import 'package:w_module/w_module.dart';
 
-import './panel_content.dart';
-
-class DataLoadAsyncModule extends PanelContent {
+class DataLoadAsyncModule extends Module {
   final String name = 'DataLoadAsyncModule';
 
   DataLoadAsyncActions _actions;
@@ -29,7 +28,7 @@ class DataLoadAsyncModule extends PanelContent {
   }
 }
 
-class DataLoadAsyncComponents implements PanelContentComponents {
+class DataLoadAsyncComponents implements ModuleComponents {
   DataLoadAsyncActions _actions;
   DataLoadAsyncStore _stores;
 

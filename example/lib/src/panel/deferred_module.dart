@@ -4,12 +4,12 @@ import 'dart:async';
 
 import 'package:react/react.dart' as react;
 import 'package:web_skin_react/web_skin_react.dart' as WSR;
+import 'package:w_module/w_module.dart';
 
-import './panel_content.dart';
 import './deferred_heavyLifter_interface.dart';
 import './deferred_heavyLifter_implementation.dart' deferred as HeavyLifterWithData;
 
-class DeferredModule extends PanelContent {
+class DeferredModule extends Module {
   final String name = 'DeferredModule';
 
   HeavyLifter data;
@@ -27,7 +27,7 @@ class DeferredModule extends PanelContent {
   }
 }
 
-class DeferredComponents implements PanelContentComponents {
+class DeferredComponents implements ModuleComponents {
   DeferredModule _module;
   DeferredComponents(this._module);
 

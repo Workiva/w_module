@@ -5,9 +5,7 @@ import 'dart:async';
 import 'package:w_module/w_module.dart';
 import 'package:react/react.dart' as react;
 
-import './panel_content.dart';
-
-class LifecycleEchoModule extends PanelContent {
+class LifecycleEchoModule extends Module {
   final String name = 'LifecycleEchoModule';
 
   LifecycleEchoComponents _components;
@@ -52,7 +50,7 @@ class LifecycleEchoModule extends PanelContent {
   }
 }
 
-class LifecycleEchoComponents implements PanelContentComponents {
+class LifecycleEchoComponents implements ModuleComponents {
   content() => react.div({
     'style': {'padding': '50px', 'backgroundColor': 'lightGray', 'color': 'black'}
   }, ['This module echoes all of its lifecycle events to the dev console.']);

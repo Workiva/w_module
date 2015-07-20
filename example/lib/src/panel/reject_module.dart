@@ -5,9 +5,7 @@ import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
 import 'package:web_skin_react/web_skin_react.dart' as WSR;
 
-import './panel_content.dart';
-
-class RejectModule extends PanelContent {
+class RejectModule extends Module {
   final String name = 'RejectModule';
 
   RejectActions _actions;
@@ -30,7 +28,7 @@ class RejectModule extends PanelContent {
   }
 }
 
-class RejectComponents implements PanelContentComponents {
+class RejectComponents implements ModuleComponents {
   RejectActions _actions;
   RejectStore _stores;
 

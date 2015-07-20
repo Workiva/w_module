@@ -4,10 +4,9 @@ import 'dart:async';
 
 import 'package:react/react.dart' as react;
 import 'package:web_skin_react/web_skin_react.dart' as WSR;
+import 'package:w_module/w_module.dart';
 
-import './panel_content.dart';
-
-class DataLoadBlockingModule extends PanelContent {
+class DataLoadBlockingModule extends Module {
   final String name = 'DataLoadBlockingModule';
 
   List<String> data;
@@ -27,7 +26,7 @@ class DataLoadBlockingModule extends PanelContent {
   }
 }
 
-class DataLoadBlockingComponents implements PanelContentComponents {
+class DataLoadBlockingComponents implements ModuleComponents {
   DataLoadBlockingModule _module;
   DataLoadBlockingComponents(this._module);
 

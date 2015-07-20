@@ -1,10 +1,9 @@
 library w_module.example.panel.basic_module;
 
 import 'package:react/react.dart' as react;
+import 'package:w_module/w_module.dart';
 
-import './panel_content.dart';
-
-class BasicModule extends PanelContent {
+class BasicModule extends Module {
   final String name = 'BasicModule';
 
   BasicModuleComponents _components;
@@ -15,7 +14,7 @@ class BasicModule extends PanelContent {
   }
 }
 
-class BasicModuleComponents implements PanelContentComponents {
+class BasicModuleComponents implements ModuleComponents {
   content() => react.div({
     'style': {'padding': '50px', 'backgroundColor': 'lightgray', 'color': 'black'}
   }, 'This module does almost nothing.');

@@ -5,10 +5,9 @@ import 'dart:math';
 import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
 import 'package:web_skin_react/web_skin_react.dart' as WSR;
+import 'package:w_module/w_module.dart';
 
-import './panel_content.dart';
-
-class FluxModule extends PanelContent {
+class FluxModule extends Module {
   final String name = 'FluxModule';
 
   FluxActions _actions;
@@ -24,7 +23,7 @@ class FluxModule extends PanelContent {
   }
 }
 
-class FluxComponents implements PanelContentComponents {
+class FluxComponents implements ModuleComponents {
   FluxActions _actions;
   FluxStore _stores;
 

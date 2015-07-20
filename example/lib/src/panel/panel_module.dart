@@ -8,7 +8,6 @@ import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
 import 'package:web_skin_react/web_skin_react.dart' as WSR;
 
-import './panel_content.dart';
 import './basic_module.dart';
 import './flux_module.dart';
 import './reject_module.dart';
@@ -18,7 +17,7 @@ import './deferred_module.dart';
 import './lifecycleEcho_module.dart';
 import './hierarchy_module.dart';
 
-class PanelModule extends PanelContent {
+class PanelModule extends Module {
   final String name = 'PanelModule';
 
   PanelActions _actions;
@@ -38,7 +37,7 @@ class PanelModule extends PanelContent {
   }
 }
 
-class PanelComponents implements PanelContentComponents {
+class PanelComponents implements ModuleComponents {
   PanelActions _actions;
   PanelStore _stores;
 
@@ -58,8 +57,8 @@ class PanelStore extends Store {
   num get panelIndex => _panelIndex;
   bool _isRenderable = false;
   bool get isRenderable => _isRenderable;
-  PanelContent _panelModule;
-  PanelContent get panelModule => _panelModule;
+  Module _panelModule;
+  Module get panelModule => _panelModule;
 
   /// Internals
   PanelActions _actions;
