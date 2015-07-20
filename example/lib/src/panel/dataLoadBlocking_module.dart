@@ -20,7 +20,7 @@ class DataLoadBlockingModule extends PanelContent {
     _components = new DataLoadBlockingComponents(this);
   }
 
-  onLoad() async {
+  Future onLoad() async {
     // perform async load of data (fake it with a Future)
     await new Future.delayed(new Duration(seconds: 1));
     data = ['Grover', 'Hoffman', 'Lessard', 'Peterson', 'Udey', 'Weible'];

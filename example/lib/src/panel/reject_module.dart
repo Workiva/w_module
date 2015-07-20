@@ -22,7 +22,7 @@ class RejectModule extends PanelContent {
     _components = new RejectComponents(_actions, _stores);
   }
 
-  onShouldUnload() {
+  ShouldUnloadResult onShouldUnload() {
     if (_stores.shouldUnload) {
       return new ShouldUnloadResult();
     }

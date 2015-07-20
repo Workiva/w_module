@@ -1,5 +1,6 @@
 library w_module.example.panel.panel_module;
 
+import 'dart:async';
 import 'dart:html';
 
 import 'package:w_module/w_module.dart';
@@ -32,7 +33,7 @@ class PanelModule extends PanelContent {
     _components = new PanelComponents(_actions, _stores);
   }
 
-  onLoad() {
+  Future onLoad() async {
     _actions.changeToPanel(0);
   }
 }

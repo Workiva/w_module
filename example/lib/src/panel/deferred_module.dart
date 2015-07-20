@@ -1,5 +1,7 @@
 library w_module.example.panel.deferred_module;
 
+import 'dart:async';
+
 import 'package:react/react.dart' as react;
 import 'package:web_skin_react/web_skin_react.dart' as WSR;
 
@@ -19,7 +21,7 @@ class DeferredModule extends PanelContent {
     _components = new DeferredComponents(this);
   }
 
-  onLoad() async {
+  Future onLoad() async {
     await HeavyLifterWithData.loadLibrary();
     data = new HeavyLifterWithData.RealLifter(HeavyLifterDivision.HEAVYWEIGHT);
   }

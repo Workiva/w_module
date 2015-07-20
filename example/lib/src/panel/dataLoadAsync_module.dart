@@ -23,7 +23,7 @@ class DataLoadAsyncModule extends PanelContent {
     _components = new DataLoadAsyncComponents(_actions, _stores);
   }
 
-  onLoad() {
+  Future onLoad() async {
     // trigger non-blocking async load of data
     _actions.loadData();
   }

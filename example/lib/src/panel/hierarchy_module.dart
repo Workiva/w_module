@@ -1,5 +1,6 @@
 library w_module.example.panel.hierarchy_module;
 
+import 'dart:async';
 import 'dart:html';
 
 import 'package:w_module/w_module.dart';
@@ -31,7 +32,7 @@ class HierarchyModule extends PanelContent {
     _components = new HierarchyComponents(_actions, _stores);
   }
 
-  onLoad() {
+  Future onLoad() async {
 
     // can optionally await all of the loadModule calls
     // to force all children to load before this module
