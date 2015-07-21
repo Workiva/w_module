@@ -9,6 +9,12 @@ authors:
   - Max Peterson <maxwell.peterson@workiva.com>
   - Trent Grover <trent.grover@workiva.com>
 homepage: https://github.com/Workiva/w_module
+dependencies:
+  barback: "^0.15.2"
+  transformer_utils:
+    git:
+      url: git@github.com:Workiva/dart_transformer_utils.git
+      ref: master
 dev_dependencies:
   browser: "^0.10.0+2"
   browser_detect: "^1.0.3"
@@ -22,3 +28,5 @@ dev_dependencies:
   w_flux: "^1.0.0"
 environment:
   sdk: ">=1.9.0 <2.0.0"
+transformers:
+- w_module/alpha/deferred_module_transformer
