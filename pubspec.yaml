@@ -13,6 +13,7 @@ dev_dependencies:
       ref: 0.3.0
   dart_style: '>=0.1.8 <0.2.0'
   mockito: '>=0.10.0 <0.11.0'
+  source_gen: "^0.4.2"
   test: '0.12.2'
   w_flux:
     git:
