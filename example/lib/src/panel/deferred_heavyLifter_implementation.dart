@@ -40,7 +40,7 @@ class RealLifter implements HeavyLifter {
         'Bubble Buddy',
         'DoodleBob'
       ];
-    } else if (_division == HeavyLifterDivision.FEATHERWEIGHT) {
+    } else if (_division == HeavyLifterDivision.WELTERWEIGHT) {
       return [
         'Philip J. Fry',
         'Turanga Leela',
