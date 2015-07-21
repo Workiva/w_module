@@ -12,19 +12,25 @@ abstract class LifecycleModule {
   /// List of child components so that lifecycle can iterate over them as needed
   List<LifecycleModule> _childModules = [];
 
+  // Broadcast streams for load / unload lifecycle events
+  StreamController<LifecycleModule> _willLoadController;
+  Stream<LifecycleModule> get willLoad => _willLoadController.stream;
+
+  StreamController<LifecycleModule> _didLoadController;
+  Stream<LifecycleModule> get didLoad => _didLoadController.stream;
+
+  StreamController<LifecycleModule> _willUnloadController;
+  Stream<LifecycleModule> get willUnload => _willUnloadController.stream;
+
+  StreamController<LifecycleModule> _didUnloadController;
+  Stream<LifecycleModule> get didUnload => _didUnloadController.stream;
+
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
-    _willLoadController = new StreamController<LifecycleModule>();
-    _willLoad = _willLoadController.stream.asBroadcastStream();
-
-    _didLoadController = new StreamController<LifecycleModule>();
-    _didLoad = _didLoadController.stream.asBroadcastStream();
-
-    _willUnloadController = new StreamController<LifecycleModule>();
-    _willUnload = _willUnloadController.stream.asBroadcastStream();
-
-    _didUnloadController = new StreamController<LifecycleModule>();
-    _didUnload = _didUnloadController.stream.asBroadcastStream();
+    _willLoadController = new StreamController<LifecycleModule>.broadcast();
+    _didLoadController = new StreamController<LifecycleModule>.broadcast();
+    _willUnloadController = new StreamController<LifecycleModule>.broadcast();
+    _didUnloadController = new StreamController<LifecycleModule>.broadcast();
   }
 
   //--------------------------------------------------------
@@ -84,10 +90,7 @@ abstract class LifecycleModule {
     ShouldUnloadResult canUnload = shouldUnload();
     if (canUnload.shouldUnload) {
       _willUnloadController.add(this);
-      List<Future> unloadChildren = [];
-      for (num i = 0; i < _childModules.length; i++) {
-        unloadChildren.add(_childModules[i].unload());
-      }
+      Iterable<Future> unloadChildren = _childModules.map((c) => c.unload());
       await Future.wait(unloadChildren);
       _childModules.clear();
       await onUnload();
@@ -121,23 +124,6 @@ abstract class LifecycleModule {
   /// Use this for cleanup.
   /// Completes a future with no payload indicating that the module has finished unloading.
   Future onUnload() async {}
-
-  // Broadcast streams for load / unload lifecycle events
-  StreamController<LifecycleModule> _willLoadController;
-  Stream<LifecycleModule> _willLoad;
-  Stream<LifecycleModule> get willLoad => _willLoad;
-
-  StreamController<LifecycleModule> _didLoadController;
-  Stream<LifecycleModule> _didLoad;
-  Stream<LifecycleModule> get didLoad => _didLoad;
-
-  StreamController<LifecycleModule> _willUnloadController;
-  Stream<LifecycleModule> _willUnload;
-  Stream<LifecycleModule> get willUnload => _willUnload;
-
-  StreamController<LifecycleModule> _didUnloadController;
-  Stream<LifecycleModule> _didUnload;
-  Stream<LifecycleModule> get didUnload => _didUnload;
 }
 
 class ModuleUnloadCanceledException implements Exception {
