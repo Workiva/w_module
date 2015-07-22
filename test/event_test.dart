@@ -8,11 +8,9 @@ import 'package:test/test.dart';
 void main() {
   group('Event', () {
     Event<String> event;
-    StreamController streamController;
 
     setUp(() {
-      streamController = new StreamController<String>();
-      event = new Event<String>.fromStream(streamController.stream);
+      event = new Event<String>();
     });
 
     test('should inherit from Stream', () {
@@ -27,7 +25,7 @@ void main() {
         completer.complete();
       });
 
-      streamController.add('trigger');
+      event('trigger');
       return completer.future;
     });
 
@@ -42,8 +40,24 @@ void main() {
         completer.complete();
       });
 
-      streamController.add('water');
+      event('water');
       return completer.future;
+    });
+
+    test('should be able to obtain a read-only view', () async {
+      Event<String> readOnlyEvent = event.readOnly;
+      expect(() {
+        readOnlyEvent('not allowed!');
+      }, throwsStateError);
+
+      Completer c = new Completer();
+      readOnlyEvent.listen((payload) {
+        expect(payload, equals('allowed'));
+        c.complete();
+      });
+
+      event('allowed');
+      await c.future;
     });
   });
 }
