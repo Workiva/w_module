@@ -6,5 +6,8 @@ class DeferredModule {
   final dynamic eventsClass;
   final dynamic moduleClass;
 
-  const DeferredModule(this.moduleClass, this.apiClass, this.componentsClass, this.eventsClass);
+  const DeferredModule(this.moduleClass, {api, components, events})
+      : apiClass = api,
+        componentsClass = components,
+        eventsClass = events;
 }

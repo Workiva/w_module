@@ -16,18 +16,20 @@ class ExampleModule extends Module {
 }
 
 class ExampleApi {
-  Future<bool> doStuffWith(String stuff, {quiet: false}) async {
+  Future<bool> doStuffWith(String stuff, {quiet: false, List<int> data}) async {
     if (quiet) return false;
     print(stuff);
     return true;
   }
 }
 
-class ExampleComponents {
+class ExampleComponents extends ModuleComponents {
   content([String content = 'Content!']) => content;
 }
 
 class ExampleEvents {
+  Map<Map<String, int>, Stream<bool>> crazyMap = {};
+  Stream<List<int>> get data => new Stream.fromIterable([]);
   Stream<String> get things => new Stream.fromIterable([]);
   set things(Stream<String> things) {}
 }

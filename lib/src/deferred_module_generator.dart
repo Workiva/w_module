@@ -7,27 +7,63 @@ import 'package:source_gen/source_gen.dart';
 import 'package:w_module/src/deferred_module.dart' show DeferredModule;
 import 'package:w_module/src/module.dart' show Module;
 
+String _getFullType(DartType type) {
+  String typeStr = '${type.name}';
+  if (type is ParameterizedType) {
+    if (type.typeArguments.isNotEmpty) {
+      typeStr = '$typeStr<${type.typeArguments.join(', ')}>';
+    }
+  }
+  return typeStr;
+}
+
 class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
   const DeferredModuleGenerator();
 
   generateForAnnotatedElement(LibraryElement element, DeferredModule annotation) {
-    Class apiClass = _getClass(element, annotation.apiClass);
-    Class componentsClass = _getClass(element, annotation.componentsClass);
-    Class eventsClass = _getClass(element, annotation.eventsClass);
-    Class moduleClass = _getClass(element, annotation.moduleClass);
-
     StringBuffer buffer = new StringBuffer();
 
-    String apiClassDef = _generateAbstractClass(apiClass.element);
-    String componentsClassDef = _generateAbstractClass(componentsClass.element);
-    String eventsClassDef = _generateAbstractClass(eventsClass.element);
+    Class apiClass;
+    if (annotation.apiClass != null) {
+      apiClass = _getClass(element, annotation.apiClass);
+      String apiClassDef = _generateAbstractClass(apiClass.element);
+      buffer.writeln('');
+      buffer.writeln(apiClassDef);
+    }
 
-    buffer.writeln(apiClassDef);
-    buffer.writeln(componentsClassDef);
-    buffer.writeln(eventsClassDef);
+    Class componentsClass;
+    if (annotation.componentsClass != null) {
+      componentsClass = _getClass(element, annotation.componentsClass);
+      String componentsClassDef = _generateAbstractClass(componentsClass.element, superClass: 'ModuleComponents');
+      buffer.writeln('');
+      buffer.writeln(componentsClassDef);
+    }
+
+    Class eventsClass;
+    if (annotation.eventsClass != null) {
+      eventsClass = _getClass(element, annotation.eventsClass);
+      String eventsClassDef = _generateAbstractClass(eventsClass.element);
+      buffer.writeln('');
+      buffer.writeln(eventsClassDef);
+    }
+
+    Class moduleClass = _getClass(element, annotation.moduleClass);
+
+    Set<String> deferredLoads = new Set();
+    if (apiClass != null && apiClass.isDeferred) {
+      deferredLoads.add(apiClass.libraryPrefix);
+    }
+    if (componentsClass != null && componentsClass.isDeferred) {
+      deferredLoads.add(componentsClass.libraryPrefix);
+    }
+    if (eventsClass != null && eventsClass.isDeferred) {
+      deferredLoads.add(eventsClass.libraryPrefix);
+    }
+    if (moduleClass != null && moduleClass.isDeferred) {
+      deferredLoads.add(moduleClass.libraryPrefix);
+    }
 
     buffer.writeln('');
-
     buffer.writeln('class Deferred${moduleClass.element.name} extends Module {');
 
     buffer.writeln('  String get name {');
@@ -40,38 +76,48 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
     buffer.writeln('  var _actual;');
     buffer.writeln('  bool _isLoaded = false;');
 
-    buffer.writeln('');
+    if (apiClass != null) {
+      buffer.writeln('');
+      buffer.writeln('  @override');
+      buffer.writeln('  ${apiClass.element.name} get api {');
+      buffer.writeln('    _verifyIsLoaded();');
+      buffer.writeln('    return _actual.api;');
+      buffer.writeln('  }');
+    }
 
-    buffer.writeln('  ${apiClass.element.name} get api {');
-    buffer.writeln('    _verifyIsLoaded();');
-    buffer.writeln('    return _actual.api;');
-    buffer.writeln('  }');
+    if (componentsClass != null) {
+      buffer.writeln('');
+      buffer.writeln('  @override');
+      buffer.writeln('  ${componentsClass.element.name} get components {');
+      buffer.writeln('    _verifyIsLoaded();');
+      buffer.writeln('    return _actual.components;');
+      buffer.writeln('  }');
+    }
 
-    buffer.writeln('');
-
-    buffer.writeln('  ${componentsClass.element.name} get components {');
-    buffer.writeln('    _verifyIsLoaded();');
-    buffer.writeln('    return _actual.components;');
-    buffer.writeln('  }');
-
-    buffer.writeln('');
-
-    buffer.writeln('  ${eventsClass.element.name} get events {');
-    buffer.writeln('    _verifyIsLoaded();');
-    buffer.writeln('    return _actual.events;');
-    buffer.writeln('  }');
+    if (eventsClass != null) {
+      buffer.writeln('');
+      buffer.writeln('  @override');
+      buffer.writeln('  ${eventsClass.element.name} get events {');
+      buffer.writeln('    _verifyIsLoaded();');
+      buffer.writeln('    return _actual.events;');
+      buffer.writeln('  }');
+    }
 
     buffer.writeln('');
 
     buffer.writeln('  Future onLoad() async {');
-    buffer.writeln('    await ${moduleClass.libraryPrefix}.loadLibrary();');
+    buffer.writeln('    await Future.wait([');
+    deferredLoads.forEach((d) {
+      buffer.writeln('        $d.loadLibrary(),');
+    });
+    buffer.writeln('    ]);');
     buffer.writeln('    _actual = new ${moduleClass.libraryPrefix}.${moduleClass.element.name}();');
     buffer.writeln('    _isLoaded = true;');
     buffer.writeln('  }');
 
     buffer.writeln('');
 
-    buffer.writeln('  Future<bool> shouldUnload() {');
+    buffer.writeln('  ShouldUnloadResult shouldUnload() {');
     buffer.writeln('    _verifyIsLoaded();');
     buffer.writeln('    return _actual.shouldUnload();');
     buffer.writeln('  }');
@@ -94,15 +140,10 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
     return buffer.toString();
   }
 
-  String _generateAbstractClass(ClassElement element) {
+  String _generateAbstractClass(ClassElement element, {String superClass}) {
     StringBuffer buffer = new StringBuffer();
-    buffer.writeln('abstract class ${element.name} {');
-
-    print(element.name);
-    print(element.fields);
-    print(element.accessors);
-    print(element.methods);
-    print('\n');
+    String extendsClause = superClass != null ? 'extends $superClass' : '';
+    buffer.writeln('abstract class ${element.name} $extendsClause {');
 
     element.fields.forEach((FieldElement f) {
       if (f.isPrivate || f.isStatic) return;
@@ -114,7 +155,7 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
         field = 'get $field';
       }
       if (f.type != null) {
-        field = '${f.type.name} $field';
+        field = '${_getFullType(f.type)} $field';
       } else if (!f.isFinal) {
         // Untyped, non-final must use `var`.
         field = 'var $field';
@@ -130,14 +171,14 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
       if (a.isGetter) {
         accessor = 'get $accessor';
         if (a.type != null) {
-          accessor = '${a.type.name} $accessor';
+          accessor = '${_getFullType(a.type)} $accessor';
         }
       } else {
         accessor = 'set $accessor';
         ParameterElement param = a.parameters.first;
         String paramStr = '${param.name}';
         if (param.type != null) {
-          paramStr = '${param.type.name} $paramStr';
+          paramStr = '${_getFullType(param.type)} $paramStr';
         }
         accessor = '$accessor($paramStr)';
       }
@@ -149,14 +190,14 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
 
       String method = '${m.name}';
       if (m.returnType != null) {
-        method = '${m.returnType.name} $method';
+        method = '${_getFullType(m.returnType)} $method';
       }
 
       String params = '';
 
       void appendParam(String name, {DartType type, dynamic defaultValue, bool positional: false}) {
         if (type != null) {
-          params = '$params${type.name} ';
+          params = '$params${_getFullType(type)} ';
         }
         params = '$params$name';
       }
@@ -218,21 +259,21 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
       throw new ArgumentError('DeferredModuleGenerator: Invalid class location: $location');
     }
 
+    ImportElement targetImport;
     LibraryElement targetLibrary;
     ClassElement targetClass;
-    if (libraryPrefix != null) {
-      for (int i = 0; i < currentLibrary.importedLibraries.length; i++) {
-        targetLibrary = currentLibrary.importedLibraries[i];
-        targetClass = _findClassInLibrary(targetLibrary, className);
-        if (targetClass != null) break;
-      }
+    for (int i = 0; i < currentLibrary.imports.length; i++) {
+      targetImport = currentLibrary.imports[i];
+      targetLibrary = targetImport.importedLibrary;
+      targetClass = _findClassInLibrary(targetLibrary, className);
+      if (targetClass != null) break;
     }
 
     if (targetClass == null) {
       throw new InvalidGenerationSourceError('DeferredModuleGenerator: Could not find the targeted class: $location');
     }
 
-    return new Class(targetClass, libraryPrefix);
+    return new Class(targetClass, isDeferred: targetImport.isDeferred, libraryPrefix: libraryPrefix);
   }
 
   ClassElement _findClassInLibrary(LibraryElement element, String className) {
@@ -248,8 +289,9 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
 class Class {
   final ClassElement element;
   final bool hasLibraryPrefix;
+  final bool isDeferred;
   final String libraryPrefix;
-  Class(ClassElement this.element, [String libraryPrefix])
+  Class(ClassElement this.element, {bool this.isDeferred: false, String libraryPrefix})
       : hasLibraryPrefix = libraryPrefix != null,
         this.libraryPrefix = libraryPrefix;
 }
