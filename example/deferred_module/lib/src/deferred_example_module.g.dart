@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-07-22T18:36:33.048Z
+// 2015-07-22T20:11:45.300Z
 
 part of w_module.example.deferred.deferred_example_module;
 
@@ -9,6 +9,7 @@ part of w_module.example.deferred.deferred_example_module;
 // **************************************************************************
 
 abstract class ExampleApi {
+  int i;
   Future<bool> doStuffWith(String stuff, {dynamic quiet, List<int> data});
 }
 
@@ -29,6 +30,7 @@ class DeferredExampleModule extends Module {
   }
 
   var _actual;
+  String _constructorCalled;
   bool _isLoaded = false;
 
   @override
@@ -49,9 +51,31 @@ class DeferredExampleModule extends Module {
     return _actual.events;
   }
 
+  var _ExampleModule_stuff;
+  var _ExampleModule_data;
+  var _ExampleModule_has;
+
+  DeferredExampleModule(String stuff, List<int> data, {bool has}) {
+    _constructorCalled = '';
+    _ExampleModule_stuff = stuff;
+    _ExampleModule_data = data;
+    _ExampleModule_has = has;
+  }
+
+  var _ExampleModule_named_i;
+  var _ExampleModule_named_j;
+  var _ExampleModule_named_k;
+
+  DeferredExampleModule.named(int i, [int j, int k]) {
+    _constructorCalled = 'named';
+    _ExampleModule_named_i = i;
+    _ExampleModule_named_j = j;
+    _ExampleModule_named_k = k;
+  }
+
   Future onLoad() async {
     await Future.wait([example_module.loadLibrary(),]);
-    _actual = new example_module.ExampleModule();
+    _constructActualModule();
     _isLoaded = true;
   }
 
@@ -63,6 +87,17 @@ class DeferredExampleModule extends Module {
   Future onUnload() {
     _verifyIsLoaded();
     return _actual.onUnload();
+  }
+
+  void _constructActualModule() {
+    if (_constructorCalled == '') {
+      _actual = new example_module.ExampleModule(
+          _ExampleModule_stuff, _ExampleModule_data, has: _ExampleModule_has);
+    }
+    if (_constructorCalled == 'named') {
+      _actual = new example_module.ExampleModule.named(_ExampleModule_named_i,
+          _ExampleModule_named_j, _ExampleModule_named_k);
+    }
   }
 
   void _verifyIsLoaded() {

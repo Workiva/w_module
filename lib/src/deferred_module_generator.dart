@@ -17,6 +17,55 @@ String _getFullType(DartType type) {
   return typeStr;
 }
 
+String _getFullParameters(List<ParameterElement> parameters) {
+  String paramStr = '';
+
+  void appendParam(String name, {DartType type, dynamic defaultValue, bool positional: false}) {
+    if (type != null) {
+      paramStr = '$paramStr${_getFullType(type)} ';
+    }
+    paramStr = '$paramStr$name';
+  }
+
+  bool firstPositionalReached = false;
+  bool firstNamedReached = false;
+
+  parameters.forEach((p) {
+    if (!paramStr.isEmpty) {
+      // Separate param from previous with comma.
+      paramStr = '$paramStr, ';
+    }
+
+    if (p.parameterKind == ParameterKind.REQUIRED) {
+      appendParam(p.name, type: p.type);
+    } else if (p.parameterKind == ParameterKind.POSITIONAL) {
+      if (!firstPositionalReached) {
+        // Add the bracket to enclose positional params.
+        paramStr = '$paramStr[';
+        firstPositionalReached = true;
+      }
+      appendParam(p.name, type: p.type);
+    } else if (p.parameterKind == ParameterKind.NAMED) {
+      if (!firstNamedReached) {
+        // Add the brace to enclose named params.
+        paramStr = '$paramStr{';
+        firstNamedReached = true;
+      }
+      appendParam(p.name, type: p.type);
+    }
+  });
+
+  // Close the optional/named brackets if necessary.
+  if (firstPositionalReached) {
+    paramStr = '$paramStr]';
+  }
+  if (firstNamedReached) {
+    paramStr = '$paramStr}';
+  }
+
+  return paramStr;
+}
+
 class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
   const DeferredModuleGenerator();
 
@@ -63,6 +112,12 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
       deferredLoads.add(moduleClass.libraryPrefix);
     }
 
+    Map<ConstructorElement, Constructor> ctors = {};
+    moduleClass.element.constructors.forEach((c) {
+      ctors[c] = new Constructor(c);
+    });
+
+    /// Deferred module class.
     buffer.writeln('');
     buffer.writeln('class Deferred${moduleClass.element.name} extends Module {');
 
@@ -74,8 +129,10 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
     buffer.writeln('');
 
     buffer.writeln('  var _actual;');
+    buffer.writeln('  String _constructorCalled;');
     buffer.writeln('  bool _isLoaded = false;');
 
+    /// Module API.
     if (apiClass != null) {
       buffer.writeln('');
       buffer.writeln('  @override');
@@ -85,6 +142,7 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
       buffer.writeln('  }');
     }
 
+    /// Module components.
     if (componentsClass != null) {
       buffer.writeln('');
       buffer.writeln('  @override');
@@ -94,6 +152,7 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
       buffer.writeln('  }');
     }
 
+    /// Module events.
     if (eventsClass != null) {
       buffer.writeln('');
       buffer.writeln('  @override');
@@ -103,34 +162,61 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
       buffer.writeln('  }');
     }
 
-    buffer.writeln('');
+    /// Module constructors.
+    moduleClass.element.constructors.forEach((c) {
+      buffer.writeln('');
+      c.parameters.forEach((p) {
+        buffer.writeln('var ${ctors[c].varFor(p)};');
+      });
 
+      buffer.writeln('');
+      buffer.writeln('  ${ctors[c].deferredName}(${_getFullParameters(c.parameters)}) {');
+      buffer.writeln('    _constructorCalled = \'${c.name}\';');
+      c.parameters.forEach((p) {
+        buffer.writeln('${ctors[c].varFor(p)} = ${p.name};');
+      });
+      buffer.writeln('  }');
+    });
+
+    /// Module lifecycle.
+    buffer.writeln('');
     buffer.writeln('  Future onLoad() async {');
     buffer.writeln('    await Future.wait([');
     deferredLoads.forEach((d) {
       buffer.writeln('        $d.loadLibrary(),');
     });
     buffer.writeln('    ]);');
-    buffer.writeln('    _actual = new ${moduleClass.libraryPrefix}.${moduleClass.element.name}();');
+    buffer.writeln('    _constructActualModule();');
     buffer.writeln('    _isLoaded = true;');
     buffer.writeln('  }');
 
     buffer.writeln('');
-
     buffer.writeln('  ShouldUnloadResult shouldUnload() {');
     buffer.writeln('    _verifyIsLoaded();');
     buffer.writeln('    return _actual.shouldUnload();');
     buffer.writeln('  }');
 
     buffer.writeln('');
-
     buffer.writeln('  Future onUnload() {');
     buffer.writeln('    _verifyIsLoaded();');
     buffer.writeln('    return _actual.onUnload();');
     buffer.writeln('  }');
 
     buffer.writeln('');
+    buffer.writeln('  void _constructActualModule() {');
+    moduleClass.element.constructors.forEach((c) {
+      buffer.writeln('    if (_constructorCalled == \'${c.name}\') {');
+      String ctorLoc = '';
+      if (moduleClass.hasLibraryPrefix) {
+        ctorLoc = '${moduleClass.libraryPrefix}.';
+      }
+      ctorLoc = '$ctorLoc${ctors[c].name}';
+      buffer.writeln('      _actual = new $ctorLoc(${ctors[c].fillArgs()});');
+      buffer.writeln('    }');
+    });
+    buffer.writeln('  }');
 
+    buffer.writeln('');
     buffer.writeln('  void _verifyIsLoaded() {');
     buffer.writeln('    if (!_isLoaded)');
     buffer.writeln('      throw new StateError(\'Cannot access deferred module\\\'s API until it has been loaded.\');');
@@ -193,51 +279,7 @@ class DeferredModuleGenerator extends GeneratorForAnnotation<DeferredModule> {
         method = '${_getFullType(m.returnType)} $method';
       }
 
-      String params = '';
-
-      void appendParam(String name, {DartType type, dynamic defaultValue, bool positional: false}) {
-        if (type != null) {
-          params = '$params${_getFullType(type)} ';
-        }
-        params = '$params$name';
-      }
-
-      bool firstPositionalReached = false;
-      bool firstNamedReached = false;
-      m.type.parameters.forEach((p) {
-        if (!params.isEmpty) {
-          // Separate param from previous with comma.
-          params = '$params, ';
-        }
-
-        if (p.parameterKind == ParameterKind.REQUIRED) {
-          appendParam(p.name, type: p.type);
-        } else if (p.parameterKind == ParameterKind.POSITIONAL) {
-          if (!firstPositionalReached) {
-            // Add the bracket to enclose positional params.
-            params = '$params[';
-            firstPositionalReached = true;
-          }
-          appendParam(p.name, type: p.type);
-        } else if (p.parameterKind == ParameterKind.NAMED) {
-          if (!firstNamedReached) {
-            // Add the brace to enclose named params.
-            params = '$params{';
-            firstNamedReached = true;
-          }
-          appendParam(p.name, type: p.type);
-        }
-      });
-
-      // Close the optional/named brackets if necessary.
-      if (firstPositionalReached) {
-        params = '$params]';
-      }
-      if (firstNamedReached) {
-        params = '$params}';
-      }
-
-      method = '$method($params);';
+      method = '$method(${_getFullParameters(m.type.parameters)});';
       buffer.writeln(method);
     });
 
@@ -294,4 +336,34 @@ class Class {
   Class(ClassElement this.element, {bool this.isDeferred: false, String libraryPrefix})
       : hasLibraryPrefix = libraryPrefix != null,
         this.libraryPrefix = libraryPrefix;
+}
+
+class Constructor {
+  ConstructorElement element;
+
+  String get deferredName => 'Deferred$name';
+
+  String get name {
+    String n = element.enclosingElement.name;
+    if (element.name.isNotEmpty) {
+      n = '$n.${element.name}';
+    }
+    return n;
+  }
+
+  Constructor(ConstructorElement this.element);
+
+  String fillArgs() {
+    List a = [];
+    element.parameters.forEach((p) {
+      if (p.parameterKind == ParameterKind.NAMED) {
+        a.add('${p.name}: ${varFor(p)}');
+      } else {
+        a.add(varFor(p));
+      }
+    });
+    return a.join(', ');
+  }
+
+  String varFor(ParameterElement param) => '_${name.replaceAll('.', '_')}_${param.name}';
 }
