@@ -8,11 +8,11 @@ import 'package:test/test.dart';
 void main() {
   group('Event', () {
     Event<String> event;
-    StreamController streamController;
+    DispatchKey key;
 
     setUp(() {
-      streamController = new StreamController<String>();
-      event = new Event<String>.fromStream(streamController.stream);
+      key = new DispatchKey('test');
+      event = new Event<String>(key);
     });
 
     test('should inherit from Stream', () {
@@ -27,7 +27,7 @@ void main() {
         completer.complete();
       });
 
-      streamController.add('trigger');
+      event('trigger', key);
       return completer.future;
     });
 
@@ -42,8 +42,30 @@ void main() {
         completer.complete();
       });
 
-      streamController.add('water');
+      event('water', key);
       return completer.future;
+    });
+
+    test('should only allow dispatch with correct key', () async {
+      Completer completer = new Completer();
+
+      event.listen((payload) {
+        if (payload == 'bad') throw new Exception(
+            'Should not be able to dispatch events without the correct key.');
+        if (payload == 'good') {
+          completer.complete();
+        }
+      });
+
+      // Create a new dispatch key that should not work for this event.
+      DispatchKey incorrectKey = new DispatchKey('incorrect');
+
+      expect(() {
+        event('bad', incorrectKey);
+      }, throwsArgumentError);
+      event('good', key);
+
+      await completer.future;
     });
   });
 }
