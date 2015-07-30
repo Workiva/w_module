@@ -62,7 +62,7 @@ class HierarchyComponents implements ModuleComponents {
 
   HierarchyComponents(this._actions, this._stores);
 
-  content() => HierarchyComponent({'actions': _actions, 'stores': _stores});
+  content() => HierarchyComponent({'actions': _actions, 'store': _stores});
 }
 
 class HierarchyActions {
@@ -106,18 +106,10 @@ class HierarchyStore extends Store {
 
 var HierarchyComponent = react.registerComponent(() => new _HierarchyComponent());
 class _HierarchyComponent extends FluxComponent<HierarchyActions, HierarchyStore> {
-  List<Module> get childModules => state['childModules'];
-
-  getStoreHandlers() => {stores: _updateHierarchyStore};
-
-  getInitialState() {
-    return {'childModules': []};
-  }
-
   render() {
     return react.div({
       'style': {'padding': '10px', 'backgroundColor': 'lightgray', 'color': 'black'}
-    }, childModules.map((child) => react.div({
+    }, store.childModules.map((child) => react.div({
       'style': {'border': '3px dashed gray', 'margin': '5px'}
     }, [
       WSR.Button({
@@ -128,9 +120,5 @@ class _HierarchyComponent extends FluxComponent<HierarchyActions, HierarchyStore
       }, 'Unload Module'),
       child.components.content()
     ])));
-  }
-
-  _updateHierarchyStore(HierarchyStore store) {
-    setState({'childModules': store.childModules});
   }
 }

@@ -34,7 +34,7 @@ class RejectComponents implements ModuleComponents {
 
   RejectComponents(this._actions, this._stores);
 
-  content() => RejectComponent({'actions': _actions, 'stores': _stores});
+  content() => RejectComponent({'actions': _actions, 'store': _stores});
 }
 
 class RejectActions {
@@ -61,14 +61,6 @@ class RejectStore extends Store {
 
 var RejectComponent = react.registerComponent(() => new _RejectComponent());
 class _RejectComponent extends FluxComponent<RejectActions, RejectStore> {
-  bool get shouldUnload => state['shouldUnload'];
-
-  getStoreHandlers() => {stores: _updateRejectStore};
-
-  getInitialState() {
-    return {'shouldUnload': true};
-  }
-
   render() {
     return react.div({'style': {'padding': '50px', 'backgroundColor': 'green', 'color': 'white'}}, [
       'This module will reject unloading if the checkbox is cleared.',
@@ -76,13 +68,9 @@ class _RejectComponent extends FluxComponent<RejectActions, RejectStore> {
         'id': 'rejectModuleCheckbox',
         'type': 'checkbox',
         'label': 'shouldUnload',
-        'checked': shouldUnload,
+        'checked': store.shouldUnload,
         'onChange': actions.toggleShouldUnload
       })
     ]);
-  }
-
-  _updateRejectStore(RejectStore store) {
-    setState({'shouldUnload': store.shouldUnload});
   }
 }

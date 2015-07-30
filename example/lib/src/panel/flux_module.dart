@@ -29,7 +29,7 @@ class FluxComponents implements ModuleComponents {
 
   FluxComponents(this._actions, this._stores);
 
-  content() => MyFluxComponent({'actions': _actions, 'stores': _stores});
+  content() => MyFluxComponent({'actions': _actions, 'store': _stores});
 }
 
 class FluxActions {
@@ -57,17 +57,9 @@ class FluxStore extends Store {
 
 var MyFluxComponent = react.registerComponent(() => new _MyFluxComponent());
 class _MyFluxComponent extends FluxComponent<FluxActions, FluxStore> {
-  String get backgroundColor => state['backgroundColor'];
-
-  getStoreHandlers() => {stores: _updateFluxStore};
-
-  getInitialState() {
-    return {'backgroundColor': stores.backgroundColor};
-  }
-
   render() {
     return react.div({
-      'style': {'padding': '50px', 'backgroundColor': backgroundColor, 'color': 'white'}
+      'style': {'padding': '50px', 'backgroundColor': store.backgroundColor, 'color': 'white'}
     }, [
       'This module uses a flux pattern to change its background color.',
       WSR.Input({
@@ -76,9 +68,5 @@ class _MyFluxComponent extends FluxComponent<FluxActions, FluxStore> {
         'onClick': actions.changeBackgroundColor
       })
     ]);
-  }
-
-  _updateFluxStore(FluxStore store) {
-    setState({'backgroundColor': store.backgroundColor});
   }
 }

@@ -17,7 +17,7 @@ dev_dependencies:
   w_flux:
     git:
       url: git@github.com:Workiva/w_flux.git
-      ref: master
+      ref: 0.3.0
   web_skin_react:
     git:
       url: git@github.com:Workiva/web-skin-react.git
