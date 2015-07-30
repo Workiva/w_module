@@ -43,7 +43,7 @@ class PanelComponents implements ModuleComponents {
 
   PanelComponents(this._actions, this._stores);
 
-  content() => PanelComponent({'actions': _actions, 'stores': _stores});
+  content() => PanelComponent({'actions': _actions, 'store': _stores});
 }
 
 class PanelActions {
@@ -117,20 +117,17 @@ class PanelStore extends Store {
 
 var PanelComponent = react.registerComponent(() => new _PanelComponent());
 class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
-  num get panelIndex => state['panelIndex'];
-  get panelContent => state['panelContent'];
-
-  getStoreHandlers() => {stores: _updatePanelStore};
-
-  getInitialState() {
-    return {'panelIndex': 0, 'panelContent': null};
-  }
-
   render() {
+    // display a loading placeholder if the module isn't ready for rendering
+    var content = store.isRenderable
+        ? store.panelModule.components.content()
+        : WSR.ProgressBar(
+            {'wsStyle': 'success', 'indeterminate': true, 'label': 'Loading New Panel Module...'});
+
     var tabBar = WSR.Nav({
       'wsStyle': 'pills',
       'justified': true,
-      'activeKey': panelIndex,
+      'activeKey': store.panelIndex,
       'onSelect': (newIndex, _, __) => actions.changeToPanel(newIndex),
       'style': {'paddingBottom': '5px'}
     }, [
@@ -152,15 +149,6 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
         'color': 'black',
         'border': '1px solid lightgreen'
       }
-    }, [tabBar, panelContent]);
-  }
-
-  _updatePanelStore(PanelStore store) {
-    // display a loading placeholder if the module isn't ready for rendering
-    var content = store.isRenderable
-        ? store.panelModule.components.content()
-        : WSR.ProgressBar(
-            {'wsStyle': 'success', 'indeterminate': true, 'label': 'Loading New Panel Module...'});
-    setState({'panelIndex': store.panelIndex, 'panelContent': content});
+    }, [tabBar, content]);
   }
 }

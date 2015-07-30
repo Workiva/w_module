@@ -34,7 +34,7 @@ class DataLoadAsyncComponents implements ModuleComponents {
 
   DataLoadAsyncComponents(this._actions, this._stores);
 
-  content() => DataLoadAsyncComponent({'actions': _actions, 'stores': _stores});
+  content() => DataLoadAsyncComponent({'actions': _actions, 'store': _stores});
 }
 
 class DataLoadAsyncActions {
@@ -75,32 +75,19 @@ class DataLoadAsyncStore extends Store {
 
 var DataLoadAsyncComponent = react.registerComponent(() => new _DataLoadAsyncComponent());
 class _DataLoadAsyncComponent extends FluxComponent<DataLoadAsyncActions, DataLoadAsyncStore> {
-  bool get isLoading => state['isLoading'];
-  List<String> get data => state['data'];
-
-  getStoreHandlers() => {stores: _updateDataLoadAsyncStore};
-
-  getInitialState() {
-    return {'isLoading': stores.isLoading, 'data': stores.data};
-  }
-
   render() {
     var content;
-    if (isLoading) {
+    if (store.isLoading) {
       content =
           WSR.ProgressBar({'wsStyle': 'info', 'indeterminate': true, 'label': 'Loading Data...'});
     } else {
       int keyCounter = 0;
-      content =
-          WSR.ListGroup({}, data.map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)));
+      content = WSR.ListGroup(
+          {}, store.data.map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)));
     }
 
     return react.div({
       'style': {'padding': '50px', 'backgroundColor': 'orange', 'color': 'white'}
     }, ['This module renders a loading spinner until data is ready for display.', content]);
-  }
-
-  _updateDataLoadAsyncStore(DataLoadAsyncStore store) {
-    setState({'isLoading': store.isLoading, 'data': store.data});
   }
 }
