@@ -42,7 +42,6 @@ class DataLoadAsyncActions {
 }
 
 class DataLoadAsyncStore extends Store {
-
   /// Public data
   bool _isLoading;
   bool get isLoading => _isLoading;
@@ -59,7 +58,6 @@ class DataLoadAsyncStore extends Store {
   }
 
   _loadData(_) async {
-
     // set loading state and trigger to display loading spinner
     _isLoading = true;
     trigger();
@@ -73,21 +71,36 @@ class DataLoadAsyncStore extends Store {
   }
 }
 
-var DataLoadAsyncComponent = react.registerComponent(() => new _DataLoadAsyncComponent());
-class _DataLoadAsyncComponent extends FluxComponent<DataLoadAsyncActions, DataLoadAsyncStore> {
+var DataLoadAsyncComponent =
+    react.registerComponent(() => new _DataLoadAsyncComponent());
+
+class _DataLoadAsyncComponent
+    extends FluxComponent<DataLoadAsyncActions, DataLoadAsyncStore> {
   render() {
     var content;
     if (store.isLoading) {
-      content =
-          WSR.ProgressBar({'wsStyle': 'info', 'indeterminate': true, 'label': 'Loading Data...'});
+      content = WSR.ProgressBar({
+        'wsStyle': 'info',
+        'indeterminate': true,
+        'label': 'Loading Data...'
+      });
     } else {
       int keyCounter = 0;
       content = WSR.ListGroup(
-          {}, store.data.map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)));
+          {},
+          store.data
+              .map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)));
     }
 
     return react.div({
-      'style': {'padding': '50px', 'backgroundColor': 'orange', 'color': 'white'}
-    }, ['This module renders a loading spinner until data is ready for display.', content]);
+      'style': {
+        'padding': '50px',
+        'backgroundColor': 'orange',
+        'color': 'white'
+      }
+    }, [
+      'This module renders a loading spinner until data is ready for display.',
+      content
+    ]);
   }
 }

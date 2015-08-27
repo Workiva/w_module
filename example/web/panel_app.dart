@@ -18,7 +18,6 @@ main() async {
 
   // block browser tab / window close if necessary
   window.onBeforeUnload.listen((event) {
-
     // can the app be unloaded?
     ShouldUnloadResult res = panelModule.shouldUnload();
     if (!res.shouldUnload) {

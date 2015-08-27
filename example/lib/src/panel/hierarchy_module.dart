@@ -32,7 +32,6 @@ class HierarchyModule extends Module {
   }
 
   Future onLoad() async {
-
     // can optionally await all of the loadModule calls
     // to force all children to load before this module
     // completes loading (not recommended)
@@ -71,7 +70,6 @@ class HierarchyActions {
 }
 
 class HierarchyStore extends Store {
-
   /// Public data
   List<Module> _childModules = [];
   List<Module> get childModules => _childModules;
@@ -89,7 +87,6 @@ class HierarchyStore extends Store {
   }
 
   _removeChildModule(Module oldModule) {
-
     // do we need to reject the unload?
     ShouldUnloadResult canUnload = oldModule.shouldUnload();
     if (!canUnload.shouldUnload) {
@@ -104,21 +101,30 @@ class HierarchyStore extends Store {
   }
 }
 
-var HierarchyComponent = react.registerComponent(() => new _HierarchyComponent());
-class _HierarchyComponent extends FluxComponent<HierarchyActions, HierarchyStore> {
+var HierarchyComponent =
+    react.registerComponent(() => new _HierarchyComponent());
+
+class _HierarchyComponent
+    extends FluxComponent<HierarchyActions, HierarchyStore> {
   render() {
-    return react.div({
-      'style': {'padding': '10px', 'backgroundColor': 'lightgray', 'color': 'black'}
-    }, store.childModules.map((child) => react.div({
-      'style': {'border': '3px dashed gray', 'margin': '5px'}
-    }, [
-      WSR.Button({
-        'style': {'float': 'right', 'margin': '5px'},
-        'onClick': (_) {
-          actions.removeChildModule(child);
-        }
-      }, 'Unload Module'),
-      child.components.content()
-    ])));
+    return react.div(
+        {
+      'style': {
+        'padding': '10px',
+        'backgroundColor': 'lightgray',
+        'color': 'black'
+      }
+    },
+        store.childModules.map((child) => react.div({
+              'style': {'border': '3px dashed gray', 'margin': '5px'}
+            }, [
+              WSR.Button({
+                'style': {'float': 'right', 'margin': '5px'},
+                'onClick': (_) {
+                  actions.removeChildModule(child);
+                }
+              }, 'Unload Module'),
+              child.components.content()
+            ])));
   }
 }
