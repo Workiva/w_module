@@ -16,6 +16,10 @@ class BasicModule extends Module {
 
 class BasicModuleComponents implements ModuleComponents {
   content() => react.div({
-    'style': {'padding': '50px', 'backgroundColor': 'lightgray', 'color': 'black'}
-  }, 'This module does almost nothing.');
+        'style': {
+          'padding': '50px',
+          'backgroundColor': 'lightgray',
+          'color': 'black'
+        }
+      }, 'This module does almost nothing.');
 }

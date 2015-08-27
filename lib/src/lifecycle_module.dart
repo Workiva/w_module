@@ -5,7 +5,6 @@ import 'dart:async';
 /// Intended to be extended by most base module classes in order to provide a unified
 /// lifecycle API.
 abstract class LifecycleModule {
-
   /// Name of the module for identification within exceptions and while debugging.
   String name = 'Module';
 
@@ -63,7 +62,6 @@ abstract class LifecycleModule {
   /// Calls the onShouldUnload() method, which can be implemented on a Module.
   /// onShouldUnload is also called on all registered child modules
   ShouldUnloadResult shouldUnload() {
-
     // collect results from all child modules and self
     List<ShouldUnloadResult> shouldUnloads = [];
     _childModules.forEach((child) {

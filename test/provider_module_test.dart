@@ -1,3 +1,4 @@
+@TestOn('vm || browser')
 library w_module.test.provider_module_test;
 
 import 'dart:async';
@@ -17,7 +18,8 @@ void main() {
       module = new TestProviderModule();
     });
 
-    test('should have a listen method that is passed through to its stream', () async {
+    test('should have a listen method that is passed through to its stream',
+        () async {
       Completer completer = new Completer();
 
       module.listen((TestProviderModule payload) {
@@ -43,7 +45,8 @@ void main() {
       return completer.future;
     });
 
-    test('should have a doApiCall method that performs optomostic triggers', () async {
+    test('should have a doApiCall method that performs optomostic triggers',
+        () async {
       Completer completer = new Completer();
 
       // TODO how to test this?

@@ -47,6 +47,7 @@ abstract class ProviderModule extends LifecycleModule {
   // (provider.listen(...) instead of provider.stream.listen(...))
   StreamSubscription<ProviderModule> listen(void onData(ProviderModule event),
       {Function onError, void onDone(), bool cancelOnError}) {
-    return _stream.listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+    return _stream.listen(onData,
+        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 }

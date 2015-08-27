@@ -32,9 +32,14 @@ class DataLoadBlockingComponents implements ModuleComponents {
 
   content() {
     int keyCounter = 0;
-    return react.div({'style': {'padding': '50px', 'backgroundColor': 'red', 'color': 'white'}}, [
+    return react.div({
+      'style': {'padding': '50px', 'backgroundColor': 'red', 'color': 'white'}
+    }, [
       'This module blocks the module loading lifecycle until the data is ready to render.',
-      WSR.ListGroup({}, _module.data.map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)))
+      WSR.ListGroup(
+          {},
+          _module.data
+              .map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)))
     ]);
   }
 }

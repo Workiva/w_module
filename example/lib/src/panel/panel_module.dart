@@ -51,7 +51,6 @@ class PanelActions {
 }
 
 class PanelStore extends Store {
-
   /// Public data
   num _panelIndex = 0;
   num get panelIndex => _panelIndex;
@@ -69,10 +68,8 @@ class PanelStore extends Store {
   }
 
   _changeToPanel(num newPanelIndex) async {
-
     // is there a panel currently loaded?
     if (_panelModule != null) {
-
       // do we need to reject the unload of the existing panel?
       ShouldUnloadResult canUnload = _panelModule.shouldUnload();
       if (!canUnload.shouldUnload) {
@@ -116,13 +113,17 @@ class PanelStore extends Store {
 }
 
 var PanelComponent = react.registerComponent(() => new _PanelComponent());
+
 class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
   render() {
     // display a loading placeholder if the module isn't ready for rendering
     var content = store.isRenderable
         ? store.panelModule.components.content()
-        : WSR.ProgressBar(
-            {'wsStyle': 'success', 'indeterminate': true, 'label': 'Loading New Panel Module...'});
+        : WSR.ProgressBar({
+            'wsStyle': 'success',
+            'indeterminate': true,
+            'label': 'Loading New Panel Module...'
+          });
 
     var tabBar = WSR.Nav({
       'wsStyle': 'pills',
@@ -149,6 +150,9 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
         'color': 'black',
         'border': '1px solid lightgreen'
       }
-    }, [tabBar, content]);
+    }, [
+      tabBar,
+      content
+    ]);
   }
 }

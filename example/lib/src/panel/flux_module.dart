@@ -37,7 +37,6 @@ class FluxActions {
 }
 
 class FluxStore extends Store {
-
   /// Public data
   String _backgroundColor = 'gray';
   String get backgroundColor => _backgroundColor;
@@ -51,15 +50,21 @@ class FluxStore extends Store {
 
   _changeBackgroundColor(_) {
     // generate a random hex color string
-    _backgroundColor = '#' + (new Random().nextDouble() * 16777215).floor().toRadixString(16);
+    _backgroundColor =
+        '#' + (new Random().nextDouble() * 16777215).floor().toRadixString(16);
   }
 }
 
 var MyFluxComponent = react.registerComponent(() => new _MyFluxComponent());
+
 class _MyFluxComponent extends FluxComponent<FluxActions, FluxStore> {
   render() {
     return react.div({
-      'style': {'padding': '50px', 'backgroundColor': store.backgroundColor, 'color': 'white'}
+      'style': {
+        'padding': '50px',
+        'backgroundColor': store.backgroundColor,
+        'color': 'white'
+      }
     }, [
       'This module uses a flux pattern to change its background color.',
       WSR.Input({

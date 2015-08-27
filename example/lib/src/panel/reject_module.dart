@@ -42,7 +42,6 @@ class RejectActions {
 }
 
 class RejectStore extends Store {
-
   /// Public data
   bool _shouldUnload = true;
   bool get shouldUnload => _shouldUnload;
@@ -60,9 +59,12 @@ class RejectStore extends Store {
 }
 
 var RejectComponent = react.registerComponent(() => new _RejectComponent());
+
 class _RejectComponent extends FluxComponent<RejectActions, RejectStore> {
   render() {
-    return react.div({'style': {'padding': '50px', 'backgroundColor': 'green', 'color': 'white'}}, [
+    return react.div({
+      'style': {'padding': '50px', 'backgroundColor': 'green', 'color': 'white'}
+    }, [
       'This module will reject unloading if the checkbox is cleared.',
       WSR.Input({
         'id': 'rejectModuleCheckbox',

@@ -7,7 +7,8 @@ import 'package:web_skin_react/web_skin_react.dart' as WSR;
 import 'package:w_module/w_module.dart';
 
 import './deferred_heavyLifter_interface.dart';
-import './deferred_heavyLifter_implementation.dart' deferred as HeavyLifterWithData;
+import './deferred_heavyLifter_implementation.dart'
+    deferred as HeavyLifterWithData;
 
 class DeferredModule extends Module {
   final String name = 'DeferredModule';
@@ -33,10 +34,14 @@ class DeferredComponents implements ModuleComponents {
 
   content() {
     int keyCounter = 0;
-    return react.div({'style': {'padding': '50px', 'backgroundColor': 'blue', 'color': 'white'}}, [
+    return react.div({
+      'style': {'padding': '50px', 'backgroundColor': 'blue', 'color': 'white'}
+    }, [
       'This module gets its data from a deferred implementation.',
-      WSR.ListGroup({},
-          _module.data.competitors.map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)))
+      WSR.ListGroup(
+          {},
+          _module.data.competitors
+              .map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)))
     ]);
   }
 }
