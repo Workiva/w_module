@@ -20,7 +20,7 @@ class TestLifecycleModule extends LifecycleModule {
     eventList = [];
     mockShouldUnload = true;
 
-    // load / unload state streams
+    // Parent module events:
     willLoad.listen((_) {
       eventList.add('willLoad');
     });
@@ -32,6 +32,11 @@ class TestLifecycleModule extends LifecycleModule {
     });
     didUnload.listen((_) {
       eventList.add('didUnload');
+    });
+
+    // Child module events:
+    didLoadChildModule.listen((_) {
+      eventList.add('didLoadChildModule');
     });
   }
 
@@ -104,12 +109,13 @@ void main() {
 
     test('loadModule loads a child module', () async {
       await parentModule.loadModule(childModule);
-      expect(parentModule.eventList, equals([]));
+      expect(parentModule.eventList, equals(['didLoadChildModule']));
       expect(childModule.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
     });
 
     test('should unload child modules when parent in unloaded', () async {
       await parentModule.loadModule(childModule);
+      parentModule.eventList = [];
       childModule.eventList = [];
       await parentModule.unload();
       expect(parentModule.eventList,
@@ -129,9 +135,9 @@ void main() {
         'unloaded child module should be removed from parent module\'s lifecycle',
         () async {
       await parentModule.loadModule(childModule);
+      parentModule.eventList = [];
       childModule.eventList = [];
       await childModule.unload();
-      expect(parentModule.eventList, equals([]));
       expect(childModule.eventList,
           equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
       childModule.eventList = [];
