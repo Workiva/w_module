@@ -6,7 +6,7 @@ main(List<String> args) async {
   // https://github.com/Workiva/dart_dev
 
   List<String> directories = ['example/', 'lib/', 'test/', 'tool/'];
-  config.analyze.entryPoints = ['example/web/', 'lib/', 'test/', 'tool/'];
+  config.analyze.entryPoints = ['example/', 'lib/', 'test/', 'tool/'];
   config.copyLicense.directories = directories;
   config.format.directories = directories;
 
