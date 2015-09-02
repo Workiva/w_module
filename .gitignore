@@ -1,6 +1,11 @@
+.idea/
+
+# dart
 .pub
+build
 packages
 pubspec.lock
 
+# coverage
 /coverage/
 
