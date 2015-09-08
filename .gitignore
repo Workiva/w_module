@@ -1,6 +1,7 @@
 .idea/
 
 # dart
+.packages
 .pub
 build
 packages
