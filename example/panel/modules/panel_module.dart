@@ -1,4 +1,4 @@
-library w_module.example.panel.panel_module;
+library w_module.example.panel.modules.panel_module;
 
 import 'dart:async';
 import 'dart:html';

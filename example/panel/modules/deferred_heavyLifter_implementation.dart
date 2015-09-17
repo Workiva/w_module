@@ -1,4 +1,4 @@
-library w_module.example.panel.deferred_heavyLifter_implementation;
+library w_module.example.panel.modules.deferred_heavyLifter_implementation;
 
 import './deferred_heavyLifter_interface.dart';
 

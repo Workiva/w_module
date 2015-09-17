@@ -1,4 +1,4 @@
-library w_module.example.panel.dataLoadAsync_module;
+library w_module.example.panel.modules.dataLoadAsync_module;
 
 import 'dart:async';
 

@@ -1,4 +1,4 @@
-library w_module.example.panel.reject_module;
+library w_module.example.panel.modules.reject_module;
 
 import 'package:w_module/w_module.dart';
 import 'package:w_flux/w_flux.dart';

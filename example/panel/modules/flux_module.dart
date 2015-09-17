@@ -1,4 +1,4 @@
-library w_module.example.panel.flux_module;
+library w_module.example.panel.modules.flux_module;
 
 import 'dart:math';
 

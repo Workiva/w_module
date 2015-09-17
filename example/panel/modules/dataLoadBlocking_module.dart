@@ -1,4 +1,4 @@
-library w_module.example.panel.dataLoadBlocking_module;
+library w_module.example.panel.modules.dataLoadBlocking_module;
 
 import 'dart:async';
 

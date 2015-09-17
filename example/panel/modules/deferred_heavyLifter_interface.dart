@@ -1,4 +1,4 @@
-library w_module.example.panel.deferred_heavyLifter_interface;
+library w_module.example.panel.modules.deferred_heavyLifter_interface;
 
 enum HeavyLifterDivision { FEATHERWEIGHT, WELTERWEIGHT, HEAVYWEIGHT }
 
