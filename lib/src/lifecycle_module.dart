@@ -54,7 +54,7 @@ abstract class LifecycleModule {
 
   /// Public method to async load a child module and register it
   /// for lifecycle management
-  Future loadModule(LifecycleModule newModule) async {
+  Future loadChildModule(LifecycleModule newModule) async {
     newModule.didLoad.listen((_) {
       _childModules.add(newModule);
       _didLoadChildModuleController.add(newModule);

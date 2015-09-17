@@ -107,14 +107,14 @@ void main() {
       childModule = new TestLifecycleModule();
     });
 
-    test('loadModule loads a child module', () async {
-      await parentModule.loadModule(childModule);
+    test('loadChildModule loads a child module', () async {
+      await parentModule.loadChildModule(childModule);
       expect(parentModule.eventList, equals(['didLoadChildModule']));
       expect(childModule.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
     });
 
     test('should unload child modules when parent in unloaded', () async {
-      await parentModule.loadModule(childModule);
+      await parentModule.loadChildModule(childModule);
       parentModule.eventList = [];
       childModule.eventList = [];
       await parentModule.unload();
@@ -134,7 +134,7 @@ void main() {
     test(
         'unloaded child module should be removed from parent module\'s lifecycle',
         () async {
-      await parentModule.loadModule(childModule);
+      await parentModule.loadChildModule(childModule);
       parentModule.eventList = [];
       childModule.eventList = [];
       await childModule.unload();
@@ -153,7 +153,7 @@ void main() {
       expect(parentShouldUnload.shouldUnload, equals(true));
       expect(parentShouldUnload.messages, equals([]));
 
-      await parentModule.loadModule(childModule);
+      await parentModule.loadChildModule(childModule);
       parentModule.eventList = [];
       childModule.eventList = [];
 
@@ -176,7 +176,7 @@ void main() {
       expect(shouldUnloadRes.shouldUnload, equals(false));
       expect(shouldUnloadRes.messages, equals([shouldUnloadError]));
 
-      await parentModule.loadModule(childModule);
+      await parentModule.loadChildModule(childModule);
       parentModule.eventList = [];
       childModule.eventList = [];
 
