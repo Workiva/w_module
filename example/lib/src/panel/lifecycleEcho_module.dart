@@ -25,6 +25,9 @@ class LifecycleEchoModule extends Module {
     didUnload.listen((_) {
       print('${name}: didUnload');
     });
+    didLoadChildModule.listen((_) {
+      print('${name}: didLoadChildModule');
+    });
     _components = new LifecycleEchoComponents();
   }
 
@@ -36,6 +39,7 @@ class LifecycleEchoModule extends Module {
 
   Future onLoad() async {
     print('${name}: onLoad');
+    loadChildModule(new LifecycleEchoChildModule());
     await new Future.delayed(new Duration(seconds: 1));
   }
 
@@ -60,4 +64,8 @@ class LifecycleEchoComponents implements ModuleComponents {
       }, [
         'This module echoes all of its lifecycle events to the dev console.'
       ]);
+}
+
+class LifecycleEchoChildModule extends Module {
+
 }
