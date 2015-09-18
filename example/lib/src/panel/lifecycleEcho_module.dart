@@ -66,6 +66,4 @@ class LifecycleEchoComponents implements ModuleComponents {
       ]);
 }
 
-class LifecycleEchoChildModule extends Module {
-
-}
+class LifecycleEchoChildModule extends Module {}
