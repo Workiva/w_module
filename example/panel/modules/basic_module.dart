@@ -1,4 +1,4 @@
-library w_module.example.panel.basic_module;
+library w_module.example.panel.modules.basic_module;
 
 import 'package:react/react.dart' as react;
 import 'package:w_module/w_module.dart';

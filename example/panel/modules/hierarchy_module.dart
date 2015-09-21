@@ -1,4 +1,4 @@
-library w_module.example.panel.hierarchy_module;
+library w_module.example.panel.modules.hierarchy_module;
 
 import 'dart:async';
 import 'dart:html';

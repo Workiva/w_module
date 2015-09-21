@@ -1,4 +1,4 @@
-library w_module.example.app.panel_app;
+library w_module.example.panel;
 
 import 'dart:html';
 
@@ -6,7 +6,7 @@ import 'package:react/react.dart' as react;
 import 'package:react/react_client.dart' as react_client;
 import 'package:w_module/w_module.dart';
 
-import 'lib/src/panel/panel_module.dart';
+import 'modules/panel_module.dart';
 
 main() async {
   Element container = querySelector('#panel-container');

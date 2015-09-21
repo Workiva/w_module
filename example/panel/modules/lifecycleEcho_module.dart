@@ -1,4 +1,4 @@
-library w_module.example.panel.lifecycleEcho_module;
+library w_module.example.panel.modules.lifecycleEcho_module;
 
 import 'dart:async';
 

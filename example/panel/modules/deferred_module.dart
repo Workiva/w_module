@@ -1,4 +1,4 @@
-library w_module.example.panel.deferred_module;
+library w_module.example.panel.modules.deferred_module;
 
 import 'dart:async';
 
