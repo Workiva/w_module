@@ -50,7 +50,7 @@ class HierarchyModule extends Module {
       module.didLoad.listen((_) {
         _actions.addChildModule(module);
       });
-      loadModule(module);
+      loadChildModule(module);
     });
   }
 }

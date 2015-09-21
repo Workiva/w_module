@@ -11,7 +11,7 @@ abstract class LifecycleModule {
   /// List of child components so that lifecycle can iterate over them as needed
   List<LifecycleModule> _childModules = [];
 
-  // Broadcast streams for load / unload lifecycle events
+  // Broadcast streams for the module's lifecycle events.
   StreamController<LifecycleModule> _willLoadController;
   Stream<LifecycleModule> get willLoad => _willLoadController.stream;
 
@@ -24,12 +24,18 @@ abstract class LifecycleModule {
   StreamController<LifecycleModule> _didUnloadController;
   Stream<LifecycleModule> get didUnload => _didUnloadController.stream;
 
+  StreamController<LifecycleModule> _didLoadChildModuleController;
+  Stream<LifecycleModule> get didLoadChildModule =>
+      _didLoadChildModuleController.stream;
+
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
     _willLoadController = new StreamController<LifecycleModule>.broadcast();
     _didLoadController = new StreamController<LifecycleModule>.broadcast();
     _willUnloadController = new StreamController<LifecycleModule>.broadcast();
     _didUnloadController = new StreamController<LifecycleModule>.broadcast();
+    _didLoadChildModuleController =
+        new StreamController<LifecycleModule>.broadcast();
   }
 
   //--------------------------------------------------------
@@ -48,12 +54,13 @@ abstract class LifecycleModule {
 
   /// Public method to async load a child module and register it
   /// for lifecycle management
-  Future loadModule(LifecycleModule newModule) async {
-    newModule.willUnload.listen((_) {
-      _childModules.remove(newModule);
-    });
+  Future loadChildModule(LifecycleModule newModule) async {
     newModule.didLoad.listen((_) {
       _childModules.add(newModule);
+      _didLoadChildModuleController.add(newModule);
+    });
+    newModule.willUnload.listen((_) {
+      _childModules.remove(newModule);
     });
     await newModule.load();
   }
@@ -94,7 +101,7 @@ abstract class LifecycleModule {
       await onUnload();
       _didUnloadController.add(this);
     } else {
-      //  reject with shouldUnload messages
+      // reject with shouldUnload messages
       throw new ModuleUnloadCanceledException(canUnload.messagesAsString());
     }
   }

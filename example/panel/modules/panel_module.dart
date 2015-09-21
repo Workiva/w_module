@@ -107,7 +107,7 @@ class PanelStore extends Store {
     } else if (_panelIndex == 8) {
       _panelModule = new PanelModule();
     }
-    await _parentModule.loadModule(_panelModule);
+    await _parentModule.loadChildModule(_panelModule);
     _isRenderable = true;
   }
 }
