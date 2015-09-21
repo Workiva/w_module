@@ -49,7 +49,11 @@ main() async {
 
   // process public events dispatched from the module
   randomColorModule.events.colorChanged.listen(
-      (newColor) => html.querySelector('#current-color').innerHtml = newColor);
+      (newColor) {
+        html.Element colorSpan = html.querySelector('#current-color');
+        colorSpan.innerHtml = newColor;
+        colorSpan.style.color = newColor;
+      });
 }
 
 DispatchKey randomColorModuleDispatchKey = new DispatchKey('randomColor');

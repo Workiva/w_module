@@ -21,12 +21,20 @@ limitations under the License.
         <title>Random Color Generator Example | w_module</title>
     </head>
     <body>
-        <button id="random-color">Random Color via API</button>
-        <button id="purple-color">Purple via API</button>
-        <span id="current-color"></span>
+        <div>
+            <h4>Exercise the module API here:</h4>
+            <button id="random-color">Random Color via API</button>
+            <button id="purple-color">Purple via API</button>
+            <br><br>
+            <span>Current background color: </span>
+            <span id="current-color"></span>
+        </div>
         <br><br>
 
-        <div id="content-container"></div>
+        <div>
+            <h4>Render the module UI here:</h4>
+            <div id="content-container" style="border: 5px dashed red"></div>
+        </div>
 
         <script src="packages/react/react_prod.js"></script>
         <script type="application/dart" src="random_color.dart"></script>
