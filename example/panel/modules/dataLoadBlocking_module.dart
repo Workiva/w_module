@@ -3,7 +3,6 @@ library w_module.example.panel.modules.dataLoadBlocking_module;
 import 'dart:async';
 
 import 'package:react/react.dart' as react;
-import 'package:web_skin_react/web_skin_react.dart' as WSR;
 import 'package:w_module/w_module.dart';
 
 class DataLoadBlockingModule extends Module {
@@ -36,10 +35,8 @@ class DataLoadBlockingComponents implements ModuleComponents {
       'style': {'padding': '50px', 'backgroundColor': 'red', 'color': 'white'}
     }, [
       'This module blocks the module loading lifecycle until the data is ready to render.',
-      WSR.ListGroup(
-          {},
-          _module.data
-              .map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)))
+      react.ul({'className': 'list-group'},
+          _module.data.map((item) => react.li({'key': keyCounter++}, item)))
     ]);
   }
 }

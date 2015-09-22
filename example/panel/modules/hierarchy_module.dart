@@ -6,7 +6,6 @@ import 'dart:html';
 import 'package:w_module/w_module.dart';
 import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
-import 'package:web_skin_react/web_skin_react.dart' as WSR;
 
 import './basic_module.dart';
 import './flux_module.dart';
@@ -118,7 +117,7 @@ class _HierarchyComponent
         store.childModules.map((child) => react.div({
               'style': {'border': '3px dashed gray', 'margin': '5px'}
             }, [
-              WSR.Button({
+              react.button({
                 'style': {'float': 'right', 'margin': '5px'},
                 'onClick': (_) {
                   actions.removeChildModule(child);

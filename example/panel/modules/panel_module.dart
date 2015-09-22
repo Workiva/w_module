@@ -6,7 +6,6 @@ import 'dart:html';
 import 'package:w_module/w_module.dart';
 import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
-import 'package:web_skin_react/web_skin_react.dart' as WSR;
 
 import './basic_module.dart';
 import './flux_module.dart';
@@ -119,28 +118,20 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
     // display a loading placeholder if the module isn't ready for rendering
     var content = store.isRenderable
         ? store.panelModule.components.content()
-        : WSR.ProgressBar({
-            'wsStyle': 'success',
-            'indeterminate': true,
-            'label': 'Loading New Panel Module...'
-          });
+        : react.div({'className': 'loader'}, 'Loading new panel module...');
 
-    var tabBar = WSR.Nav({
-      'wsStyle': 'pills',
-      'justified': true,
-      'activeKey': store.panelIndex,
-      'onSelect': (newIndex, _, __) => actions.changeToPanel(newIndex),
-      'style': {'paddingBottom': '5px'}
+    var tabBar = react.div({
+      'className': 'buttonBar'
     }, [
-      WSR.NavItem({'eventKey': 0}, 'Basic'),
-      WSR.NavItem({'eventKey': 1}, 'Flux'),
-      WSR.NavItem({'eventKey': 2}, 'Reject'),
-      WSR.NavItem({'eventKey': 3}, 'Data Load (async)'),
-      WSR.NavItem({'eventKey': 4}, 'Data Load (blocking)'),
-      WSR.NavItem({'eventKey': 5}, 'Deferred'),
-      WSR.NavItem({'eventKey': 6}, 'Lifecycle Echo'),
-      WSR.NavItem({'eventKey': 7}, 'All of them'),
-      WSR.NavItem({'eventKey': 8}, 'Recursive')
+      _renderPanelButton(0, 'Basic'),
+      _renderPanelButton(1, 'Flux'),
+      _renderPanelButton(2, 'Reject'),
+      _renderPanelButton(3, 'Data Load (async)'),
+      _renderPanelButton(4, 'Data Load (blocking)'),
+      _renderPanelButton(5, 'Deferred'),
+      _renderPanelButton(6, 'Lifecycle Echo'),
+      _renderPanelButton(7, 'All of them'),
+      _renderPanelButton(8, 'Recursive')
     ]);
 
     return react.div({
@@ -154,5 +145,13 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
       tabBar,
       content
     ]);
+  }
+
+  _renderPanelButton(int index, String label) {
+    return react.button({
+      'key': index,
+      'onClick': (_) => actions.changeToPanel(index),
+      'className': store.panelIndex == index ? 'active' : null
+    }, label);
   }
 }

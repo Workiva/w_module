@@ -3,7 +3,6 @@ library w_module.example.panel.modules.reject_module;
 import 'package:w_module/w_module.dart';
 import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
-import 'package:web_skin_react/web_skin_react.dart' as WSR;
 
 class RejectModule extends Module {
   final String name = 'RejectModule';
@@ -66,13 +65,17 @@ class _RejectComponent extends FluxComponent<RejectActions, RejectStore> {
       'style': {'padding': '50px', 'backgroundColor': 'green', 'color': 'white'}
     }, [
       'This module will reject unloading if the checkbox is cleared.',
-      WSR.Input({
-        'id': 'rejectModuleCheckbox',
-        'type': 'checkbox',
-        'label': 'shouldUnload',
-        'checked': store.shouldUnload,
-        'onChange': actions.toggleShouldUnload
-      })
+      react.br({}),
+      react.br({}),
+      react.label({}, [
+        react.input({
+          'type': 'checkbox',
+          'label': 'shouldUnload',
+          'checked': store.shouldUnload,
+          'onChange': actions.toggleShouldUnload
+        }),
+        'shouldUnload'
+      ])
     ]);
   }
 }

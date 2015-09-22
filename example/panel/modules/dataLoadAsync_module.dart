@@ -4,7 +4,6 @@ import 'dart:async';
 
 import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
-import 'package:web_skin_react/web_skin_react.dart' as WSR;
 import 'package:w_module/w_module.dart';
 
 class DataLoadAsyncModule extends Module {
@@ -79,17 +78,11 @@ class _DataLoadAsyncComponent
   render() {
     var content;
     if (store.isLoading) {
-      content = WSR.ProgressBar({
-        'wsStyle': 'info',
-        'indeterminate': true,
-        'label': 'Loading Data...'
-      });
+      content = react.div({'className': 'loader'}, 'Loading data...');
     } else {
       int keyCounter = 0;
-      content = WSR.ListGroup(
-          {},
-          store.data
-              .map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)));
+      content = react.ul({'className': 'list-group'},
+          store.data.map((item) => react.li({'key': keyCounter++}, item)));
     }
 
     return react.div({
