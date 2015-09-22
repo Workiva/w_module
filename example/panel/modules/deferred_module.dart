@@ -3,7 +3,6 @@ library w_module.example.panel.modules.deferred_module;
 import 'dart:async';
 
 import 'package:react/react.dart' as react;
-import 'package:web_skin_react/web_skin_react.dart' as WSR;
 import 'package:w_module/w_module.dart';
 
 import './deferred_heavyLifter_interface.dart';
@@ -38,10 +37,10 @@ class DeferredComponents implements ModuleComponents {
       'style': {'padding': '50px', 'backgroundColor': 'blue', 'color': 'white'}
     }, [
       'This module gets its data from a deferred implementation.',
-      WSR.ListGroup(
-          {},
+      react.ul(
+          {'className': 'list-group'},
           _module.data.competitors
-              .map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)))
+              .map((item) => react.li({'key': keyCounter++}, item)))
     ]);
   }
 }

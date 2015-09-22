@@ -4,7 +4,6 @@ import 'dart:math';
 
 import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
-import 'package:web_skin_react/web_skin_react.dart' as WSR;
 import 'package:w_module/w_module.dart';
 
 class FluxModule extends Module {
@@ -67,11 +66,10 @@ class _MyFluxComponent extends FluxComponent<FluxActions, FluxStore> {
       }
     }, [
       'This module uses a flux pattern to change its background color.',
-      WSR.Input({
-        'type': 'submit',
-        'value': 'Random Background Color',
+      react.button({
+        'style': {'padding': '10px', 'margin': '10px'},
         'onClick': actions.changeBackgroundColor
-      })
+      }, 'Random Background Color')
     ]);
   }
 }
