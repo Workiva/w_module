@@ -1,5 +1,5 @@
 name: w_module
-version: 0.2.0
+version: 0.3.0
 dev_dependencies:
   browser: "^0.10.0+2"
   coverage: "^0.7.2"
