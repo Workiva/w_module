@@ -2,6 +2,10 @@ library w_module.src.event;
 
 import 'dart:async';
 
+/// An event stream that can be listened to.  A dispatch key is required to
+/// instantiate the event stream.  The same dispatch key must subsequently be
+/// used to dispatch all events on the stream, effectively preventing
+/// uncontrolled external dispatch.
 class Event<T> extends Stream<T> {
   /// This event is associated with a specific dispatch key.
   /// In order to control this event stream, this dispatch
