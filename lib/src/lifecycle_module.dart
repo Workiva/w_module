@@ -120,7 +120,7 @@ abstract class LifecycleModule {
 
   /// Custom logic to be executed during load.
   /// Initial data queries and interactions with the server can be triggered
-  /// here.  Completes a future with no payload indicating that the module has
+  /// here.  Returns a future with no payload that completes when the module has
   /// finished loading.
   Future onLoad() async {}
 
@@ -135,9 +135,9 @@ abstract class LifecycleModule {
   }
 
   /// Custom logic to be executed during unload.
-  /// Called on unload if shouldUnload completes with true.
-  /// This can be used for cleanup.
-  /// Completes a future with no payload indicating that the module has finished unloading.
+  /// Called on unload if shouldUnload completes with true. This can be used for
+  /// cleanup. Returns a future with no payload that completes when the module
+  /// has finished unloading.
   Future onUnload() async {}
 }
 
