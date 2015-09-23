@@ -2,8 +2,8 @@ library w_module.src.lifecycle_module;
 
 import 'dart:async';
 
-/// Intended to be extended by most base module classes in order to provide a unified
-/// lifecycle API.
+/// Intended to be extended by most base module classes in order to provide a
+/// unified lifecycle API.
 abstract class LifecycleModule {
   /// Name of the module for identification within exceptions and while debugging.
   String name = 'Module';
@@ -12,18 +12,24 @@ abstract class LifecycleModule {
   List<LifecycleModule> _childModules = [];
 
   // Broadcast streams for the module's lifecycle events.
+
+  /// Event dispatched at beginning of module.load() logic
   StreamController<LifecycleModule> _willLoadController;
   Stream<LifecycleModule> get willLoad => _willLoadController.stream;
 
+  /// Event dispatched at end of module.load() logic
   StreamController<LifecycleModule> _didLoadController;
   Stream<LifecycleModule> get didLoad => _didLoadController.stream;
 
+  /// Event dispatched at beginning of module.unload() logic
   StreamController<LifecycleModule> _willUnloadController;
   Stream<LifecycleModule> get willUnload => _willUnloadController.stream;
 
+  /// Event dispatched at end of module.unload() logic
   StreamController<LifecycleModule> _didUnloadController;
   Stream<LifecycleModule> get didUnload => _didUnloadController.stream;
 
+  /// Event dispatched at end of module.loadChildModule() logic
   StreamController<LifecycleModule> _didLoadChildModuleController;
   Stream<LifecycleModule> get didLoadChildModule =>
       _didLoadChildModuleController.stream;
@@ -53,7 +59,7 @@ abstract class LifecycleModule {
   }
 
   /// Public method to async load a child module and register it
-  /// for lifecycle management
+  /// for lifecycle management.
   Future loadChildModule(LifecycleModule newModule) async {
     newModule.didLoad.listen((_) {
       _childModules.add(newModule);
@@ -67,7 +73,7 @@ abstract class LifecycleModule {
 
   /// Public method to query the unloadable state of the Module.
   /// Calls the onShouldUnload() method, which can be implemented on a Module.
-  /// onShouldUnload is also called on all registered child modules
+  /// onShouldUnload is also called on all registered child modules.
   ShouldUnloadResult shouldUnload() {
     // collect results from all child modules and self
     List<ShouldUnloadResult> shouldUnloads = [];
@@ -112,10 +118,13 @@ abstract class LifecycleModule {
   // lifecycle
   //--------------------------------------------------------
 
-  /// Initial data queries & interactions with the server should be triggered here.
-  /// Completes a future with no payload indicating that the module has finished loading.
+  /// Custom logic to be executed during load.
+  /// Initial data queries and interactions with the server can be triggered
+  /// here.  Returns a future with no payload that completes when the module has
+  /// finished loading.
   Future onLoad() async {}
 
+  /// Custom logic to be executed during shouldUnload (consequently also in unload).
   /// Returns a ShouldUnloadResult.
   /// [ShouldUnloadResult.shouldUnload == true] indicates that the module is safe to unload.
   /// [ShouldUnloadResult.shouldUnload == false] indicates that the module should not be unloaded.
@@ -125,18 +134,21 @@ abstract class LifecycleModule {
     return new ShouldUnloadResult();
   }
 
-  /// Called on unload if shouldUnload completes with true.
-  /// Use this for cleanup.
-  /// Completes a future with no payload indicating that the module has finished unloading.
+  /// Custom logic to be executed during unload.
+  /// Called on unload if shouldUnload completes with true. This can be used for
+  /// cleanup. Returns a future with no payload that completes when the module
+  /// has finished unloading.
   Future onUnload() async {}
 }
 
+/// Exception thrown when unload fails.
 class ModuleUnloadCanceledException implements Exception {
   String message;
 
   ModuleUnloadCanceledException(this.message);
 }
 
+/// A set of messages returned from the hierarchical application of shouldUnload
 class ShouldUnloadResult {
   bool shouldUnload;
   List<String> messages;
