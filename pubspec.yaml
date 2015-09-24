@@ -2,6 +2,7 @@ name: w_module
 version: 0.3.0
 dev_dependencies:
   browser: "^0.10.0+2"
+  browser_detect: "^1.0.3"
   coverage: "^0.7.2"
   dart_dev: "^1.0.0"
   dart_style: "^0.2.0"

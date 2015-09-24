@@ -15,7 +15,9 @@
 library w_module.example.panel;
 
 import 'dart:html';
+import 'dart:js' as js;
 
+import 'package:browser_detect/browser_detect.dart';
 import 'package:react/react.dart' as react;
 import 'package:react/react_client.dart' as react_client;
 import 'package:w_module/w_module.dart';
@@ -31,12 +33,17 @@ main() async {
   await panelModule.load();
 
   // block browser tab / window close if necessary
-  window.onBeforeUnload.listen((event) {
+  window.onBeforeUnload.listen((BeforeUnloadEvent event) {
     // can the app be unloaded?
     ShouldUnloadResult res = panelModule.shouldUnload();
     if (!res.shouldUnload) {
       // return the supplied error message to block close
-      return res.messagesAsString();
+      event.returnValue = res.messagesAsString();
+    } else if (browser.isIe) {
+      // IE interprets a null string as a response and displays an alert to
+      // the user. Use the `undefined` value of the JS context instead.
+      // https://github.com/dart-lang/sdk/issues/22589
+      event.returnValue = js.context['undefined'];
     }
   });
 
