@@ -1,0 +1,23 @@
+
+#example-toolbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#example-toolpanel {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    width: 300px;
+    bottom: 0;
+    overflow: scroll;
+}
+
+#example-drawing {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 300px;
+    right: 0;
+}

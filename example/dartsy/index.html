@@ -18,16 +18,23 @@ limitations under the License.
 <html>
     <head lang="en">
         <meta charset="UTF-8">
-        <title>Examples | w_module</title>
+        <title>Dartsy Module Composition Example | w_module</title>
+
+        <!-- stylesheets -->
+        <link rel="stylesheet" href="packages/web_skin/dist/css/web-skin.min.css">
+        <link rel="stylesheet" href="styles.css">
+
+        <!-- javascript -->
+        <script src="packages/react/react.js"></script>
+        <script src="packages/web_skin_react/web-skin-react.js"></script>
     </head>
     <body>
-        <div class="container">
-            <h1>w_module Examples</h1>
-            <ul>
-                <li><a href="random_color/">Random Color Generator</a></li>
-                <li><a href="dartsy/">Dartsy Module Composition Example</a></li>
-                <li><a href="panel/">Multiple Module Panel</a></li>
-            </ul>
-        </div>
+        <div id="example-toolbar"></div>
+        <div id="example-toolpanel"></div>
+        <div id="example-drawing"></div>
+
+        <!-- app scripts -->
+        <script type="application/dart" src="example.dart"></script>
+        <script src="packages/browser/dart.js"></script>
     </body>
 </html>
