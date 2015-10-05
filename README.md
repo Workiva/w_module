@@ -1,5 +1,7 @@
 w_module
 --------
+[![Pub](https://img.shields.io/pub/v/w_module.svg)](https://pub.dartlang.org/packages/w_module) [![Build Status](https://travis-ci.org/Workiva/w_module.svg?branch=master)](https://travis-ci.org/Workiva/w_module) [![codecov.io](http://codecov.io/github/Workiva/w_module/coverage.svg?branch=master)](http://codecov.io/github/Workiva/w_module?branch=master)
+
 > Base module classes with a well defined lifecycle for modular Dart applications.
 
 - [**Overview**](#overview)
