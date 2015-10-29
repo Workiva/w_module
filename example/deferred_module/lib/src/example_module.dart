@@ -16,9 +16,7 @@ class ExampleModule extends Module {
   @override
   ExampleEvents get events => new ExampleEvents();
 
-  ExampleModule(String stuff, List<int> data, {bool has: true}) {
-
-  }
+  ExampleModule(String stuff, List<int> data, {bool has: true}) {}
 
   ExampleModule.named(int i, [int j, int k]) {
     this._i = i;

@@ -92,7 +92,8 @@ class DeferredExampleModule extends Module {
   void _constructActualModule() {
     if (_constructorCalled == '') {
       _actual = new example_module.ExampleModule(
-          _ExampleModule_stuff, _ExampleModule_data, has: _ExampleModule_has);
+          _ExampleModule_stuff, _ExampleModule_data,
+          has: _ExampleModule_has);
     }
     if (_constructorCalled == 'named') {
       _actual = new example_module.ExampleModule.named(_ExampleModule_named_i,
