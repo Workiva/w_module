@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// The w_module library implements a module encapsulation and lifecycle
-/// pattern for Dart that interfaces well with the application architecture
-/// defined in the w_flux library.
-///
-/// w_module defines how data should flow in and out of a module, how renderable
-/// UI is exposed to consumers, and establishes a common module lifecycle that
-/// facilitates dynamic loading / unloading of modules.
-library w_module;
+library tool.dev;
 
-export 'package:w_module/src/deferred_module.dart' show DeferredModule;
-export 'src/event.dart';
-export 'src/lifecycle_module.dart';
-export 'src/module.dart';
+import 'package:dart_dev/dart_dev.dart' show dev, config;
+
+main(List<String> args) async {
+  // https://github.com/Workiva/dart_dev
+
+  List<String> directories = ['example/', 'lib/', 'test/', 'tool/'];
+  config.analyze.entryPoints = directories;
+  config.copyLicense.directories = directories;
+  config.format.directories = directories;
+
+  await dev(args);
+}

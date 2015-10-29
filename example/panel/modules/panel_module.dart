@@ -1,4 +1,18 @@
-library w_module.example.panel.panel_module;
+// Copyright 2015 Workiva Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+library w_module.example.panel.modules.panel_module;
 
 import 'dart:async';
 import 'dart:html';
@@ -6,7 +20,6 @@ import 'dart:html';
 import 'package:w_module/w_module.dart';
 import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
-import 'package:web_skin_react/web_skin_react.dart' as WSR;
 
 import './basic_module.dart';
 import './flux_module.dart';
@@ -43,7 +56,7 @@ class PanelComponents implements ModuleComponents {
 
   PanelComponents(this._actions, this._stores);
 
-  content() => PanelComponent({'actions': _actions, 'stores': _stores});
+  content() => PanelComponent({'actions': _actions, 'store': _stores});
 }
 
 class PanelActions {
@@ -51,7 +64,6 @@ class PanelActions {
 }
 
 class PanelStore extends Store {
-
   /// Public data
   num _panelIndex = 0;
   num get panelIndex => _panelIndex;
@@ -69,10 +81,8 @@ class PanelStore extends Store {
   }
 
   _changeToPanel(num newPanelIndex) async {
-
     // is there a panel currently loaded?
     if (_panelModule != null) {
-
       // do we need to reject the unload of the existing panel?
       ShouldUnloadResult canUnload = _panelModule.shouldUnload();
       if (!canUnload.shouldUnload) {
@@ -110,39 +120,32 @@ class PanelStore extends Store {
     } else if (_panelIndex == 8) {
       _panelModule = new PanelModule();
     }
-    await _parentModule.loadModule(_panelModule);
+    await _parentModule.loadChildModule(_panelModule);
     _isRenderable = true;
   }
 }
 
 var PanelComponent = react.registerComponent(() => new _PanelComponent());
+
 class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
-  num get panelIndex => state['panelIndex'];
-  get panelContent => state['panelContent'];
-
-  getStoreHandlers() => {stores: _updatePanelStore};
-
-  getInitialState() {
-    return {'panelIndex': 0, 'panelContent': null};
-  }
-
   render() {
-    var tabBar = WSR.Nav({
-      'wsStyle': 'pills',
-      'justified': true,
-      'activeKey': panelIndex,
-      'onSelect': (newIndex, _, __) => actions.changeToPanel(newIndex),
-      'style': {'paddingBottom': '5px'}
+    // display a loading placeholder if the module isn't ready for rendering
+    var content = store.isRenderable
+        ? store.panelModule.components.content()
+        : react.div({'className': 'loader'}, 'Loading new panel module...');
+
+    var tabBar = react.div({
+      'className': 'buttonBar'
     }, [
-      WSR.NavItem({'eventKey': 0}, 'Basic'),
-      WSR.NavItem({'eventKey': 1}, 'Flux'),
-      WSR.NavItem({'eventKey': 2}, 'Reject'),
-      WSR.NavItem({'eventKey': 3}, 'Data Load (async)'),
-      WSR.NavItem({'eventKey': 4}, 'Data Load (blocking)'),
-      WSR.NavItem({'eventKey': 5}, 'Deferred'),
-      WSR.NavItem({'eventKey': 6}, 'Lifecycle Echo'),
-      WSR.NavItem({'eventKey': 7}, 'All of them'),
-      WSR.NavItem({'eventKey': 8}, 'Recursive')
+      _renderPanelButton(0, 'Basic'),
+      _renderPanelButton(1, 'Flux'),
+      _renderPanelButton(2, 'Reject'),
+      _renderPanelButton(3, 'Data Load (async)'),
+      _renderPanelButton(4, 'Data Load (blocking)'),
+      _renderPanelButton(5, 'Deferred'),
+      _renderPanelButton(6, 'Lifecycle Echo'),
+      _renderPanelButton(7, 'All of them'),
+      _renderPanelButton(8, 'Recursive')
     ]);
 
     return react.div({
@@ -152,15 +155,17 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
         'color': 'black',
         'border': '1px solid lightgreen'
       }
-    }, [tabBar, panelContent]);
+    }, [
+      tabBar,
+      content
+    ]);
   }
 
-  _updatePanelStore(PanelStore store) {
-    // display a loading placeholder if the module isn't ready for rendering
-    var content = store.isRenderable
-        ? store.panelModule.components.content()
-        : WSR.ProgressBar(
-            {'wsStyle': 'success', 'indeterminate': true, 'label': 'Loading New Panel Module...'});
-    setState({'panelIndex': store.panelIndex, 'panelContent': content});
+  _renderPanelButton(int index, String label) {
+    return react.button({
+      'key': index,
+      'onClick': (_) => actions.changeToPanel(index),
+      'className': store.panelIndex == index ? 'active' : null
+    }, label);
   }
 }

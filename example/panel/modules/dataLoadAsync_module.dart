@@ -1,10 +1,23 @@
-library w_module.example.panel.dataLoadAsync_module;
+// Copyright 2015 Workiva Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+library w_module.example.panel.modules.dataLoadAsync_module;
 
 import 'dart:async';
 
 import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
-import 'package:web_skin_react/web_skin_react.dart' as WSR;
 import 'package:w_module/w_module.dart';
 
 class DataLoadAsyncModule extends Module {
@@ -34,7 +47,7 @@ class DataLoadAsyncComponents implements ModuleComponents {
 
   DataLoadAsyncComponents(this._actions, this._stores);
 
-  content() => DataLoadAsyncComponent({'actions': _actions, 'stores': _stores});
+  content() => DataLoadAsyncComponent({'actions': _actions, 'store': _stores});
 }
 
 class DataLoadAsyncActions {
@@ -42,7 +55,6 @@ class DataLoadAsyncActions {
 }
 
 class DataLoadAsyncStore extends Store {
-
   /// Public data
   bool _isLoading;
   bool get isLoading => _isLoading;
@@ -59,7 +71,6 @@ class DataLoadAsyncStore extends Store {
   }
 
   _loadData(_) async {
-
     // set loading state and trigger to display loading spinner
     _isLoading = true;
     trigger();
@@ -73,34 +84,30 @@ class DataLoadAsyncStore extends Store {
   }
 }
 
-var DataLoadAsyncComponent = react.registerComponent(() => new _DataLoadAsyncComponent());
-class _DataLoadAsyncComponent extends FluxComponent<DataLoadAsyncActions, DataLoadAsyncStore> {
-  bool get isLoading => state['isLoading'];
-  List<String> get data => state['data'];
+var DataLoadAsyncComponent =
+    react.registerComponent(() => new _DataLoadAsyncComponent());
 
-  getStoreHandlers() => {stores: _updateDataLoadAsyncStore};
-
-  getInitialState() {
-    return {'isLoading': stores.isLoading, 'data': stores.data};
-  }
-
+class _DataLoadAsyncComponent
+    extends FluxComponent<DataLoadAsyncActions, DataLoadAsyncStore> {
   render() {
     var content;
-    if (isLoading) {
-      content =
-          WSR.ProgressBar({'wsStyle': 'info', 'indeterminate': true, 'label': 'Loading Data...'});
+    if (store.isLoading) {
+      content = react.div({'className': 'loader'}, 'Loading data...');
     } else {
       int keyCounter = 0;
-      content =
-          WSR.ListGroup({}, data.map((item) => WSR.ListGroupItem({'key': keyCounter++}, item)));
+      content = react.ul({'className': 'list-group'},
+          store.data.map((item) => react.li({'key': keyCounter++}, item)));
     }
 
     return react.div({
-      'style': {'padding': '50px', 'backgroundColor': 'orange', 'color': 'white'}
-    }, ['This module renders a loading spinner until data is ready for display.', content]);
-  }
-
-  _updateDataLoadAsyncStore(DataLoadAsyncStore store) {
-    setState({'isLoading': store.isLoading, 'data': store.data});
+      'style': {
+        'padding': '50px',
+        'backgroundColor': 'orange',
+        'color': 'white'
+      }
+    }, [
+      'This module renders a loading spinner until data is ready for display.',
+      content
+    ]);
   }
 }

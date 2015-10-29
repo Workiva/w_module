@@ -1,25 +1,25 @@
 name: w_module
-version: 0.1.0
-dependencies:
+version: 0.3.1
+description: Base module classes with a well defined lifecycle for modular Dart applications.
+authors:
+  - Workiva Client Platform Team <team-clientplatform@workiva.com>
+  - Dustin Lessard <dustin.lessard@workiva.com>
+  - Evan Weible <evan.weible@workiva.com>
+  - Jay Udey <jay.udey@workiva.com>
+  - Max Peterson <maxwell.peterson@workiva.com>
+  - Trent Grover <trent.grover@workiva.com>
+homepage: https://github.com/Workiva/w_module
 dev_dependencies:
-  browser: '>=0.10.0+2 <0.11.0'
-  coverage:
-    git:
-      url: https://github.com/ekweible/coverage.git
-      ref: 796a265
-  dart_codecov_generator:
-    git:
-      url: https://github.com/ekweible/dart_codecov_generator.git
-      ref: 0.3.0
-  dart_style: '>=0.1.8 <0.2.0'
-  mockito: '>=0.10.0 <0.11.0'
+  browser: "^0.10.0+2"
+  browser_detect: "^1.0.3"
+  coverage: "^0.7.2"
+  dart_dev: "^1.0.0"
+  dart_style: "^0.2.0"
+  dartdoc: ">=0.4.0 <0.7.0"
+  mockito: "^0.10.0"
+  react: ">=0.5.0 <0.8.0"
   source_gen: "^0.4.2"
-  test: '0.12.2'
-  w_flux:
-    git:
-      url: git@github.com:Workiva/w_flux.git
-      ref: master
-  web_skin_react:
-    git:
-      url: git@github.com:Workiva/web-skin-react.git
-      ref: 2.1.4
+  test: "^0.12.0"
+  w_flux: "^1.0.0"
+environment:
+  sdk: ">=1.9.0 <2.0.0"

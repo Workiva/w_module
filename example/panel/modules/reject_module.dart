@@ -1,9 +1,22 @@
-library w_module.example.panel.reject_module;
+// Copyright 2015 Workiva Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+library w_module.example.panel.modules.reject_module;
 
 import 'package:w_module/w_module.dart';
 import 'package:w_flux/w_flux.dart';
 import 'package:react/react.dart' as react;
-import 'package:web_skin_react/web_skin_react.dart' as WSR;
 
 class RejectModule extends Module {
   final String name = 'RejectModule';
@@ -34,7 +47,7 @@ class RejectComponents implements ModuleComponents {
 
   RejectComponents(this._actions, this._stores);
 
-  content() => RejectComponent({'actions': _actions, 'stores': _stores});
+  content() => RejectComponent({'actions': _actions, 'store': _stores});
 }
 
 class RejectActions {
@@ -42,7 +55,6 @@ class RejectActions {
 }
 
 class RejectStore extends Store {
-
   /// Public data
   bool _shouldUnload = true;
   bool get shouldUnload => _shouldUnload;
@@ -60,29 +72,24 @@ class RejectStore extends Store {
 }
 
 var RejectComponent = react.registerComponent(() => new _RejectComponent());
+
 class _RejectComponent extends FluxComponent<RejectActions, RejectStore> {
-  bool get shouldUnload => state['shouldUnload'];
-
-  getStoreHandlers() => {stores: _updateRejectStore};
-
-  getInitialState() {
-    return {'shouldUnload': true};
-  }
-
   render() {
-    return react.div({'style': {'padding': '50px', 'backgroundColor': 'green', 'color': 'white'}}, [
+    return react.div({
+      'style': {'padding': '50px', 'backgroundColor': 'green', 'color': 'white'}
+    }, [
       'This module will reject unloading if the checkbox is cleared.',
-      WSR.Input({
-        'id': 'rejectModuleCheckbox',
-        'type': 'checkbox',
-        'label': 'shouldUnload',
-        'checked': shouldUnload,
-        'onChange': actions.toggleShouldUnload
-      })
+      react.br({}),
+      react.br({}),
+      react.label({}, [
+        react.input({
+          'type': 'checkbox',
+          'label': 'shouldUnload',
+          'checked': store.shouldUnload,
+          'onChange': actions.toggleShouldUnload
+        }),
+        'shouldUnload'
+      ])
     ]);
-  }
-
-  _updateRejectStore(RejectStore store) {
-    setState({'shouldUnload': store.shouldUnload});
   }
 }

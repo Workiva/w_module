@@ -1,4 +1,18 @@
-library w_module.example.panel.lifecycleEcho_module;
+// Copyright 2015 Workiva Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+library w_module.example.panel.modules.lifecycleEcho_module;
 
 import 'dart:async';
 
@@ -25,6 +39,9 @@ class LifecycleEchoModule extends Module {
     didUnload.listen((_) {
       print('${name}: didUnload');
     });
+    didLoadChildModule.listen((_) {
+      print('${name}: didLoadChildModule');
+    });
     _components = new LifecycleEchoComponents();
   }
 
@@ -36,6 +53,7 @@ class LifecycleEchoModule extends Module {
 
   Future onLoad() async {
     print('${name}: onLoad');
+    loadChildModule(new LifecycleEchoChildModule());
     await new Future.delayed(new Duration(seconds: 1));
   }
 
@@ -52,6 +70,14 @@ class LifecycleEchoModule extends Module {
 
 class LifecycleEchoComponents implements ModuleComponents {
   content() => react.div({
-    'style': {'padding': '50px', 'backgroundColor': 'lightGray', 'color': 'black'}
-  }, ['This module echoes all of its lifecycle events to the dev console.']);
+        'style': {
+          'padding': '50px',
+          'backgroundColor': 'lightGray',
+          'color': 'black'
+        }
+      }, [
+        'This module echoes all of its lifecycle events to the dev console.'
+      ]);
 }
+
+class LifecycleEchoChildModule extends Module {}

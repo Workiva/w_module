@@ -1,0 +1,43 @@
+<!--
+Copyright 2015 Workiva Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<!DOCTYPE html>
+<html>
+    <head lang="en">
+        <meta charset="UTF-8">
+        <title>Random Color Generator Example | w_module</title>
+    </head>
+    <body>
+        <div>
+            <h4>Exercise the module API here:</h4>
+            <button id="random-color">Random Color via API</button>
+            <button id="purple-color">Purple via API</button>
+            <br><br>
+            <span>Current background color: </span>
+            <span id="current-color"></span>
+        </div>
+        <br><br>
+
+        <div>
+            <h4>Render the module UI here:</h4>
+            <div id="content-container" style="border: 5px dashed red"></div>
+        </div>
+
+        <script src="packages/react/react_prod.js"></script>
+        <script type="application/dart" src="random_color.dart"></script>
+        <script src="packages/browser/dart.js"></script>
+    </body>
+</html>

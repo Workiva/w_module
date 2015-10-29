@@ -12,32 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-@TestOn('vm || browser')
-library w_module.test.lifecycle_module_test;
+library w_module.example.panel.modules.basic_module;
 
+import 'package:react/react.dart' as react;
 import 'package:w_module/w_module.dart';
-import 'package:test/test.dart';
 
-class TestModule extends Module {}
+class BasicModule extends Module {
+  final String name = 'BasicModule';
 
-void main() {
-  group('Module', () {
-    TestModule module;
+  BasicModuleComponents _components;
+  BasicModuleComponents get components => _components;
 
-    setUp(() {
-      module = new TestModule();
-    });
+  BasicModule() {
+    _components = new BasicModuleComponents();
+  }
+}
 
-    test('should return null from api getter by default', () async {
-      expect(module.api, isNull);
-    });
-
-    test('should return null from components getter by default', () async {
-      expect(module.components, isNull);
-    });
-
-    test('should return null from events getter by default', () async {
-      expect(module.events, isNull);
-    });
-  });
+class BasicModuleComponents implements ModuleComponents {
+  content() => react.div({
+        'style': {
+          'padding': '50px',
+          'backgroundColor': 'lightgray',
+          'color': 'black'
+        }
+      }, 'This module does almost nothing.');
 }

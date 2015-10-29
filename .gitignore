@@ -1,7 +1,14 @@
+.idea/
+
+# dart
+.packages
 .pub
+build
 packages
 pubspec.lock
 
-coverage.lcov
-coverage_report
+# docs
+/doc/api/
 
+# coverage
+/coverage/

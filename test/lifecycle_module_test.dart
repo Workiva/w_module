@@ -1,3 +1,18 @@
+// Copyright 2015 Workiva Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+@TestOn('vm || browser')
 library w_module.test.lifecycle_module_test;
 
 import 'dart:async';
@@ -15,12 +30,11 @@ class TestLifecycleModule extends LifecycleModule {
   bool mockShouldUnload;
 
   TestLifecycleModule() {
-
     // init test validation data
     eventList = [];
     mockShouldUnload = true;
 
-    // load / unload state streams
+    // Parent module events:
     willLoad.listen((_) {
       eventList.add('willLoad');
     });
@@ -32,6 +46,11 @@ class TestLifecycleModule extends LifecycleModule {
     });
     didUnload.listen((_) {
       eventList.add('didUnload');
+    });
+
+    // Child module events:
+    didLoadChildModule.listen((_) {
+      eventList.add('didLoadChildModule');
     });
   }
 
@@ -63,7 +82,8 @@ void main() {
       module = new TestLifecycleModule();
     });
 
-    test('should trigger loading events and call onLoad when module is loaded', () async {
+    test('should trigger loading events and call onLoad when module is loaded',
+        () async {
       await module.load();
       expect(module.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
     });
@@ -72,7 +92,8 @@ void main() {
         'should trigger unloading events and call onShouldUnload and onUnload when module is unloaded',
         () async {
       await module.unload();
-      expect(module.eventList, equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      expect(module.eventList,
+          equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
     });
 
     test(
@@ -100,29 +121,39 @@ void main() {
       childModule = new TestLifecycleModule();
     });
 
-    test('loadModule loads a child module', () async {
-      await parentModule.loadModule(childModule);
-      expect(parentModule.eventList, equals([]));
+    test('loadChildModule loads a child module', () async {
+      await parentModule.loadChildModule(childModule);
+      expect(parentModule.eventList, equals(['didLoadChildModule']));
       expect(childModule.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
     });
 
     test('should unload child modules when parent in unloaded', () async {
-      await parentModule.loadModule(childModule);
+      await parentModule.loadChildModule(childModule);
+      parentModule.eventList = [];
       childModule.eventList = [];
       await parentModule.unload();
       expect(parentModule.eventList,
           equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
-      expect(childModule.eventList,
-          equals(['onShouldUnload', 'onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      expect(
+          childModule.eventList,
+          equals([
+            'onShouldUnload',
+            'onShouldUnload',
+            'willUnload',
+            'onUnload',
+            'didUnload'
+          ]));
     });
 
-    test('unloaded child module should be removed from parent module\'s lifecycle', () async {
-      await parentModule.loadModule(childModule);
+    test(
+        'unloaded child module should be removed from parent module\'s lifecycle',
+        () async {
+      await parentModule.loadChildModule(childModule);
+      parentModule.eventList = [];
       childModule.eventList = [];
       await childModule.unload();
-      expect(parentModule.eventList, equals([]));
-      expect(
-          childModule.eventList, equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      expect(childModule.eventList,
+          equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
       childModule.eventList = [];
       await parentModule.unload();
       expect(parentModule.eventList,
@@ -136,7 +167,7 @@ void main() {
       expect(parentShouldUnload.shouldUnload, equals(true));
       expect(parentShouldUnload.messages, equals([]));
 
-      await parentModule.loadModule(childModule);
+      await parentModule.loadChildModule(childModule);
       parentModule.eventList = [];
       childModule.eventList = [];
 
@@ -147,7 +178,8 @@ void main() {
       expect(childModule.eventList, equals(['onShouldUnload']));
     });
 
-    test('shouldUnload should return parent and child rejection messages', () async {
+    test('shouldUnload should return parent and child rejection messages',
+        () async {
       parentModule.mockShouldUnload = false;
       ShouldUnloadResult shouldUnloadRes = parentModule.shouldUnload();
       expect(shouldUnloadRes.shouldUnload, equals(false));
@@ -158,20 +190,22 @@ void main() {
       expect(shouldUnloadRes.shouldUnload, equals(false));
       expect(shouldUnloadRes.messages, equals([shouldUnloadError]));
 
-      await parentModule.loadModule(childModule);
+      await parentModule.loadChildModule(childModule);
       parentModule.eventList = [];
       childModule.eventList = [];
 
       shouldUnloadRes = parentModule.shouldUnload();
       expect(shouldUnloadRes.shouldUnload, equals(false));
-      expect(shouldUnloadRes.messages, equals([shouldUnloadError, shouldUnloadError]));
+      expect(shouldUnloadRes.messages,
+          equals([shouldUnloadError, shouldUnloadError]));
       expect(parentModule.eventList, equals(['onShouldUnload']));
       expect(childModule.eventList, equals(['onShouldUnload']));
     });
   });
 
   group('shouldUnloadResult', () {
-    test('should default to a successful result with a blank message list', () async {
+    test('should default to a successful result with a blank message list',
+        () async {
       ShouldUnloadResult result = new ShouldUnloadResult();
       expect(result.shouldUnload, equals(true));
       expect(result.messages, equals([]));
