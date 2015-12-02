@@ -67,9 +67,9 @@ abstract class LifecycleModule {
   /// Calls the onLoad() method, which can be implemented on a Module.
   /// Executes the willLoad and didLoad event streams.
   Future load() async {
-    _willLoadController.add(this);
+    await _willLoadController.add(this);
     await onLoad();
-    _didLoadController.add(this);
+    await _didLoadController.add(this);
   }
 
   /// Public method to async load a child module and register it
@@ -77,12 +77,12 @@ abstract class LifecycleModule {
   Future loadChildModule(LifecycleModule newModule) async {
     newModule.didLoad.listen((_) {
       _childModules.add(newModule);
-      _didLoadChildModuleController.add(newModule);
     });
     newModule.willUnload.listen((_) {
       _childModules.remove(newModule);
     });
     await newModule.load();
+    await _didLoadChildModuleController.add(newModule);
   }
 
   /// Public method to query the unloadable state of the Module.
@@ -114,12 +114,12 @@ abstract class LifecycleModule {
   Future unload() async {
     ShouldUnloadResult canUnload = shouldUnload();
     if (canUnload.shouldUnload) {
-      _willUnloadController.add(this);
+      await _willUnloadController.add(this);
       Iterable<Future> unloadChildren = _childModules.map((c) => c.unload());
       await Future.wait(unloadChildren);
       _childModules.clear();
       await onUnload();
-      _didUnloadController.add(this);
+      await _didUnloadController.add(this);
     } else {
       // reject with shouldUnload messages
       throw new ModuleUnloadCanceledException(canUnload.messagesAsString());
