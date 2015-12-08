@@ -49,8 +49,9 @@ class Event<T> extends Stream<T> {
   /// Dispatch a payload to this event stream. This only works if
   /// [key] is the correct key with which this Event was constructed.
   void call(T payload, DispatchKey key) {
-    if (key != _key) throw new ArgumentError(
-        'Event dispatch expected the "${_key.name}" key but received the "${key.name}" key.');
+    if (key != _key)
+      throw new ArgumentError(
+          'Event dispatch expected the "${_key.name}" key but received the "${key.name}" key.');
     _sink.add(payload);
   }
 }

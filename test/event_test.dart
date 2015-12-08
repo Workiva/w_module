@@ -66,8 +66,9 @@ void main() {
       Completer completer = new Completer();
 
       event.listen((payload) {
-        if (payload == 'bad') throw new Exception(
-            'Should not be able to dispatch events without the correct key.');
+        if (payload == 'bad')
+          throw new Exception(
+              'Should not be able to dispatch events without the correct key.');
         if (payload == 'good') {
           completer.complete();
         }

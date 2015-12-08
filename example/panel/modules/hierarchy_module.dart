@@ -122,12 +122,12 @@ class _HierarchyComponent
   render() {
     return react.div(
         {
-      'style': {
-        'padding': '10px',
-        'backgroundColor': 'lightgray',
-        'color': 'black'
-      }
-    },
+          'style': {
+            'padding': '10px',
+            'backgroundColor': 'lightgray',
+            'color': 'black'
+          }
+        },
         store.childModules.map((child) => react.div({
               'style': {'border': '3px dashed gray', 'margin': '5px'}
             }, [
