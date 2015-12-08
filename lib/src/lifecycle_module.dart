@@ -67,23 +67,29 @@ abstract class LifecycleModule {
   /// Public method to trigger the loading of a Module.
   /// Calls the onLoad() method, which can be implemented on a Module.
   /// Executes the willLoad and didLoad event streams.
-  Future load() async {
+  Future load() {
+    Completer completer = new Completer();
     _willLoadController.add(this);
-    await onLoad();
-    _didLoadController.add(this);
+    onLoad().then((_) {
+      _didLoadController.add(this);
+      completer.complete();
+    });
+    return completer.future;
   }
 
   /// Public method to async load a child module and register it
   /// for lifecycle management.
-  Future loadChildModule(LifecycleModule newModule) async {
-    newModule.didLoad.listen((_) {
-      _childModules.add(newModule);
-      _didLoadChildModuleController.add(newModule);
-    });
+  Future loadChildModule(LifecycleModule newModule) {
+    Completer completer = new Completer();
     newModule.willUnload.listen((_) {
       _childModules.remove(newModule);
     });
-    await newModule.load();
+    newModule.load().then((_) {
+      _childModules.add(newModule);
+      _didLoadChildModuleController.add(newModule);
+      completer.complete();
+    });
+    return completer.future;
   }
 
   /// Public method to query the unloadable state of the Module.
@@ -112,19 +118,24 @@ abstract class LifecycleModule {
   /// Calls shouldUnload(), and, if that completes successfully,
   /// continues to call onUnload() on the module and all registered child modules.
   /// If unloading is rejected, this method will complete with an error.
-  Future unload() async {
+  Future unload() {
+    Completer completer = new Completer();
     ShouldUnloadResult canUnload = shouldUnload();
     if (canUnload.shouldUnload) {
       _willUnloadController.add(this);
       Iterable<Future> unloadChildren = _childModules.map((c) => c.unload());
-      await Future.wait(unloadChildren);
-      _childModules.clear();
-      await onUnload();
-      _didUnloadController.add(this);
+      Future.wait(unloadChildren).then((_) {
+        _childModules.clear();
+        onUnload().then((_) {
+          _didUnloadController.add(this);
+          completer.complete();
+        });
+      });
     } else {
       // reject with shouldUnload messages
       throw new ModuleUnloadCanceledException(canUnload.messagesAsString());
     }
+    return completer.future;
   }
 
   //--------------------------------------------------------
