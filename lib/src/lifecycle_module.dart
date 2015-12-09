@@ -24,6 +24,7 @@ abstract class LifecycleModule {
 
   /// List of child components so that lifecycle can iterate over them as needed
   List<LifecycleModule> _childModules = [];
+  Iterable<LifecycleModule> get childModules => _childModules;
 
   // Broadcast streams for the module's lifecycle events.
 

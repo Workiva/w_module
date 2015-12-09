@@ -127,6 +127,17 @@ void main() {
       expect(childModule.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
     });
 
+    test('childModules returns an iterable of loaded child modules', () async {
+      var childModuleB = new TestLifecycleModule();
+      await parentModule.loadChildModule(childModule);
+      await parentModule.loadChildModule(childModuleB);
+      await new Future(() {});
+      expect(parentModule.childModules,
+          new isInstanceOf<Iterable<LifecycleModule>>());
+      expect(parentModule.childModules.toList(),
+          equals([childModule, childModuleB]));
+    });
+
     test('should unload child modules when parent in unloaded', () async {
       await parentModule.loadChildModule(childModule);
       parentModule.eventList = [];
