@@ -21,6 +21,7 @@
 /// facilitates dynamic loading / unloading of modules.
 library w_module;
 
+export 'package:w_module/src/deferred_module.dart' show DeferredModule;
 export 'src/event.dart';
 export 'src/lifecycle_module.dart';
 export 'src/module.dart';
