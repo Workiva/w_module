@@ -21,6 +21,7 @@ import 'package:browser_detect/browser_detect.dart';
 import 'package:react/react.dart' as react;
 import 'package:react/react_client.dart' as react_client;
 import 'package:w_module/w_module.dart';
+import 'package:w_router/w_router.dart';
 
 import 'modules/panel_module.dart';
 
@@ -46,6 +47,11 @@ main() async {
       event.returnValue = js.context['undefined'];
     }
   });
+
+  // initialize the router
+  Router router = new Router(useFragment: true);
+  panelModule.registerRoutes(router);
+  router.listen();
 
   // render the app into the browser
   react.render(panelModule.components.content(), container);

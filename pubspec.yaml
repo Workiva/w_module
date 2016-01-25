@@ -17,8 +17,10 @@ dev_dependencies:
   dart_style: "^0.2.1"
   dartdoc: "^0.8.0"
   mockito: "^0.10.0"
-  react: ">=0.5.0 <0.8.0"
+  react: ">=0.5.0 <0.9.0"
   test: "^0.12.0"
   w_flux: "^1.0.0"
+  w_router:
+    path: ../w_router
 environment:
   sdk: ">=1.9.0 <2.0.0"
