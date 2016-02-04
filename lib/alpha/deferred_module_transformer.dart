@@ -18,12 +18,18 @@ String _getReflectedName(Type type) =>
 ///
 /// - Loading the deferred library that contains the real module class when the
 ///   deferred module's "onLoad" event occurs.
-/// - Deferring the availability of API, Components, and Events on the deferred
-///   module until the underlying module has actually been loaded. In other
-///   words, attempting to access the API, Components, or Events will throw if
-///   the module hasn't been loaded. Once loaded, these calls will be proxied to
-///   the real, underlying module.
-/// - Proxying of constructors. Any constructor defined in the deferred module
+/// - Deferring the availability of certain parts of the module's contract (API,
+///   Components, and Events) until the underlying module has actually been
+///   loaded.
+/// - Triggering the loading of the real module when any part of the deferred
+///   API is called.
+/// - Proxying async API methods: they will wait for the module to load.
+/// - Proxying sync API methods: they will only throw if the module has not yet
+///   been loaded.
+/// - Proxying Events: listeners can be registered immediately.
+/// - Proxying components: they will only throw if the module has not yet
+///   been loaded.
+/// - Proxying of constructors: any constructor defined in the deferred module
 ///   class that matches a constructor defined in the real module will have
 ///   bodies generated that store the given arguments and proxy them to the
 ///   constructors on the real module when it is constructed.
@@ -135,19 +141,27 @@ class _DeferredModuleTransformer {
         // the deferred module annotations.
         _deferrableModuleNames.addAll(
             getDeclarationsAnnotatedBy(unit, annotations.DeferrableModule)
-                .map((member) => instantiateAnnotation(member, annotations.DeferrableModule))
+                .map((member) =>
+                    instantiateAnnotation(member, annotations.DeferrableModule))
                 .map((annotation) => annotation.name));
         _deferrableModuleApiDeclarations.addAll(new Map.fromIterable(
             getDeclarationsAnnotatedBy(unit, annotations.DeferrableModuleApi)
-                .map((member) => new NodeWithMeta<ClassDeclaration, annotations.DeferrableModuleApi>(member, assetId: asset.id)),
+                .map((member) => new NodeWithMeta<
+                    ClassDeclaration,
+                    annotations
+                        .DeferrableModuleApi>(member, assetId: asset.id)),
             key: (d) => d.meta.moduleName));
         _deferrableModuleEventsDeclarations.addAll(new Map.fromIterable(
             getDeclarationsAnnotatedBy(unit, annotations.DeferrableModuleEvents)
-                .map((member) => new NodeWithMeta<ClassDeclaration, annotations.DeferrableModuleEvents>(member, assetId: asset.id)),
+                .map((member) => new NodeWithMeta<
+                    ClassDeclaration,
+                    annotations
+                        .DeferrableModuleEvents>(member, assetId: asset.id)),
             key: (d) => d.meta.moduleName));
         _deferredModuleDeclarations.addAll(new Map.fromIterable(
-            getDeclarationsAnnotatedBy(unit, annotations.DeferredModule)
-                .map((member) => new NodeWithMeta<ClassDeclaration, annotations.DeferredModule>(member, assetId: asset.id)),
+            getDeclarationsAnnotatedBy(unit, annotations.DeferredModule).map(
+                (member) => new NodeWithMeta<ClassDeclaration,
+                    annotations.DeferredModule>(member, assetId: asset.id)),
             key: (d) => d.meta.moduleName));
       }
     }
