@@ -11,10 +11,7 @@ authors:
 homepage: https://github.com/Workiva/w_module
 dependencies:
   barback: "^0.15.2"
-  transformer_utils:
-    git:
-      url: git@github.com:Workiva/dart_transformer_utils.git
-      ref: master
+  transformer_utils: "^0.1.1"
 dev_dependencies:
   browser: "^0.10.0+2"
   browser_detect: "^1.0.3"
