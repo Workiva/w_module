@@ -20,7 +20,7 @@ import 'dart:async';
 /// unified lifecycle API.
 abstract class LifecycleModule {
   /// Name of the module for identification within exceptions and while debugging.
-  String name = 'Module';
+  String get name => 'Module';
 
   /// List of child components so that lifecycle can iterate over them as needed
   List<LifecycleModule> _childModules = [];

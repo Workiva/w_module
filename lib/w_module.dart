@@ -21,6 +21,6 @@
 /// facilitates dynamic loading / unloading of modules.
 library w_module;
 
-export 'src/event.dart';
-export 'src/lifecycle_module.dart';
-export 'src/module.dart';
+export 'package:w_module/src/event.dart';
+export 'package:w_module/src/lifecycle_module.dart';
+export 'package:w_module/src/module.dart';
