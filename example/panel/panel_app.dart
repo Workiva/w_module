@@ -14,6 +14,7 @@
 
 library w_module.example.panel;
 
+import 'dart:async';
 import 'dart:html';
 import 'dart:js' as js;
 
@@ -30,29 +31,92 @@ main() async {
   react_client.setClientConfiguration();
 
   // instantiate the core app module and wait for it to complete loading
-  PanelModule panelModule = new PanelModule();
-  await panelModule.load();
+//  PanelModule panelModule = new PanelModule();
+//  bool panelModuleLoaded = false;
 
   // block browser tab / window close if necessary
-  window.onBeforeUnload.listen((BeforeUnloadEvent event) {
-    // can the app be unloaded?
-    ShouldUnloadResult res = panelModule.shouldUnload();
-    if (!res.shouldUnload) {
-      // return the supplied error message to block close
-      event.returnValue = res.messagesAsString();
-    } else if (browser.isIe) {
-      // IE interprets a null string as a response and displays an alert to
-      // the user. Use the `undefined` value of the JS context instead.
-      // https://github.com/dart-lang/sdk/issues/22589
-      event.returnValue = js.context['undefined'];
-    }
-  });
+//  window.onBeforeUnload.listen((BeforeUnloadEvent event) {
+//    // can the app be unloaded?
+//    ShouldUnloadResult res = panelModule.shouldUnload();
+//    if (!res.shouldUnload) {
+//      // return the supplied error message to block close
+//      event.returnValue = res.messagesAsString();
+//    } else if (browser.isIe) {
+//      // IE interprets a null string as a response and displays an alert to
+//      // the user. Use the `undefined` value of the JS context instead.
+//      // https://github.com/dart-lang/sdk/issues/22589
+//      event.returnValue = js.context['undefined'];
+//    }
+//  });
+
+  // HACK - how can we render more implicitly?
+  PanelModule panelModule;
 
   // initialize the router
   Router router = new Router(useFragment: true);
-  panelModule.registerRoutes(router);
-  router.listen();
+//  router.addModuleRoute(
+//      name: 'panel',
+//      path: '/',
+//      defaultRoute: true,
+//      moduleFactory: () {
+//        panelModule = new PanelModule();
+//        return panelModule;
+//      },
+//      enter: (_) {
+//        react.render(panelModule.components.content(), container);
+//      });
 
-  // render the app into the browser
-  react.render(panelModule.components.content(), container);
+  // simple instantiation
+  router.addRoute(
+      name: 'panel',
+      path: '/',
+      defaultRoute: true,
+      preEnter: (RoutePreEnterEvent e) {
+        Completer<bool> completer = new Completer();
+        panelModule = new PanelModule();
+        panelModule.load().then((_) {
+          panelModule.registerRoutes(router);
+          completer.complete(true);
+        });
+        e.allowEnter(completer.future);
+      },
+      enter: (_) {
+        react.render(panelModule.components.content(), container);
+      });
+
+  // manually add root level component for rendering
+//  router.root.addRoute(
+//      name: 'root',
+//      path: '/',
+//      defaultRoute: true,
+//      preEnter: (RoutePreEnterEvent e) {
+//        print('root pre-enter');
+//
+//        if (!panelModuleLoaded) {
+//          // load the panel, hook up routing, and render
+//          Completer<bool> completer = new Completer();
+//          panelModule.load().then((_) {
+//            panelModuleLoaded = true;
+//            // set up routes
+//            panelModule.registerRoutes(router);
+//            // render content
+//            react.render(panelModule.components.content(), container);
+//            // complete the future
+//            completer.complete(true);
+//          });
+//
+//          // complete the preEnter callback
+//          e.allowEnter(completer.future);
+//        }
+//      },
+//      preLeave: (RoutePreLeaveEvent e) {
+//        print('root pre-leave');
+//
+//        // prevent route changes based on module shouldUnload
+//        // TODO - may not actually make sense to use this on the root module
+//        // (the window listener makes more sense for the root)
+//        ShouldUnloadResult res = panelModule.shouldUnload();
+//        e.allowLeave(new Future.value(res.shouldUnload));
+//      });
+  router.listen();
 }

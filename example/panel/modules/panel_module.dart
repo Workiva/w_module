@@ -31,7 +31,9 @@ import './deferred_module.dart';
 import './lifecycleEcho_module.dart';
 import './hierarchy_module.dart';
 
-class PanelModule extends Module with RouterMixin {
+num panelCounter = 1;
+
+class PanelModule extends RouterModule {
   final String name = 'PanelModule';
 
   PanelActions _actions;
@@ -40,67 +42,134 @@ class PanelModule extends Module with RouterMixin {
   PanelComponents _components;
   PanelComponents get components => _components;
 
+  num panelInst;
+
+  PanelModule childPanel;
+  bool factoryRun = false;
+
   PanelModule() {
+    panelInst = panelCounter++;
     initRouter();
     _actions = new PanelActions();
     _stores = new PanelStore(router, _actions, this);
-    _components = new PanelComponents(_actions, _stores);
+    _components = new PanelComponents(_actions, _stores, router);
   }
 
   Future onLoad() async {
-    _actions.changeToPanel(0);
+    // TODO - may not be necessary
+    router.gotoUrl('/');
+  }
+
+  Future onUnload() async {
+    // detach and clean up the router
   }
 
   void configureRoute(Route route) {
-    // STEP 1: register the available routes
     route
       ..addRoute(
           name: 'basic_module',
           path: '/basic',
           pageTitle: 'Panel Example: Basic Module',
-          defaultRoute: true)
+          defaultRoute: true,
+          enter: (_) => _actions.changeToPanel(0),
+          preLeave: (RoutePreLeaveEvent e) =>
+              e.allowLeave(new Future.value(_stores.panelCanChange)))
       ..addRoute(
           name: 'flux_module',
           path: '/flux',
-          pageTitle: 'Panel Example: Flux Module')
+          pageTitle: 'Panel Example: Flux Module',
+          enter: (_) => _actions.changeToPanel(1),
+          preLeave: (RoutePreLeaveEvent e) =>
+              e.allowLeave(new Future.value(_stores.panelCanChange)))
       ..addRoute(
           name: 'reject_module',
           path: '/reject',
-          pageTitle: 'Panel Example: Reject Module')
+          pageTitle: 'Panel Example: Reject Module',
+          enter: (_) => _actions.changeToPanel(2),
+          preLeave: (RoutePreLeaveEvent e) =>
+              e.allowLeave(new Future.value(_stores.panelCanChange)))
       ..addRoute(
           name: 'dataLoad_async_module',
           path: '/dataLoad_async',
-          pageTitle: 'Panel Example: Data Load (async) Module')
+          pageTitle: 'Panel Example: Data Load (async) Module',
+          enter: (_) => _actions.changeToPanel(3),
+          preLeave: (RoutePreLeaveEvent e) =>
+              e.allowLeave(new Future.value(_stores.panelCanChange)))
       ..addRoute(
           name: 'dataLoad_blocking_module',
           path: '/dataLoad_blocking',
-          pageTitle: 'Panel Example: Data Load (blocking) Module')
+          pageTitle: 'Panel Example: Data Load (blocking) Module',
+          enter: (_) => _actions.changeToPanel(4),
+          preLeave: (RoutePreLeaveEvent e) =>
+              e.allowLeave(new Future.value(_stores.panelCanChange)))
       ..addRoute(
           name: 'deferred_module',
           path: '/deferred',
-          pageTitle: 'Panel Example: Deferred Module')
+          pageTitle: 'Panel Example: Deferred Module',
+          enter: (_) => _actions.changeToPanel(5),
+          preLeave: (RoutePreLeaveEvent e) =>
+              e.allowLeave(new Future.value(_stores.panelCanChange)))
       ..addRoute(
           name: 'lifecycle_echo_module',
           path: '/lifecycle_echo',
-          pageTitle: 'Panel Example: Lifecycle Echo Module')
+          pageTitle: 'Panel Example: Lifecycle Echo Module',
+          enter: (_) => _actions.changeToPanel(6),
+          preLeave: (RoutePreLeaveEvent e) =>
+              e.allowLeave(new Future.value(_stores.panelCanChange)))
       ..addRoute(
           name: 'hierarchy_module',
           path: '/hierarchy',
-          pageTitle: 'Panel Example: Hierarchy Module')
+          pageTitle: 'Panel Example: Hierarchy Module',
+          enter: (_) => _actions.changeToPanel(7),
+          preLeave: (RoutePreLeaveEvent e) =>
+              e.allowLeave(new Future.value(_stores.panelCanChange)))
+      // TODO - this version incorrectly associates with the first module instantiated here
       ..addRoute(
-          name: 'panel_module',
+          name: 'panel_module${panelInst}',
           path: '/panel',
-          pageTitle: 'Panel Example: Panel Module');
+          pageTitle: 'Panel Example: Panel Module',
+          enter: (RouteEnterEvent e) async {
+            await _actions.changeToPanel(8);
+            PanelModule panelMod = _stores.panelModule as PanelModule;
+            print(
+                'attach router: ${panelInst} - ${e.route.name} - ${panelMod.panelInst}');
+            panelMod.router.attachToRouter(router, startingFrom: e.route);
+          },
+          preLeave: (RoutePreLeaveEvent e) {
+            // TODO - do we need to un-attach?
+            bool panelCanChange = _stores.panelCanChange;
+            if (panelCanChange) {
+              PanelModule panelMod = _stores.panelModule as PanelModule;
+              panelMod.router.detachFromRouter();
+            }
+            e.allowLeave(new Future.value(panelCanChange));
+          },
+          leave: (RouteLeaveEvent e) {
+            // TODO - remove the existing child routes so that we can rewrite them
+          },
+          factory: (Route mountRoute) async {
+            // TODO - !!! this 1 time factory means the enter events are incorrectly locked
+            // to the module used in the factory !!!
+            print('route factory: ${panelInst}');
+            await _actions.changeToPanel(8);
+            PanelModule panelMod = _stores.panelModule as PanelModule;
+            return panelMod;
+          });
+    // TODO - do we need to somehow re-run the factory at each new entrance?
+    // TODO - do we need to somehow associate a module with the mount point
+    //  and potentially dynamically change it (reset 'this' at each entrance)?
   }
 }
 
 class PanelComponents implements ModuleComponents {
   PanelActions _actions;
   PanelStore _stores;
+  Router _router;
 
-  PanelComponents(this._actions, this._stores);
+  PanelComponents(this._actions, this._stores, this._router);
 
-  content() => PanelComponent({'actions': _actions, 'store': _stores});
+  content() => PanelComponent(
+      {'actions': _actions, 'store': _stores, 'router': _router});
 }
 
 class PanelActions {
@@ -109,7 +178,7 @@ class PanelActions {
 
 class PanelStore extends Store {
   /// Public data
-  num _panelIndex = 0;
+  num _panelIndex = -1;
   num get panelIndex => _panelIndex;
   bool _isRenderable = false;
   bool get isRenderable => _isRenderable;
@@ -121,85 +190,43 @@ class PanelStore extends Store {
   PanelActions _actions;
   LifecycleModule _parentModule;
 
+  PanelModule get parentPanel => _parentModule;
+
   PanelStore(Router this._router, PanelActions this._actions,
       LifecycleModule this._parentModule) {
-    // change routes in response to actions
-//    triggerOnAction(_actions.changeToPanel, _changeToPanel);
-    _actions.changeToPanel.listen((panelIndex) {
-      // TODO - if module says that it shouldn't unload, route change should be rejected
-      print('changeToPanel: $panelIndex');
-      if (panelIndex == 0) {
-        _router.gotoUrl('/basic');
-      } else if (panelIndex == 1) {
-        _router.gotoUrl('/flux');
-      } else if (panelIndex == 2) {
-        _router.gotoUrl('/reject');
-      } else if (panelIndex == 3) {
-        _router.gotoUrl('/dataLoad_async');
-      } else if (panelIndex == 4) {
-        _router.gotoUrl('/dataLoad_blocking');
-      } else if (panelIndex == 5) {
-        _router.gotoUrl('/deferred');
-      } else if (panelIndex == 6) {
-        _router.gotoUrl('/lifecycle_echo');
-      } else if (panelIndex == 7) {
-        _router.gotoUrl('/hierarchy');
-      } else if (panelIndex == 8) {
-        _router.gotoUrl('/panel');
-      }
-    });
-
-    // STEP 2: listen for route changes
-    _router.routeChanged.listen((route) async {
-      // in response to route change, change the view
-      print('routeChanged: $route');
-      // TODO - how to get rid of this default route handling here?
-      if ((route == '/basic') || (route == '')) {
-        await _changeToPanel(0);
-        trigger();
-      } else if (route == '/flux') {
-        await _changeToPanel(1);
-        trigger();
-      } else if (route == '/reject') {
-        await _changeToPanel(2);
-        trigger();
-      } else if (route == '/dataLoad_async') {
-        await _changeToPanel(3);
-        trigger();
-      } else if (route == '/dataLoad_blocking') {
-        await _changeToPanel(4);
-        trigger();
-      } else if (route == '/deferred') {
-        await _changeToPanel(5);
-        trigger();
-      } else if (route == '/lifecycle_echo') {
-        await _changeToPanel(6);
-        trigger();
-      } else if (route == '/hierarchy') {
-        await _changeToPanel(7);
-        trigger();
-      } else if (route == '/panel') {
-        await _changeToPanel(8);
-        trigger();
-      }
-    });
+    triggerOnAction(_actions.changeToPanel, _changeToPanel);
   }
 
-  _changeToPanel(num newPanelIndex) async {
+  bool get panelCanChange {
     // is there a different panel currently loaded?
-    if ((_panelModule != null) && (newPanelIndex != _panelIndex)) {
+    if (_panelModule != null) {
       // do we need to reject the unload of the existing panel?
       ShouldUnloadResult canUnload = _panelModule.shouldUnload();
       if (!canUnload.shouldUnload) {
-        // reject the change with an alert and short circuit
+        // notify user of failure
+        // TODO - must be a better place for this!
         window.alert(canUnload.messagesAsString());
-        return;
       }
-
-      // unload the existing panel
-      _isRenderable = false;
-      _panelModule.unload();
+      return canUnload.shouldUnload;
     }
+    return true;
+  }
+
+  _changeToPanel(num newPanelIndex) async {
+    print('changeToPanel: ${parentPanel.panelInst} - $newPanelIndex');
+    // ignore changes to the same panel
+    if (newPanelIndex == _panelIndex) {
+      return;
+    }
+
+    // reject changes if necessary
+    if (!panelCanChange) {
+      return;
+    }
+
+    // unload the existing panel
+    _isRenderable = false;
+    _panelModule?.unload();
 
     // extra trigger to show loading indicator
     _panelIndex = newPanelIndex;
@@ -224,6 +251,7 @@ class PanelStore extends Store {
       _panelModule = new HierarchyModule();
     } else if (_panelIndex == 8) {
       _panelModule = new PanelModule();
+      print('new child panel - ${_panelModule.panelInst}');
     }
     await _parentModule.loadChildModule(_panelModule);
     _isRenderable = true;
@@ -233,7 +261,16 @@ class PanelStore extends Store {
 var PanelComponent = react.registerComponent(() => new _PanelComponent());
 
 class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
+  Router get router => props['router'];
+
   render() {
+    if (store.panelIndex == 8) {
+      print(
+          'render: ${store.parentPanel.panelInst} - ${store.panelModule.panelInst}');
+    } else {
+      print('render: ${store.parentPanel.panelInst}');
+    }
+
     // display a loading placeholder if the module isn't ready for rendering
     var content = store.isRenderable
         ? store.panelModule.components.content()
@@ -242,15 +279,32 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
     var tabBar = react.div({
       'className': 'buttonBar'
     }, [
-      _renderPanelButton(0, 'Basic'),
-      _renderPanelButton(1, 'Flux'),
-      _renderPanelButton(2, 'Reject'),
-      _renderPanelButton(3, 'Data Load (async)'),
-      _renderPanelButton(4, 'Data Load (blocking)'),
-      _renderPanelButton(5, 'Deferred'),
-      _renderPanelButton(6, 'Lifecycle Echo'),
-      _renderPanelButton(7, 'All of them'),
-      _renderPanelButton(8, 'Recursive')
+      // TODO - temp label to identify panel instance
+      react.button({
+        'key': 'panelInst',
+        'style': {'backgroundColor': 'greenyellow'}
+      }, '${store.parentPanel.panelInst}'),
+
+      _renderPanelButton(0, 'Basic', '/basic'),
+      _renderPanelButton(1, 'Flux', '/flux'),
+      _renderPanelButton(2, 'Reject', '/reject'),
+      _renderPanelButton(3, 'Data Load (async)', '/dataLoad_async'),
+      _renderPanelButton(4, 'Data Load (blocking)', '/dataLoad_blocking'),
+      _renderPanelButton(5, 'Deferred', '/deferred'),
+      _renderPanelButton(6, 'Lifecycle Echo', '/lifecycle_echo'),
+      _renderPanelButton(7, 'All of them', '/hierarchy'),
+      _renderPanelButton(8, 'Recursive', '/panel')
+
+      // changeRoute version
+//      _renderPanelButton(0, 'Basic', 'basic_module'),
+//      _renderPanelButton(1, 'Flux', 'flux_module'),
+//      _renderPanelButton(2, 'Reject', 'reject_module'),
+//      _renderPanelButton(3, 'Data Load (async)', 'dataLoad_async_module'),
+//      _renderPanelButton(4, 'Data Load (blocking)', 'dataLoad_blocking_module'),
+//      _renderPanelButton(5, 'Deferred', 'deferred_module'),
+//      _renderPanelButton(6, 'Lifecycle Echo', 'lifecycle_echo_module'),
+//      _renderPanelButton(7, 'All of them', 'hierarchy_module'),
+//      _renderPanelButton(8, 'Recursive', 'panel_module')
     ]);
 
     return react.div({
@@ -266,10 +320,14 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
     ]);
   }
 
-  _renderPanelButton(int index, String label) {
+  _renderPanelButton(int index, String label, String url) {
     return react.button({
       'key': index,
-      'onClick': (_) => actions.changeToPanel(index),
+      'onClick': (_) {
+        print('url: $url');
+        router.gotoUrl(url);
+      },
+//      'onClick': (_) => router.changeRoute(url),
       'className': store.panelIndex == index ? 'active' : null
     }, label);
   }
