@@ -57,7 +57,7 @@ class PanelModule extends RouterModule {
 
   Future onLoad() async {
     // TODO - may not be necessary
-    router.gotoUrl('/');
+//    router.gotoUrl('/');
   }
 
   Future onUnload() async {
@@ -65,6 +65,7 @@ class PanelModule extends RouterModule {
   }
 
   void configureRoute(Route route) {
+    // TODO - why does new entrance to deep route not instantiate modules and render the nest?
     route
       ..addRoute(
           name: 'basic_module',
@@ -123,7 +124,6 @@ class PanelModule extends RouterModule {
           enter: (_) => _actions.changeToPanel(7),
           preLeave: (RoutePreLeaveEvent e) =>
               e.allowLeave(new Future.value(_stores.panelCanChange)))
-      // TODO - this version incorrectly associates with the first module instantiated here
       ..addRoute(
           name: 'panel_module${panelInst}',
           path: '/panel',
@@ -131,8 +131,6 @@ class PanelModule extends RouterModule {
           enter: (RouteEnterEvent e) async {
             await _actions.changeToPanel(8);
             PanelModule panelMod = _stores.panelModule as PanelModule;
-            print(
-                'attach router: ${panelInst} - ${e.route.name} - ${panelMod.panelInst}');
             panelMod.router.attachToRouter(router, startingFrom: e.route);
           },
           preLeave: (RoutePreLeaveEvent e) {
@@ -144,20 +142,11 @@ class PanelModule extends RouterModule {
             }
             e.allowLeave(new Future.value(panelCanChange));
           },
-          leave: (RouteLeaveEvent e) {
-            // TODO - remove the existing child routes so that we can rewrite them
-          },
           factory: (Route mountRoute) async {
-            // TODO - !!! this 1 time factory means the enter events are incorrectly locked
-            // to the module used in the factory !!!
-            print('route factory: ${panelInst}');
             await _actions.changeToPanel(8);
             PanelModule panelMod = _stores.panelModule as PanelModule;
             return panelMod;
           });
-    // TODO - do we need to somehow re-run the factory at each new entrance?
-    // TODO - do we need to somehow associate a module with the mount point
-    //  and potentially dynamically change it (reset 'this' at each entrance)?
   }
 }
 
@@ -213,7 +202,6 @@ class PanelStore extends Store {
   }
 
   _changeToPanel(num newPanelIndex) async {
-    print('changeToPanel: ${parentPanel.panelInst} - $newPanelIndex');
     // ignore changes to the same panel
     if (newPanelIndex == _panelIndex) {
       return;
@@ -251,7 +239,6 @@ class PanelStore extends Store {
       _panelModule = new HierarchyModule();
     } else if (_panelIndex == 8) {
       _panelModule = new PanelModule();
-      print('new child panel - ${_panelModule.panelInst}');
     }
     await _parentModule.loadChildModule(_panelModule);
     _isRenderable = true;
@@ -264,13 +251,6 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
   Router get router => props['router'];
 
   render() {
-    if (store.panelIndex == 8) {
-      print(
-          'render: ${store.parentPanel.panelInst} - ${store.panelModule.panelInst}');
-    } else {
-      print('render: ${store.parentPanel.panelInst}');
-    }
-
     // display a loading placeholder if the module isn't ready for rendering
     var content = store.isRenderable
         ? store.panelModule.components.content()
@@ -323,10 +303,7 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
   _renderPanelButton(int index, String label, String url) {
     return react.button({
       'key': index,
-      'onClick': (_) {
-        print('url: $url');
-        router.gotoUrl(url);
-      },
+      'onClick': (_) => router.gotoUrl(url),
 //      'onClick': (_) => router.changeRoute(url),
       'className': store.panelIndex == index ? 'active' : null
     }, label);
