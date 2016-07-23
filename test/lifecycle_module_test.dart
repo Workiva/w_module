@@ -49,9 +49,34 @@ class TestLifecycleModule extends LifecycleModule {
     });
 
     // Child module events:
+    willLoadChildModule.listen((_) {
+      eventList.add('willLoadChildModule');
+    });
     didLoadChildModule.listen((_) {
       eventList.add('didLoadChildModule');
     });
+    willUnloadChildModule.listen((_) {
+      eventList.add('willUnloadChildModule');
+    });
+    didUnloadChildModule.listen((_) {
+      eventList.add('didUnloadChildModule');
+    });
+  }
+
+  Future onWillLoadChildModule(LifecycleModule module) async {
+    eventList.add('onWillLoadChildModule');
+  }
+
+  Future onDidLoadChildModule(LifecycleModule module) async {
+    eventList.add('onDidLoadChildModule');
+  }
+
+  Future onWillUnloadChildModule(LifecycleModule module) async {
+    eventList.add('onWillUnloadChildModule');
+  }
+
+  Future onDidUnloadChildModule(LifecycleModule module) async {
+    eventList.add('onDidUnloadChildModule');
   }
 
   Future onLoad() async {
@@ -123,7 +148,14 @@ void main() {
 
     test('loadChildModule loads a child module', () async {
       await parentModule.loadChildModule(childModule);
-      expect(parentModule.eventList, equals(['didLoadChildModule']));
+      expect(
+          parentModule.eventList,
+          equals([
+            'onWillLoadChildModule',
+            'willLoadChildModule',
+            'onDidLoadChildModule',
+            'didLoadChildModule'
+          ]));
       expect(childModule.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
     });
 
@@ -143,8 +175,18 @@ void main() {
       parentModule.eventList = [];
       childModule.eventList = [];
       await parentModule.unload();
-      expect(parentModule.eventList,
-          equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      expect(
+          parentModule.eventList,
+          equals([
+            'onShouldUnload',
+            'willUnload',
+            'onWillUnloadChildModule',
+            'willUnloadChildModule',
+            'onDidUnloadChildModule',
+            'didUnloadChildModule',
+            'onUnload',
+            'didUnload'
+          ]));
       expect(
           childModule.eventList,
           equals([
@@ -157,15 +199,34 @@ void main() {
     });
 
     test(
-        'unloaded child module should be removed from parent module\'s lifecycle',
+        'unloaded child module should be removed from lifecycle of parent module',
         () async {
       await parentModule.loadChildModule(childModule);
       parentModule.eventList = [];
       childModule.eventList = [];
+
       await childModule.unload();
       expect(childModule.eventList,
           equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      await new Future(() {});
+      expect(
+          parentModule.eventList,
+          equals([
+            'onWillUnloadChildModule',
+            'willUnloadChildModule',
+            'onDidUnloadChildModule',
+            'didUnloadChildModule'
+          ]));
+      parentModule.eventList = [];
       childModule.eventList = [];
+
+      // Verify that subscriptions have been canceled.
+      await childModule.load();
+      await childModule.unload();
+      await new Future(() {});
+      expect(parentModule.eventList, equals([]));
+      childModule.eventList = [];
+
       await parentModule.unload();
       expect(parentModule.eventList,
           equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));

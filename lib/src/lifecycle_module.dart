@@ -44,10 +44,30 @@ abstract class LifecycleModule {
   StreamController<LifecycleModule> _didUnloadController;
   Stream<LifecycleModule> get didUnload => _didUnloadController.stream;
 
+  /// Event dispatched at the beginning of module.loadChildModule() logic
+  StreamController<LifecycleModule> _willLoadChildModuleController;
+  Stream<LifecycleModule> get willLoadChildModule =>
+      _willLoadChildModuleController.stream;
+
   /// Event dispatched at end of module.loadChildModule() logic
   StreamController<LifecycleModule> _didLoadChildModuleController;
   Stream<LifecycleModule> get didLoadChildModule =>
       _didLoadChildModuleController.stream;
+
+  /// Event dispatched before a child module is unloaded
+  StreamController<LifecycleModule> _willUnloadChildModuleController;
+  Stream<LifecycleModule> get willUnloadChildModule =>
+      _willUnloadChildModuleController.stream;
+
+  /// Event dispatched after a child module is unloaded
+  StreamController<LifecycleModule> _didUnloadChildModuleController;
+  Stream<LifecycleModule> get didUnloadChildModule =>
+      _didUnloadChildModuleController.stream;
+
+  final Map<LifecycleModule, StreamSubscription<LifecycleModule>>
+      _willUnloadChildModuleSubscriptions = {};
+  final Map<LifecycleModule, StreamSubscription<LifecycleModule>>
+      _didUnloadChildModuleSubscriptions = {};
 
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
@@ -55,7 +75,13 @@ abstract class LifecycleModule {
     _didLoadController = new StreamController<LifecycleModule>.broadcast();
     _willUnloadController = new StreamController<LifecycleModule>.broadcast();
     _didUnloadController = new StreamController<LifecycleModule>.broadcast();
+    _willLoadChildModuleController =
+        new StreamController<LifecycleModule>.broadcast();
     _didLoadChildModuleController =
+        new StreamController<LifecycleModule>.broadcast();
+    _willUnloadChildModuleController =
+        new StreamController<LifecycleModule>.broadcast();
+    _didUnloadChildModuleController =
         new StreamController<LifecycleModule>.broadcast();
   }
 
@@ -80,12 +106,30 @@ abstract class LifecycleModule {
   /// Public method to async load a child module and register it
   /// for lifecycle management.
   Future loadChildModule(LifecycleModule newModule) {
+    if (_childModules.contains(newModule)) {
+      return new Future(() {});
+    }
     Completer completer = new Completer();
-    newModule.willUnload.listen((_) {
+    onWillLoadChildModule(newModule);
+    _willLoadChildModuleController.add(newModule);
+    _willUnloadChildModuleSubscriptions[newModule] =
+        newModule.willUnload.listen((_) {
+      onWillUnloadChildModule(newModule);
+      _willUnloadChildModuleController.add(newModule);
       _childModules.remove(newModule);
+      _willUnloadChildModuleSubscriptions[newModule].cancel();
+      _willUnloadChildModuleSubscriptions.remove(newModule);
+    });
+    _didUnloadChildModuleSubscriptions[newModule] =
+        newModule.didUnload.listen((_) {
+      onDidUnloadChildModule(newModule);
+      _didUnloadChildModuleController.add(newModule);
+      _didUnloadChildModuleSubscriptions[newModule].cancel();
+      _didUnloadChildModuleSubscriptions.remove(newModule);
     });
     newModule.load().then((_) {
       _childModules.add(newModule);
+      onDidLoadChildModule(newModule);
       _didLoadChildModuleController.add(newModule);
       completer.complete();
     });
@@ -143,6 +187,18 @@ abstract class LifecycleModule {
   // to execute code during certain phases of the module
   // lifecycle
   //--------------------------------------------------------
+
+  /// Custom logic to be executed when a child module is to be loaded.
+  Future onWillLoadChildModule(LifecycleModule module) async {}
+
+  /// Custom logic to be executed when a child module has been loaded.
+  Future onDidLoadChildModule(LifecycleModule module) async {}
+
+  /// Custom logic to be executed when a child module is to be unloaded.
+  Future onWillUnloadChildModule(LifecycleModule module) async {}
+
+  /// Custom logic to be executed when a child module has been unloaded.
+  Future onDidUnloadChildModule(LifecycleModule module) async {}
 
   /// Custom logic to be executed during load.
   /// Initial data queries and interactions with the server can be triggered
