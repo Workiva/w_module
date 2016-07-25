@@ -21,7 +21,6 @@ main(List<String> args) async {
 
   List<String> directories = ['example/', 'lib/', 'test/', 'tool/'];
   config.analyze.entryPoints = [
-    'example/deferred/',
     'example/panel/',
     'example/random_color/',
     'lib/',
