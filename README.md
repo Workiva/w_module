@@ -24,7 +24,7 @@
 
 ## Overview
 
-![module-diagram](https://github.com/Workiva/w_module/blob/images/images/w_module_diagram.png)
+![module-diagram](https://raw.githubusercontent.com/Workiva/w_module/images/images/w_module_diagram.png)
 
 `w_module` implements a module encapsulation and lifecycle pattern for Dart that interfaces well with the application
 architecture defined in the [w_flux](https://github.com/Workiva/w_flux) library.  `w_module` defines the public interface
