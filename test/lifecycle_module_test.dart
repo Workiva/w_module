@@ -17,6 +17,7 @@ library w_module.test.lifecycle_module_test;
 
 import 'dart:async';
 
+import 'package:logging/logging.dart';
 import 'package:w_module/w_module.dart';
 import 'package:test/test.dart';
 
@@ -46,6 +47,18 @@ class TestLifecycleModule extends LifecycleModule {
     });
     didUnload.listen((_) {
       eventList.add('didUnload');
+    });
+    willSuspend.listen((_) {
+      eventList.add('willSuspend');
+    });
+    didSuspend.listen((_) {
+      eventList.add('didSuspend');
+    });
+    willResume.listen((_) {
+      eventList.add('willResume');
+    });
+    didResume.listen((_) {
+      eventList.add('didResume');
     });
 
     // Child module events:
@@ -97,14 +110,32 @@ class TestLifecycleModule extends LifecycleModule {
     await new Future.delayed(new Duration(milliseconds: 1));
     eventList.add('onUnload');
   }
+
+  Future onSuspend() async {
+    await new Future.delayed(new Duration(milliseconds: 1));
+    eventList.add('onSuspend');
+  }
+
+  Future onResume() async {
+    await new Future.delayed(new Duration(milliseconds: 1));
+    eventList.add('onResume');
+  }
 }
 
 void main() {
+  Logger.root.level = Level.ALL;
+
+  LogRecord lastLogMessage;
+  Logger.root.onRecord.listen((LogRecord message) {
+    lastLogMessage = message;
+  });
+
   group('LifecycleModule', () {
     TestLifecycleModule module;
 
     setUp(() {
       module = new TestLifecycleModule();
+      lastLogMessage = null;
     });
 
     test('should trigger loading events and call onLoad when module is loaded',
@@ -113,17 +144,161 @@ void main() {
       expect(module.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
     });
 
+    test('should set isLoaded when module is loaded', () async {
+      expect(module.isLoaded, isFalse);
+      await module.load();
+      expect(module.isLoaded, isTrue);
+    });
+
+    test('should do nothing when the module is loaded if it was already loaded',
+        () async {
+      await module.load();
+      module.eventList.clear();
+      await module.load();
+      expect(module.eventList, equals([]));
+    });
+
+    test('should warn when the module is loaded if it was already loaded',
+        () async {
+      await module.load();
+      expect(lastLogMessage, isNull);
+      await module.load();
+      expect(lastLogMessage, isNotNull);
+      expect(lastLogMessage.level, equals(Level.WARNING));
+    });
+
     test(
         'should trigger unloading events and call onShouldUnload and onUnload when module is unloaded',
         () async {
+      await module.load();
+      module.eventList.clear();
       await module.unload();
       expect(module.eventList,
           equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
     });
 
-    test(
-        'should throw an exception if attempting to unload module and shouldUnload completes false',
+    test('should set isLoaded when module is unloaded', () async {
+      await module.load();
+      expect(module.isLoaded, isTrue);
+      await module.unload();
+      expect(module.isLoaded, isFalse);
+    });
+
+    test('should do nothing when the module is unloaded if it was never loaded',
         () async {
+      await module.unload();
+      expect(module.eventList, equals([]));
+    });
+
+    test(
+        'should do nothing when the module is unloaded if it was already unloaded',
+        () async {
+      await module.load();
+      await module.unload();
+      module.eventList.clear();
+      await module.unload();
+      expect(module.eventList, equals([]));
+    });
+
+    test('should warn when the module is unloaded if it was never loaded',
+        () async {
+      await module.unload();
+      expect(lastLogMessage, isNotNull);
+      expect(lastLogMessage.level, equals(Level.WARNING));
+    });
+
+    test('should warn when the module is unloaded if it was already unloaded',
+        () async {
+      await module.load();
+      await module.unload();
+      expect(lastLogMessage, isNull);
+      await module.unload();
+      expect(lastLogMessage, isNotNull);
+      expect(lastLogMessage.level, equals(Level.WARNING));
+    });
+
+    test(
+        'should trigger suspend events and call onSuspend when module is suspended',
+        () async {
+      await module.load();
+      module.eventList.clear();
+      await module.suspend();
+      expect(
+          module.eventList, equals(['willSuspend', 'onSuspend', 'didSuspend']));
+    });
+
+    test('should set isSuspended when module is suspended', () async {
+      expect(module.isSuspended, isFalse);
+      await module.load();
+      await module.suspend();
+      expect(module.isSuspended, isTrue);
+    });
+
+    test('should do nothing when module is suspended if it was never loaded',
+        () async {
+      await module.suspend();
+      expect(module.eventList, equals([]));
+    });
+
+    test('should warn when module is suspended if it was never loaded',
+        () async {
+      await module.suspend();
+      expect(lastLogMessage, isNotNull);
+      expect(lastLogMessage.level, equals(Level.WARNING));
+    });
+
+    test(
+        'should trigger resume events and call onResume when module is resumed',
+        () async {
+      await module.load();
+      await module.suspend();
+      module.eventList.clear();
+      await module.resume();
+      expect(module.eventList, equals(['willResume', 'onResume', 'didResume']));
+    });
+
+    test('should set isSuspended when module is resumed', () async {
+      await module.load();
+      await module.suspend();
+      expect(module.isSuspended, isTrue);
+      await module.resume();
+      expect(module.isSuspended, isFalse);
+    });
+
+    test('should do nothing when module is resumed if it was not suspended',
+        () async {
+      await module.load();
+      module.eventList.clear();
+      await module.resume();
+      expect(module.eventList, equals([]));
+    });
+
+    test('should do nothing when module is resumed if it was never loaded',
+        () async {
+      await module.suspend();
+      expect(module.eventList, equals([]));
+    });
+
+    test('should warn when module is resumed if it was not suspended',
+        () async {
+      await module.load();
+      expect(lastLogMessage, isNull);
+      await module.resume();
+      expect(lastLogMessage, isNotNull);
+      expect(lastLogMessage.level, equals(Level.WARNING));
+    });
+
+    test('should warn when module is resumed if it was never loaded', () async {
+      await module.resume();
+      expect(lastLogMessage, isNotNull);
+      expect(lastLogMessage.level, equals(Level.WARNING));
+    });
+
+    test(
+        'should throw an exception if attempting to unload module'
+        'and shouldUnload completes false', () async {
+      await module.load();
+      module.eventList.clear();
       module.mockShouldUnload = false;
       var error;
       try {
@@ -170,10 +345,36 @@ void main() {
           equals([childModule, childModuleB]));
     });
 
-    test('should unload child modules when parent in unloaded', () async {
+    test('should suspend child modules when parent is suspended', () async {
+      await parentModule.load();
       await parentModule.loadChildModule(childModule);
-      parentModule.eventList = [];
-      childModule.eventList = [];
+      parentModule.eventList.clear();
+      childModule.eventList.clear();
+      await parentModule.suspend();
+      expect(parentModule.eventList,
+          equals(['willSuspend', 'onSuspend', 'didSuspend']));
+      expect(childModule.eventList,
+          equals(['willSuspend', 'onSuspend', 'didSuspend']));
+    });
+
+    test('should resume child modules when parent is resumed', () async {
+      await parentModule.load();
+      await parentModule.loadChildModule(childModule);
+      await parentModule.suspend();
+      parentModule.eventList.clear();
+      childModule.eventList.clear();
+      await parentModule.resume();
+      expect(parentModule.eventList,
+          equals(['willResume', 'onResume', 'didResume']));
+      expect(childModule.eventList,
+          equals(['willResume', 'onResume', 'didResume']));
+    });
+
+    test('should unload child modules when parent is unloaded', () async {
+      await parentModule.load();
+      await parentModule.loadChildModule(childModule);
+      parentModule.eventList.clear();
+      childModule.eventList.clear();
       await parentModule.unload();
       expect(
           parentModule.eventList,
@@ -201,9 +402,10 @@ void main() {
     test(
         'unloaded child module should be removed from lifecycle of parent module',
         () async {
+      await parentModule.load();
       await parentModule.loadChildModule(childModule);
-      parentModule.eventList = [];
-      childModule.eventList = [];
+      parentModule.eventList.clear();
+      childModule.eventList.clear();
 
       await childModule.unload();
       expect(childModule.eventList,
@@ -217,15 +419,15 @@ void main() {
             'onDidUnloadChildModule',
             'didUnloadChildModule'
           ]));
-      parentModule.eventList = [];
-      childModule.eventList = [];
+      parentModule.eventList.clear();
+      childModule.eventList.clear();
 
       // Verify that subscriptions have been canceled.
       await childModule.load();
       await childModule.unload();
       await new Future(() {});
       expect(parentModule.eventList, equals([]));
-      childModule.eventList = [];
+      childModule.eventList.clear();
 
       await parentModule.unload();
       expect(parentModule.eventList,
@@ -240,8 +442,8 @@ void main() {
       expect(parentShouldUnload.messages, equals([]));
 
       await parentModule.loadChildModule(childModule);
-      parentModule.eventList = [];
-      childModule.eventList = [];
+      parentModule.eventList.clear();
+      childModule.eventList.clear();
 
       parentShouldUnload = parentModule.shouldUnload();
       expect(parentShouldUnload.shouldUnload, equals(false));
@@ -263,8 +465,8 @@ void main() {
       expect(shouldUnloadRes.messages, equals([shouldUnloadError]));
 
       await parentModule.loadChildModule(childModule);
-      parentModule.eventList = [];
-      childModule.eventList = [];
+      parentModule.eventList.clear();
+      childModule.eventList.clear();
 
       shouldUnloadRes = parentModule.shouldUnload();
       expect(shouldUnloadRes.shouldUnload, equals(false));

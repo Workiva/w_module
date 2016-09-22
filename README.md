@@ -284,23 +284,29 @@ Many examples of `Module` lifecycle behavior and manipulation can be found in th
 
 ### Lifecycle Methods
 
-`Module` exposes just three lifecycle methods that external consumers should use to trigger loading and unloading
+`Module` exposes five lifecycle methods that external consumers should use to trigger loading and unloading
 behavior:
 
 Method         | Description
 -------------- | ---------------------------------
 `load`         | Triggers loading of a `Module`.  Internally, this executes the module's `onLoad` method and dispatches the `willLoad` and `didLoad` events.  Returns a future that completes once the module has finished loading.
-`shouldUnload` | Returns the unloadable state of the `Module` as a `ShouldUnloadResult`.  Internally, this executes the module's `onShouldUnload` method.
-`unload`       | Triggers unloading of a `Module`.  Internally, this executes the module's `shouldUnload` method, and, if that completes successfully, executes the module's `onUnload` method. If unloading is rejected, this method will complete with an error.
+`suspend`      | Suspends the module and all child modules. While suspended modules should make themselves lightweight and avoid making network requests.
+`resume`       | Brings the module and all child modules out of suspension. Upon resuming, modules should go back to business as usual.
+`shouldUnload` | Returns the unloadable state of the `Module` and its child modules as a `ShouldUnloadResult`.  Internally, this executes the module's `onShouldUnload` method.
+`unload`       | Triggers unloading of a `Module` and all of its child modules.  Internally, this executes the module's `shouldUnload` method, and, if that completes successfully, executes the module's `onUnload` method. If unloading is rejected, this method will complete with an error.
 
 ### Lifecycle Events
 
 `Module` also exposes lifecycle event streams that an external consumer can listen to:
 
-Method         | Description
+Event          | Description
 -------------- | ---------------------------------
 `willLoad`     | Dispatched at the beginning of the module's `load` logic.
 `didLoad`      | Dispatched at the end of the module's `load` logic.
+`willSuspend`  | Dispatched at the beginning of the module's `suspend` logic.
+`didSuspend`   | Dispatched at the end of the module's `suspend` logic.
+`willResume`   | Dispatched at the beginning of the module's `resume` logic.
+`didResume`    | Dispatched at the end of the module's `resume` logic.
 `willUnload`   | Dispatched at the beginning of the module's `unload` logic.
 `didUnload`    | Dispatched at the end of the module's `unload` logic.
 
@@ -311,6 +317,8 @@ Internally, `Module` contains methods that can be overridden to customize module
 Method           | Description
 ---------------- | ---------------------------------
 `onLoad`         | Executing during the module's `load` logic.  Custom logic for initializing child modules, service access, event listeners, etc. should be implemented here.  Deferred module loading behavior can also be hidden from consumers via this method.
+`onSuspend`      | Executed during the module's `suspend` logic. This method should be used to modify module behavior while suspended.
+`onResume`       | Executed during the module's `resume` logic. This method should be used to put the module back into its normal mode of operation.
 `onShouldUnload` | Executed during the module's `shouldUnload` logic.  Custom logic that blocks module unloading under certain conditions should be implemented here.
 `onUnload`       | Executed during the module's `unload` logic.  Custom module clean up logic should be implemented here.  Unfortunately, the nature of web browsers is such that module `unload` logic is not guaranteed to be executed under all conditions (browser or tab close), so mission critical logic should not reside here.
 
@@ -318,10 +326,19 @@ Method           | Description
 
 `Module` also supports hierarchical application of the standard lifecycle through child modules:
 
-Method               | Description
+Method                | Description
+--------------------  | ---------------------------------
+`loadChildModule`     | Loads a child module and registers it with the current module for lifecycle management.
+`willLoadChildModule` | Dispatched at the beginning of the child module's `load` logic.
+`didLoadChildModule`  | Dispatched at the end of the child module's `load` logic.
+
+### Getters
+
+Getter               | Description
 -------------------- | ---------------------------------
-`loadChildModule`    | Loads a child module and registers it with the current module for lifecycle management.
-`didLoadChildModule` | Dispatched at the end of the child module's `load` logic.
+`childModules`       | An iterable of child modules.
+`isLoaded`           | A boolean that indicates whether the module is current loaded.
+`isSuspended`        | A boolean that indicates whether the module is currently suspended. This will always be false when the module is not loaded.
 
 
 ---
