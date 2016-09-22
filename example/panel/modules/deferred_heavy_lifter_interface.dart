@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-library w_module.example.panel.modules.deferred_heavyLifter_interface;
+library w_module.example.panel.modules.deferred_heavy_lifter_interface;
 
-enum HeavyLifterDivision { FEATHERWEIGHT, WELTERWEIGHT, HEAVYWEIGHT }
+enum HeavyLifterDivision { featherweight, welterweight, heavyweight }
 
 class HeavyLifter {
   HeavyLifterDivision _division;
-  HeavyLifterDivision get division => _division;
 
-  HeavyLifter(HeavyLifterDivision this._division);
+  HeavyLifter(this._division);
 
   List<String> get competitors => [];
+
+  HeavyLifterDivision get division => _division;
 }

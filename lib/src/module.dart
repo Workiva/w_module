@@ -36,12 +36,12 @@ abstract class Module extends LifecycleModule {
   /// be overridden to provide a class defined specifically for the module.
   ///
   /// If using with w_flux internals, module mutation methods should usually
-  /// dispatch existing [actions] available within the module.  This ensures
+  /// dispatch existing actions available within the module.  This ensures
   /// that the internal unidirectional data flow is maintained, regardless of
   /// the source of the mutation (e.g. external api or internal UI).  Likewise,
   /// module methods that expose internal state should usually use existing
   /// getter methods available on stores within the module.
-  get api => null;
+  Object get api => null;
 
   /// The [components] object should contain all react-dart compatible UI
   /// component factory methods that a consumer can use to render module data.
@@ -72,12 +72,12 @@ abstract class Module extends LifecycleModule {
   /// immediate response to actions.  This ensures that the internal
   /// unidirectional data flow is maintained and external [events] represent
   /// confirmed internal state changes.
-  get events => null;
+  Object get events => null;
 }
 
-/// Standard [Module] [components] class. If a module implements a custom
-/// [components] class, it should extend [ModuleComponents].
+/// Standard [Module.components] class. If a module implements a custom class
+/// for its components, it should extend [ModuleComponents].
 abstract class ModuleComponents {
   /// The default UI component
-  content() {}
+  Object content() => null;
 }

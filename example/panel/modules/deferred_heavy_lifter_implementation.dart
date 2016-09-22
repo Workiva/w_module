@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-library w_module.example.panel.modules.deferred_heavyLifter_implementation;
+library w_module.example.panel.modules.deferred_heavy_lifter_implementation;
 
-import './deferred_heavyLifter_interface.dart';
+import './deferred_heavy_lifter_interface.dart';
 
 class RealLifter implements HeavyLifter {
   HeavyLifterDivision _division;
-  HeavyLifterDivision get division => _division;
 
-  RealLifter(HeavyLifterDivision this._division);
+  RealLifter(this._division);
 
+  @override
   List<String> get competitors {
-    if (_division == HeavyLifterDivision.FEATHERWEIGHT) {
+    if (_division == HeavyLifterDivision.featherweight) {
       return [
         'SpongeBob SquarePants',
         'Patrick Star',
@@ -54,7 +54,7 @@ class RealLifter implements HeavyLifter {
         'Bubble Buddy',
         'DoodleBob'
       ];
-    } else if (_division == HeavyLifterDivision.WELTERWEIGHT) {
+    } else if (_division == HeavyLifterDivision.welterweight) {
       return [
         'Philip J. Fry',
         'Turanga Leela',
@@ -83,7 +83,7 @@ class RealLifter implements HeavyLifter {
         'Cubert Farnsworth',
         'Flexo'
       ];
-    } else if (_division == HeavyLifterDivision.HEAVYWEIGHT) {
+    } else if (_division == HeavyLifterDivision.heavyweight) {
       return [
         'Apollo Creed',
         'Rocky Balboa',
@@ -117,4 +117,7 @@ class RealLifter implements HeavyLifter {
     }
     return [];
   }
+
+  @override
+  HeavyLifterDivision get division => _division;
 }

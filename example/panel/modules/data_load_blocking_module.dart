@@ -12,27 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-library w_module.example.panel.modules.dataLoadBlocking_module;
+library w_module.example.panel.modules.data_load_blocking_module;
 
 import 'dart:async';
 
+import 'package:meta/meta.dart' show protected;
 import 'package:react/react.dart' as react;
 import 'package:w_module/w_module.dart';
 
 class DataLoadBlockingModule extends Module {
-  final String name = 'DataLoadBlockingModule';
-
   List<String> data;
 
+  @override
+  final String name = 'DataLoadBlockingModule';
+
   DataLoadBlockingComponents _components;
-  DataLoadBlockingComponents get components => _components;
 
   DataLoadBlockingModule() {
     data = [];
     _components = new DataLoadBlockingComponents(this);
   }
 
-  Future onLoad() async {
+  @override
+  DataLoadBlockingComponents get components => _components;
+
+  @override
+  @protected
+  Future<Null> onLoad() async {
     // perform async load of data (fake it with a Future)
     await new Future.delayed(new Duration(seconds: 1));
     data = ['Grover', 'Hoffman', 'Lessard', 'Peterson', 'Udey', 'Weible'];
@@ -43,7 +49,8 @@ class DataLoadBlockingComponents implements ModuleComponents {
   DataLoadBlockingModule _module;
   DataLoadBlockingComponents(this._module);
 
-  content() {
+  @override
+  Object content() {
     int keyCounter = 0;
     return react.div({
       'style': {'padding': '50px', 'backgroundColor': 'red', 'color': 'white'}

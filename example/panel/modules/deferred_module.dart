@@ -16,28 +16,35 @@ library w_module.example.panel.modules.deferred_module;
 
 import 'dart:async';
 
+import 'package:meta/meta.dart' show protected;
 import 'package:react/react.dart' as react;
 import 'package:w_module/w_module.dart';
 
-import './deferred_heavyLifter_interface.dart';
-import './deferred_heavyLifter_implementation.dart'
-    deferred as HeavyLifterWithData;
+import './deferred_heavy_lifter_interface.dart';
+import './deferred_heavy_lifter_implementation.dart'
+    deferred as heavy_lifter_with_data;
 
 class DeferredModule extends Module {
-  final String name = 'DeferredModule';
-
   HeavyLifter data;
 
+  @override
+  final String name = 'DeferredModule';
+
   DeferredComponents _components;
-  DeferredComponents get components => _components;
 
   DeferredModule() {
     _components = new DeferredComponents(this);
   }
 
-  Future onLoad() async {
-    await HeavyLifterWithData.loadLibrary();
-    data = new HeavyLifterWithData.RealLifter(HeavyLifterDivision.HEAVYWEIGHT);
+  @override
+  DeferredComponents get components => _components;
+
+  @override
+  @protected
+  Future<Null> onLoad() async {
+    await heavy_lifter_with_data.loadLibrary();
+    data =
+        new heavy_lifter_with_data.RealLifter(HeavyLifterDivision.heavyweight);
   }
 }
 
@@ -45,7 +52,8 @@ class DeferredComponents implements ModuleComponents {
   DeferredModule _module;
   DeferredComponents(this._module);
 
-  content() {
+  @override
+  Object content() {
     int keyCounter = 0;
     return react.div({
       'style': {'padding': '50px', 'backgroundColor': 'blue', 'color': 'white'}

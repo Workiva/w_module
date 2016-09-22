@@ -17,27 +17,27 @@ library w_module.example.panel.modules.panel_module;
 import 'dart:async';
 import 'dart:html';
 
-import 'package:w_module/w_module.dart';
-import 'package:w_flux/w_flux.dart';
+import 'package:meta/meta.dart' show protected;
 import 'package:react/react.dart' as react;
+import 'package:w_flux/w_flux.dart';
+import 'package:w_module/w_module.dart';
 
 import './basic_module.dart';
 import './flux_module.dart';
 import './reject_module.dart';
-import './dataLoadAsync_module.dart';
-import './dataLoadBlocking_module.dart';
+import './data_load_async_module.dart';
+import './data_load_blocking_module.dart';
 import './deferred_module.dart';
-import './lifecycleEcho_module.dart';
+import './lifecycle_echo_module.dart';
 import './hierarchy_module.dart';
 
 class PanelModule extends Module {
+  @override
   final String name = 'PanelModule';
 
   PanelActions _actions;
-  PanelStore _stores;
-
   PanelComponents _components;
-  PanelComponents get components => _components;
+  PanelStore _stores;
 
   PanelModule() {
     _actions = new PanelActions();
@@ -45,8 +45,18 @@ class PanelModule extends Module {
     _components = new PanelComponents(_actions, _stores);
   }
 
-  Future onLoad() async {
+  @override
+  PanelComponents get components => _components;
+
+  @override
+  @protected
+  Future<Null> onLoad() {
     _actions.changeToPanel(0);
+    return new Future.value();
+  }
+
+  Future addModule(LifecycleModule newModule) {
+    return loadChildModule(newModule);
   }
 }
 
@@ -56,7 +66,8 @@ class PanelComponents implements ModuleComponents {
 
   PanelComponents(this._actions, this._stores);
 
-  content() => PanelComponent({'actions': _actions, 'store': _stores});
+  @override
+  Object content() => PanelComponent({'actions': _actions, 'store': _stores});
 }
 
 class PanelActions {
@@ -66,21 +77,22 @@ class PanelActions {
 class PanelStore extends Store {
   /// Public data
   num _panelIndex = 0;
-  num get panelIndex => _panelIndex;
   bool _isRenderable = false;
-  bool get isRenderable => _isRenderable;
   Module _panelModule;
-  Module get panelModule => _panelModule;
 
   /// Internals
   PanelActions _actions;
-  LifecycleModule _parentModule;
+  PanelModule _parentModule;
 
-  PanelStore(PanelActions this._actions, LifecycleModule this._parentModule) {
+  PanelStore(this._actions, this._parentModule) {
     triggerOnAction(_actions.changeToPanel, _changeToPanel);
   }
 
-  _changeToPanel(num newPanelIndex) async {
+  bool get isRenderable => _isRenderable;
+  num get panelIndex => _panelIndex;
+  Module get panelModule => _panelModule;
+
+  Future<Null> _changeToPanel(num newPanelIndex) async {
     // is there a panel currently loaded?
     if (_panelModule != null) {
       // do we need to reject the unload of the existing panel?
@@ -93,7 +105,7 @@ class PanelStore extends Store {
 
       // unload the existing panel
       _isRenderable = false;
-      _panelModule.unload();
+      await _panelModule.unload();
     }
 
     // extra trigger to show loading indicator
@@ -120,15 +132,17 @@ class PanelStore extends Store {
     } else if (_panelIndex == 8) {
       _panelModule = new PanelModule();
     }
-    await _parentModule.loadChildModule(_panelModule);
+    await _parentModule.addModule(_panelModule);
     _isRenderable = true;
   }
 }
 
-var PanelComponent = react.registerComponent(() => new _PanelComponent());
+// ignore: non_constant_identifier_names
+Object PanelComponent = react.registerComponent(() => new _PanelComponent());
 
 class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
-  render() {
+  @override
+  Object render() {
     // display a loading placeholder if the module isn't ready for rendering
     var content = store.isRenderable
         ? store.panelModule.components.content()
@@ -161,7 +175,7 @@ class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
     ]);
   }
 
-  _renderPanelButton(int index, String label) {
+  Object _renderPanelButton(int index, String label) {
     return react.button({
       'key': index,
       'onClick': (_) => actions.changeToPanel(index),

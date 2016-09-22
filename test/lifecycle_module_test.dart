@@ -18,12 +18,14 @@ library w_module.test.lifecycle_module_test;
 import 'dart:async';
 
 import 'package:logging/logging.dart';
-import 'package:w_module/w_module.dart';
+import 'package:meta/meta.dart' show protected;
 import 'package:test/test.dart';
+import 'package:w_module/w_module.dart';
 
 const String shouldUnloadError = 'Mock shouldUnload false message';
 
 class TestLifecycleModule extends LifecycleModule {
+  @override
   final String name = 'TestLifecycleModule';
 
   // mock data to be used for test validation
@@ -76,27 +78,45 @@ class TestLifecycleModule extends LifecycleModule {
     });
   }
 
-  Future onWillLoadChildModule(LifecycleModule module) async {
+  // Overriding without re-applying the @protected annotation allows us to call
+  // loadChildModule in our tests below.
+  @override
+  Future<Null> loadChildModule(LifecycleModule newModule) =>
+      super.loadChildModule(newModule);
+
+  @override
+  @protected
+  Future<Null> onWillLoadChildModule(LifecycleModule module) async {
     eventList.add('onWillLoadChildModule');
   }
 
-  Future onDidLoadChildModule(LifecycleModule module) async {
+  @override
+  @protected
+  Future<Null> onDidLoadChildModule(LifecycleModule module) async {
     eventList.add('onDidLoadChildModule');
   }
 
-  Future onWillUnloadChildModule(LifecycleModule module) async {
+  @override
+  @protected
+  Future<Null> onWillUnloadChildModule(LifecycleModule module) async {
     eventList.add('onWillUnloadChildModule');
   }
 
-  Future onDidUnloadChildModule(LifecycleModule module) async {
+  @override
+  @protected
+  Future<Null> onDidUnloadChildModule(LifecycleModule module) async {
     eventList.add('onDidUnloadChildModule');
   }
 
-  Future onLoad() async {
+  @override
+  @protected
+  Future<Null> onLoad() async {
     await new Future.delayed(new Duration(milliseconds: 1));
     eventList.add('onLoad');
   }
 
+  @override
+  @protected
   ShouldUnloadResult onShouldUnload() {
     eventList.add('onShouldUnload');
     if (mockShouldUnload) {
@@ -106,17 +126,23 @@ class TestLifecycleModule extends LifecycleModule {
     }
   }
 
-  Future onUnload() async {
+  @override
+  @protected
+  Future<Null> onUnload() async {
     await new Future.delayed(new Duration(milliseconds: 1));
     eventList.add('onUnload');
   }
 
-  Future onSuspend() async {
+  @override
+  @protected
+  Future<Null> onSuspend() async {
     await new Future.delayed(new Duration(milliseconds: 1));
     eventList.add('onSuspend');
   }
 
-  Future onResume() async {
+  @override
+  @protected
+  Future<Null> onResume() async {
     await new Future.delayed(new Duration(milliseconds: 1));
     eventList.add('onResume');
   }

@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-library w_module.example.panel.modules.dataLoadAsync_module;
+library w_module.example.panel.modules.data_load_async_module;
 
 import 'dart:async';
 
-import 'package:w_flux/w_flux.dart';
+import 'package:meta/meta.dart' show protected;
 import 'package:react/react.dart' as react;
+import 'package:w_flux/w_flux.dart';
 import 'package:w_module/w_module.dart';
 
 class DataLoadAsyncModule extends Module {
+  @override
   final String name = 'DataLoadAsyncModule';
 
   DataLoadAsyncActions _actions;
-  DataLoadAsyncStore _stores;
-
   DataLoadAsyncComponents _components;
-  DataLoadAsyncComponents get components => _components;
+  DataLoadAsyncStore _stores;
 
   DataLoadAsyncModule() {
     _actions = new DataLoadAsyncActions();
@@ -35,9 +35,15 @@ class DataLoadAsyncModule extends Module {
     _components = new DataLoadAsyncComponents(_actions, _stores);
   }
 
-  Future onLoad() async {
+  @override
+  DataLoadAsyncComponents get components => _components;
+
+  @override
+  @protected
+  Future<Null> onLoad() {
     // trigger non-blocking async load of data
     _actions.loadData();
+    return new Future.value();
   }
 }
 
@@ -47,7 +53,9 @@ class DataLoadAsyncComponents implements ModuleComponents {
 
   DataLoadAsyncComponents(this._actions, this._stores);
 
-  content() => DataLoadAsyncComponent({'actions': _actions, 'store': _stores});
+  @override
+  Object content() =>
+      DataLoadAsyncComponent({'actions': _actions, 'store': _stores});
 }
 
 class DataLoadAsyncActions {
@@ -55,22 +63,22 @@ class DataLoadAsyncActions {
 }
 
 class DataLoadAsyncStore extends Store {
-  /// Public data
-  bool _isLoading;
-  bool get isLoading => _isLoading;
-  List<String> _data;
-  List<String> get data => _data;
-
-  /// Internals
   DataLoadAsyncActions _actions;
+  List<String> _data;
+  bool _isLoading;
 
-  DataLoadAsyncStore(DataLoadAsyncActions this._actions) {
+  DataLoadAsyncStore(this._actions) {
     _isLoading = false;
     _data = [];
     triggerOnAction(_actions.loadData, _loadData);
   }
 
-  _loadData(_) async {
+  /// Public data
+  List<String> get data => _data;
+
+  bool get isLoading => _isLoading;
+
+  Future<Null> _loadData(_) async {
     // set loading state and trigger to display loading spinner
     _isLoading = true;
     trigger();
@@ -84,12 +92,14 @@ class DataLoadAsyncStore extends Store {
   }
 }
 
-var DataLoadAsyncComponent =
+// ignore: non_constant_identifier_names
+Object DataLoadAsyncComponent =
     react.registerComponent(() => new _DataLoadAsyncComponent());
 
 class _DataLoadAsyncComponent
     extends FluxComponent<DataLoadAsyncActions, DataLoadAsyncStore> {
-  render() {
+  @override
+  Object render() {
     var content;
     if (store.isLoading) {
       content = react.div({'className': 'loader'}, 'Loading data...');

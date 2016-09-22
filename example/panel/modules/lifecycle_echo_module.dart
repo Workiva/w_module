@@ -12,38 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-library w_module.example.panel.modules.lifecycleEcho_module;
+library w_module.example.panel.modules.lifecycle_echo_module;
 
 import 'dart:async';
 
-import 'package:w_module/w_module.dart';
+import 'package:meta/meta.dart' show protected;
 import 'package:react/react.dart' as react;
+import 'package:w_module/w_module.dart';
 
 class LifecycleEchoModule extends Module {
+  @override
   final String name = 'LifecycleEchoModule';
 
   LifecycleEchoComponents _components;
-  LifecycleEchoComponents get components => _components;
 
   LifecycleEchoModule() {
     // load / unload state streams
     willLoad.listen((_) {
-      print('${name}: willLoad');
+      print('$name: willLoad');
     });
     didLoad.listen((_) {
-      print('${name}: didLoad');
+      print('$name: didLoad');
     });
     willUnload.listen((_) {
-      print('${name}: willUnload');
+      print('$name: willUnload');
     });
     didUnload.listen((_) {
-      print('${name}: didUnload');
+      print('$name: didUnload');
     });
     didLoadChildModule.listen((_) {
-      print('${name}: didLoadChildModule');
+      print('$name: didLoadChildModule');
     });
     _components = new LifecycleEchoComponents();
   }
+
+  @override
+  LifecycleEchoComponents get components => _components;
 
   //--------------------------------------------------------
   // Methods that can be optionally implemented by subclasses
@@ -51,25 +55,32 @@ class LifecycleEchoModule extends Module {
   // lifecycle
   //--------------------------------------------------------
 
-  Future onLoad() async {
-    print('${name}: onLoad');
-    loadChildModule(new LifecycleEchoChildModule());
+  @override
+  @protected
+  Future<Null> onLoad() async {
+    print('$name: onLoad');
+    await loadChildModule(new LifecycleEchoChildModule());
     await new Future.delayed(new Duration(seconds: 1));
   }
 
+  @override
+  @protected
   ShouldUnloadResult onShouldUnload() {
-    print('${name}: onShouldUnload');
+    print('$name: onShouldUnload');
     return new ShouldUnloadResult();
   }
 
-  Future onUnload() async {
-    print('${name}: onUnload');
+  @override
+  @protected
+  Future<Null> onUnload() async {
+    print('$name: onUnload');
     await new Future.delayed(new Duration(seconds: 1));
   }
 }
 
 class LifecycleEchoComponents implements ModuleComponents {
-  content() => react.div({
+  @override
+  Object content() => react.div({
         'style': {
           'padding': '50px',
           'backgroundColor': 'lightGray',
