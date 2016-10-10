@@ -17,12 +17,52 @@ library w_module.src.lifecycle_module;
 import 'dart:async';
 
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart' show protected;
 
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
 abstract class LifecycleModule {
-  /// Name of the module for identification within exceptions and while debugging.
-  String name = 'Module';
+  bool _isLoaded = false;
+
+  bool _isSuspended = false;
+
+  Logger _logger;
+
+  String _name = 'Module';
+
+  // constructor necessary to init load / unload state stream
+  LifecycleModule() {
+    _willLoadController = new StreamController<LifecycleModule>.broadcast();
+    _didLoadController = new StreamController<LifecycleModule>.broadcast();
+    _willUnloadController = new StreamController<LifecycleModule>.broadcast();
+    _didUnloadController = new StreamController<LifecycleModule>.broadcast();
+    _willLoadChildModuleController =
+        new StreamController<LifecycleModule>.broadcast();
+    _didLoadChildModuleController =
+        new StreamController<LifecycleModule>.broadcast();
+    _willUnloadChildModuleController =
+        new StreamController<LifecycleModule>.broadcast();
+    _didUnloadChildModuleController =
+        new StreamController<LifecycleModule>.broadcast();
+    _willSuspendController = new StreamController<LifecycleModule>.broadcast();
+    _didSuspendController = new StreamController<LifecycleModule>.broadcast();
+    _willResumeController = new StreamController<LifecycleModule>.broadcast();
+    _didResumeController = new StreamController<LifecycleModule>.broadcast();
+
+    _logger = new Logger('w_module');
+  }
+
+  /// Name of the module for identification in exceptions and debug messages.
+  // ignore: unnecessary_getters_setters
+  String get name => _name;
+
+  /// Deprecated: the module name should be defined by overriding the getter in
+  /// a subclass and it should not be mutable.
+  @deprecated
+  // ignore: unnecessary_getters_setters
+  set name(String newName) {
+    _name = newName;
+  }
 
   /// List of child components so that lifecycle can iterate over them as needed
   List<LifecycleModule> _childModules = [];
@@ -87,34 +127,6 @@ abstract class LifecycleModule {
   final Map<LifecycleModule, StreamSubscription<LifecycleModule>>
       _didUnloadChildModuleSubscriptions = {};
 
-  bool _isLoaded = false;
-
-  bool _isSuspended = false;
-
-  Logger _logger;
-
-  // constructor necessary to init load / unload state stream
-  LifecycleModule() {
-    _willLoadController = new StreamController<LifecycleModule>.broadcast();
-    _didLoadController = new StreamController<LifecycleModule>.broadcast();
-    _willUnloadController = new StreamController<LifecycleModule>.broadcast();
-    _didUnloadController = new StreamController<LifecycleModule>.broadcast();
-    _willLoadChildModuleController =
-        new StreamController<LifecycleModule>.broadcast();
-    _didLoadChildModuleController =
-        new StreamController<LifecycleModule>.broadcast();
-    _willUnloadChildModuleController =
-        new StreamController<LifecycleModule>.broadcast();
-    _didUnloadChildModuleController =
-        new StreamController<LifecycleModule>.broadcast();
-    _willSuspendController = new StreamController<LifecycleModule>.broadcast();
-    _didSuspendController = new StreamController<LifecycleModule>.broadcast();
-    _willResumeController = new StreamController<LifecycleModule>.broadcast();
-    _didResumeController = new StreamController<LifecycleModule>.broadcast();
-
-    _logger = new Logger('w_module');
-  }
-
   /// Whether the module is currently loaded.
   bool get isLoaded => _isLoaded;
 
@@ -133,8 +145,8 @@ abstract class LifecycleModule {
   /// Calls the onLoad() method, which can be implemented on a Module.
   /// Executes the willLoad and didLoad event streams.
   /// TODO: Do we want to support re-loading of child modules here?
-  Future load() {
-    Completer completer = new Completer();
+  Future<Null> load() {
+    final completer = new Completer<Null>();
     if (!_isLoaded) {
       _willLoadController.add(this);
       onLoad().then((_) {
@@ -151,11 +163,12 @@ abstract class LifecycleModule {
 
   /// Public method to async load a child module and register it
   /// for lifecycle management.
-  Future loadChildModule(LifecycleModule newModule) {
+  @protected
+  Future<Null> loadChildModule(LifecycleModule newModule) {
     if (_childModules.contains(newModule)) {
       return new Future(() {});
     }
-    Completer completer = new Completer();
+    final completer = new Completer<Null>();
     onWillLoadChildModule(newModule);
     _willLoadChildModuleController.add(newModule);
     _willUnloadChildModuleSubscriptions[newModule] =
@@ -257,13 +270,13 @@ abstract class LifecycleModule {
   /// Calls shouldUnload(), and, if that completes successfully,
   /// continues to call onUnload() on the module and all registered child modules.
   /// If unloading is rejected, this method will complete with an error.
-  Future unload() {
-    Completer completer = new Completer();
+  Future<Null> unload() {
+    final completer = new Completer<Null>();
     if (_isLoaded) {
       ShouldUnloadResult canUnload = shouldUnload();
       if (canUnload.shouldUnload) {
         _willUnloadController.add(this);
-        Iterable<Future> unloadChildren = _childModules.map((c) => c.unload());
+        final unloadChildren = _childModules.map((c) => c.unload());
         Future.wait(unloadChildren).then((_) {
           _childModules.clear();
           onUnload().then((_) {
@@ -295,30 +308,37 @@ abstract class LifecycleModule {
   /// Initial data queries and interactions with the server can be triggered
   /// here.  Returns a future with no payload that completes when the module has
   /// finished loading.
+  @protected
   Future onLoad() async {}
 
   /// Custom logic to be executed when a child module is to be loaded.
-  Future onWillLoadChildModule(LifecycleModule module) async {}
+  @protected
+  Future<Null> onWillLoadChildModule(LifecycleModule module) async {}
 
   /// Custom logic to be executed when a child module has been loaded.
-  Future onDidLoadChildModule(LifecycleModule module) async {}
+  @protected
+  Future<Null> onDidLoadChildModule(LifecycleModule module) async {}
 
   /// Custom logic to be executed when a child module is to be unloaded.
-  Future onWillUnloadChildModule(LifecycleModule module) async {}
+  @protected
+  Future<Null> onWillUnloadChildModule(LifecycleModule module) async {}
 
   /// Custom logic to be executed when a child module has been unloaded.
-  Future onDidUnloadChildModule(LifecycleModule module) async {}
+  @protected
+  Future<Null> onDidUnloadChildModule(LifecycleModule module) async {}
 
   /// Custom logic to be executed during suspend.
   ///
   /// Server connections can be dropped and large data structures unloaded here.
   /// Nothing should be done here that cannot be undone in [onResume].
-  Future onSuspend() async {}
+  @protected
+  Future<Null> onSuspend() async {}
 
   /// Custom logic to be executed during resume.
   ///
   /// Any changes made in [onSuspend] can be reverted here.
-  Future onResume() async {}
+  @protected
+  Future<Null> onResume() async {}
 
   /// Custom logic to be executed during shouldUnload (consequently also in unload).
   ///
@@ -327,6 +347,7 @@ abstract class LifecycleModule {
   /// [ShouldUnloadResult.shouldUnload == false] indicates that the module should not be unloaded.
   /// In this case, ShouldUnloadResult.messages contains a list of string messages indicating
   /// why unload was rejected.
+  @protected
   ShouldUnloadResult onShouldUnload() {
     return new ShouldUnloadResult();
   }
@@ -336,7 +357,8 @@ abstract class LifecycleModule {
   /// Called on unload if shouldUnload completes with true. This can be used for
   /// cleanup. Returns a future with no payload that completes when the module
   /// has finished unloading.
-  Future onUnload() async {}
+  @protected
+  Future<Null> onUnload() async {}
 }
 
 /// Exception thrown when unload fails.

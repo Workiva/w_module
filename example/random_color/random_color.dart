@@ -14,6 +14,7 @@
 
 library w_module.example.random_color;
 
+import 'dart:async';
 import 'dart:html' as html;
 import 'dart:math';
 
@@ -23,7 +24,7 @@ import 'package:react/react_client.dart' as react_client;
 import 'package:w_flux/w_flux.dart';
 import 'package:w_module/w_module.dart';
 
-main() async {
+Future<Null> main() async {
   // instantiate the module and wait for it to load
   RandomColorModule randomColorModule = new RandomColorModule();
   await randomColorModule.load();
@@ -58,19 +59,14 @@ main() async {
 DispatchKey randomColorModuleDispatchKey = new DispatchKey('randomColor');
 
 class RandomColorModule extends Module {
+  @override
   final String name = 'RandomColorModule';
 
   RandomColorActions _actions;
-  RandomColorStore _stores;
-
   RandomColorApi _api;
-  RandomColorApi get api => _api;
-
-  RandomColorEvents _events;
-  RandomColorEvents get events => _events;
-
   RandomColorComponents _components;
-  RandomColorComponents get components => _components;
+  RandomColorEvents _events;
+  RandomColorStore _stores;
 
   RandomColorModule() {
     _actions = new RandomColorActions();
@@ -80,6 +76,15 @@ class RandomColorModule extends Module {
     _components = new RandomColorComponents(_actions, _stores);
     _api = new RandomColorApi(_actions, _stores);
   }
+
+  @override
+  RandomColorApi get api => _api;
+
+  @override
+  RandomColorComponents get components => _components;
+
+  @override
+  RandomColorEvents get events => _events;
 }
 
 class RandomColorApi {
@@ -88,11 +93,11 @@ class RandomColorApi {
 
   RandomColorApi(this._actions, this._stores);
 
-  setBackgroundColor(String newColor) {
+  void setBackgroundColor(String newColor) {
     _actions.setBackgroundColor(newColor);
   }
 
-  changeBackgroundColor() {
+  void changeBackgroundColor() {
     _actions.changeBackgroundColor();
   }
 
@@ -109,7 +114,9 @@ class RandomColorComponents implements ModuleComponents {
 
   RandomColorComponents(this._actions, this._stores);
 
-  content() => RandomColorComponent({'actions': _actions, 'store': _stores});
+  @override
+  Object content() =>
+      RandomColorComponent({'actions': _actions, 'store': _stores});
 }
 
 class RandomColorActions {
@@ -120,7 +127,6 @@ class RandomColorActions {
 class RandomColorStore extends Store {
   /// Public data
   String _backgroundColor = 'gray';
-  String get backgroundColor => _backgroundColor;
 
   RandomColorEvents _events;
   DispatchKey _dispatchKey;
@@ -128,13 +134,14 @@ class RandomColorStore extends Store {
   /// Internals
   RandomColorActions _actions;
 
-  RandomColorStore(RandomColorActions this._actions,
-      RandomColorEvents this._events, DispatchKey this._dispatchKey) {
+  RandomColorStore(this._actions, this._events, this._dispatchKey) {
     _actions.changeBackgroundColor.listen(_changeBackgroundColor);
     _actions.setBackgroundColor.listen(_setBackgroundColor);
   }
 
-  _changeBackgroundColor(_) {
+  String get backgroundColor => _backgroundColor;
+
+  void _changeBackgroundColor(_) {
     // generate a random hex color string
     _backgroundColor =
         '#' + (new Random().nextDouble() * 16777215).floor().toRadixString(16);
@@ -142,7 +149,7 @@ class RandomColorStore extends Store {
     trigger();
   }
 
-  _setBackgroundColor(String newColor) {
+  void _setBackgroundColor(String newColor) {
     // generate a random hex color string
     _backgroundColor = newColor;
     _events.colorChanged(_backgroundColor, _dispatchKey);
@@ -150,12 +157,14 @@ class RandomColorStore extends Store {
   }
 }
 
-var RandomColorComponent =
+// ignore: non_constant_identifier_names
+Object RandomColorComponent =
     react.registerComponent(() => new _RandomColorComponent());
 
 class _RandomColorComponent
     extends FluxComponent<RandomColorActions, RandomColorStore> {
-  render() {
+  @override
+  Object render() {
     return react.div({
       'style': {
         'padding': '50px',

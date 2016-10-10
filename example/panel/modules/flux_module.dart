@@ -21,19 +21,21 @@ import 'package:react/react.dart' as react;
 import 'package:w_module/w_module.dart';
 
 class FluxModule extends Module {
+  @override
   final String name = 'FluxModule';
 
   FluxActions _actions;
-  FluxStore _stores;
-
   FluxComponents _components;
-  FluxComponents get components => _components;
+  FluxStore _stores;
 
   FluxModule() {
     _actions = new FluxActions();
     _stores = new FluxStore(_actions);
     _components = new FluxComponents(_actions, _stores);
   }
+
+  @override
+  FluxComponents get components => _components;
 }
 
 class FluxComponents implements ModuleComponents {
@@ -42,7 +44,8 @@ class FluxComponents implements ModuleComponents {
 
   FluxComponents(this._actions, this._stores);
 
-  content() => MyFluxComponent({'actions': _actions, 'store': _stores});
+  @override
+  Object content() => MyFluxComponent({'actions': _actions, 'store': _stores});
 }
 
 class FluxActions {
@@ -50,28 +53,28 @@ class FluxActions {
 }
 
 class FluxStore extends Store {
-  /// Public data
-  String _backgroundColor = 'gray';
-  String get backgroundColor => _backgroundColor;
-
-  /// Internals
   FluxActions _actions;
+  String _backgroundColor = 'gray';
 
-  FluxStore(FluxActions this._actions) {
+  FluxStore(this._actions) {
     triggerOnAction(_actions.changeBackgroundColor, _changeBackgroundColor);
   }
 
-  _changeBackgroundColor(_) {
+  String get backgroundColor => _backgroundColor;
+
+  void _changeBackgroundColor(_) {
     // generate a random hex color string
     _backgroundColor =
         '#' + (new Random().nextDouble() * 16777215).floor().toRadixString(16);
   }
 }
 
-var MyFluxComponent = react.registerComponent(() => new _MyFluxComponent());
+// ignore: non_constant_identifier_names
+Object MyFluxComponent = react.registerComponent(() => new _MyFluxComponent());
 
 class _MyFluxComponent extends FluxComponent<FluxActions, FluxStore> {
-  render() {
+  @override
+  Object render() {
     return react.div({
       'style': {
         'padding': '50px',

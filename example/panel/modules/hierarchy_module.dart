@@ -17,26 +17,26 @@ library w_module.example.panel.modules.hierarchy_module;
 import 'dart:async';
 import 'dart:html';
 
+import 'package:meta/meta.dart' show protected;
+import 'package:react/react.dart' as react;
 import 'package:w_module/w_module.dart';
 import 'package:w_flux/w_flux.dart';
-import 'package:react/react.dart' as react;
 
 import './basic_module.dart';
 import './flux_module.dart';
 import './reject_module.dart';
-import './dataLoadAsync_module.dart';
-import './dataLoadBlocking_module.dart';
+import './data_load_async_module.dart';
+import './data_load_blocking_module.dart';
 import './deferred_module.dart';
-import './lifecycleEcho_module.dart';
+import './lifecycle_echo_module.dart';
 
 class HierarchyModule extends Module {
+  @override
   final String name = 'HierarchyModule';
 
   HierarchyActions _actions;
-  HierarchyStore _stores;
-
   HierarchyComponents _components;
-  HierarchyComponents get components => _components;
+  HierarchyStore _stores;
 
   HierarchyModule() {
     _actions = new HierarchyActions();
@@ -44,7 +44,12 @@ class HierarchyModule extends Module {
     _components = new HierarchyComponents(_actions, _stores);
   }
 
-  Future onLoad() async {
+  @override
+  HierarchyComponents get components => _components;
+
+  @override
+  @protected
+  Future<Null> onLoad() async {
     // can optionally await all of the loadModule calls
     // to force all children to load before this module
     // completes loading (not recommended)
@@ -74,7 +79,9 @@ class HierarchyComponents implements ModuleComponents {
 
   HierarchyComponents(this._actions, this._stores);
 
-  content() => HierarchyComponent({'actions': _actions, 'store': _stores});
+  @override
+  Object content() =>
+      HierarchyComponent({'actions': _actions, 'store': _stores});
 }
 
 class HierarchyActions {
@@ -83,23 +90,21 @@ class HierarchyActions {
 }
 
 class HierarchyStore extends Store {
-  /// Public data
-  List<Module> _childModules = [];
-  List<Module> get childModules => _childModules;
-
-  /// Internals
   HierarchyActions _actions;
+  List<Module> _childModules = [];
 
-  HierarchyStore(HierarchyActions this._actions) {
+  HierarchyStore(this._actions) {
     triggerOnAction(_actions.addChildModule, _addChildModule);
     triggerOnAction(_actions.removeChildModule, _removeChildModule);
   }
 
-  _addChildModule(Module newModule) {
+  List<Module> get childModules => _childModules;
+
+  void _addChildModule(Module newModule) {
     _childModules.add(newModule);
   }
 
-  _removeChildModule(Module oldModule) {
+  void _removeChildModule(Module oldModule) {
     // do we need to reject the unload?
     ShouldUnloadResult canUnload = oldModule.shouldUnload();
     if (!canUnload.shouldUnload) {
@@ -114,12 +119,14 @@ class HierarchyStore extends Store {
   }
 }
 
-var HierarchyComponent =
+// ignore: non_constant_identifier_names
+Object HierarchyComponent =
     react.registerComponent(() => new _HierarchyComponent());
 
 class _HierarchyComponent
     extends FluxComponent<HierarchyActions, HierarchyStore> {
-  render() {
+  @override
+  Object render() {
     return react.div(
         {
           'style': {

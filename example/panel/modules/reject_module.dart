@@ -14,18 +14,19 @@
 
 library w_module.example.panel.modules.reject_module;
 
-import 'package:w_module/w_module.dart';
-import 'package:w_flux/w_flux.dart';
+import 'package:meta/meta.dart' show protected;
 import 'package:react/react.dart' as react;
+import 'package:w_flux/w_flux.dart';
+import 'package:w_module/w_module.dart';
 
 class RejectModule extends Module {
+  @override
   final String name = 'RejectModule';
 
   RejectActions _actions;
   RejectStore _stores;
 
   RejectComponents _components;
-  RejectComponents get components => _components;
 
   RejectModule() {
     _actions = new RejectActions();
@@ -33,11 +34,16 @@ class RejectModule extends Module {
     _components = new RejectComponents(_actions, _stores);
   }
 
+  @override
+  RejectComponents get components => _components;
+
+  @override
+  @protected
   ShouldUnloadResult onShouldUnload() {
     if (_stores.shouldUnload) {
       return new ShouldUnloadResult();
     }
-    return new ShouldUnloadResult(false, '${name} won\'t let you leave!');
+    return new ShouldUnloadResult(false, '$name won\'t let you leave!');
   }
 }
 
@@ -47,7 +53,8 @@ class RejectComponents implements ModuleComponents {
 
   RejectComponents(this._actions, this._stores);
 
-  content() => RejectComponent({'actions': _actions, 'store': _stores});
+  @override
+  Object content() => RejectComponent({'actions': _actions, 'store': _stores});
 }
 
 class RejectActions {
@@ -57,24 +64,27 @@ class RejectActions {
 class RejectStore extends Store {
   /// Public data
   bool _shouldUnload = true;
-  bool get shouldUnload => _shouldUnload;
 
   /// Internals
   RejectActions _actions;
 
-  RejectStore(RejectActions this._actions) {
+  RejectStore(this._actions) {
     triggerOnAction(_actions.toggleShouldUnload, _toggleShouldUnload);
   }
 
-  _toggleShouldUnload(_) {
+  bool get shouldUnload => _shouldUnload;
+
+  void _toggleShouldUnload(_) {
     _shouldUnload = !_shouldUnload;
   }
 }
 
-var RejectComponent = react.registerComponent(() => new _RejectComponent());
+// ignore: non_constant_identifier_names
+Object RejectComponent = react.registerComponent(() => new _RejectComponent());
 
 class _RejectComponent extends FluxComponent<RejectActions, RejectStore> {
-  render() {
+  @override
+  Object render() {
     return react.div({
       'style': {'padding': '50px', 'backgroundColor': 'green', 'color': 'white'}
     }, [

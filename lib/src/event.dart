@@ -35,11 +35,12 @@ class Event<T> extends Stream<T> {
 
   /// Create an Event and associate it with [key].
   Event(DispatchKey key) : _key = key {
-    var c = new StreamController.broadcast();
+    var c = new StreamController<T>.broadcast();
     _sink = c.sink;
     _stream = c.stream;
   }
 
+  @override
   StreamSubscription<T> listen(void onData(T event),
       {Function onError, void onDone(), bool cancelOnError}) {
     return _stream.listen(onData,
@@ -63,5 +64,5 @@ class Event<T> extends Stream<T> {
 /// One key can be used for multiple events.
 class DispatchKey {
   String name;
-  DispatchKey([String this.name]);
+  DispatchKey([this.name]);
 }
