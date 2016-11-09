@@ -189,6 +189,7 @@ class SerializableBus {
           'Method $method does not exist on ${module.serializableKey}\' module\'s API');
       return;
     }
+
     // Check here that the position args in data match the expected params of the method being called
     if (data is List && apiMethodMirror.parameters.length == data.length) {
       for (var i = 0; i < apiMethodMirror.parameters.length; i++) {
@@ -196,27 +197,22 @@ class SerializableBus {
 
         // If the type data being passed to this param is not equal to the expected type
         // try to serialize it into an Dart class
-        if (param.type.reflectedType != data[i].runtimeType) {
+        if (param.type.reflectedType != data[i].runtimeType && data[i] is Map) {
           ClassMirror paramClassMirror = reflectClass(param.type.reflectedType);
 
-          ClassMirror superClassMirror = paramClassMirror.superclass;
-          while (
-              paramClassMirror.superclass.reflectedType != JsonSerializable &&
-                  paramClassMirror.superclass != null) {
-            superClassMirror = superClassMirror.superclass;
-          }
-
-          // Ensure that super class of the expected param type is JsonSerializable
-          // This way we know we can deserialize the class from a Map
-          if (superClassMirror != null && data[i] is Map) {
-            // Create a new instance of the expected param type and pull the instance off the mirror
+          // Paramter type must implement fromJson model that takes a Map
+          try {
             var instance = paramClassMirror
                 .newInstance(new Symbol('fromJson'), [data[i]]).reflectee;
             data[i] = instance;
-          } else {
-            _logger.warning('Unable to deserialize map to Dart Object');
+          } on NoSuchMethodError {
+            _logger.warning(
+                '${paramClassMirror.simpleName.toString()} does not implement fromJson named constructor');
             return;
           }
+        } else {
+          _logger.warning('Incompatiable type for deserialization');
+          return;
         }
       }
 

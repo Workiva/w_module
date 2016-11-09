@@ -293,7 +293,8 @@ void main() {
       expect(api.removeCalled, isTrue);
     });
 
-    test('should not call api method if paramater lengths are mismatched', () async {
+    test('should not call api method if paramater lengths are mismatched',
+        () async {
       Completer completer = new Completer();
       Map<String, dynamic> apiCall = {
         'module': serializableKey,
@@ -312,7 +313,8 @@ void main() {
       expect(api.removeCalled, isFalse);
     });
 
-    test('should not call api method if paramater types are mismatched', () async {
+    test('should not call api method if paramater types are mismatched',
+        () async {
       Completer completer = new Completer();
       Map<String, dynamic> apiCall = {
         'module': serializableKey,
