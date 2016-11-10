@@ -15,7 +15,7 @@ dependencies:
 dev_dependencies:
   browser: "^0.10.0+2"
   browser_detect: "^1.0.3"
-  coverage: "^0.7.2"
+  coverage: "^0.7.3"
   dart_dev: "^1.0.0"
   dart_style: "^0.2.1"
   dartdoc: "^0.8.0"
