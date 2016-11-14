@@ -197,22 +197,25 @@ class SerializableBus {
 
         // If the type data being passed to this param is not equal to the expected type
         // try to serialize it into an Dart class
-        if (param.type.reflectedType != data[i].runtimeType && data[i] is Map) {
-          ClassMirror paramClassMirror = reflectClass(param.type.reflectedType);
+        if (param.type.reflectedType != data[i].runtimeType) {
+          if (data[i] is Map) {
+            ClassMirror paramClassMirror =
+                reflectClass(param.type.reflectedType);
 
-          // Paramter type must implement fromJson model that takes a Map
-          try {
-            var instance = paramClassMirror
-                .newInstance(new Symbol('fromJson'), [data[i]]).reflectee;
-            data[i] = instance;
-          } on NoSuchMethodError {
-            _logger.warning(
-                '${paramClassMirror.simpleName.toString()} does not implement fromJson named constructor');
+            // Paramter type must implement fromJson model that takes a Map
+            try {
+              var instance = paramClassMirror
+                  .newInstance(new Symbol('fromJson'), [data[i]]).reflectee;
+              data[i] = instance;
+            } on NoSuchMethodError {
+              _logger.warning(
+                  '${paramClassMirror.simpleName.toString()} does not implement fromJson named constructor');
+              return;
+            }
+          } else {
+            _logger.warning('Incompatiable type for deserialization');
             return;
           }
-        } else {
-          _logger.warning('Incompatiable type for deserialization');
-          return;
         }
       }
 
