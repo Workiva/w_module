@@ -202,7 +202,7 @@ class SerializableBus {
             ClassMirror paramClassMirror =
                 reflectClass(param.type.reflectedType);
 
-            // Paramter type must implement fromJson model that takes a Map
+            // Paramter type must implement fromJson name constructor that takes a Map
             try {
               var instance = paramClassMirror
                   .newInstance(new Symbol('fromJson'), [data[i]]).reflectee;
