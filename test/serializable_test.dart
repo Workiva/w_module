@@ -164,7 +164,7 @@ void main() {
       when(module.willUnload).thenReturn(willUnloadController.stream);
       when(module.didUnload).thenReturn(didUnloadController.stream);
 
-      when(bridge.eventReceived).thenReturn(bridgeEventController.stream);
+      when(bridge.apiCallReceived).thenReturn(bridgeEventController.stream);
 
       bus.registerModule(module);
       bus.bridge = bridge;
@@ -177,7 +177,7 @@ void main() {
 
     test('should properly register modules and register for lifecycle events',
         () async {
-      expect(bus.registeredModules[serializableKey], module);
+      expect(bus.moduleRegistrations[serializableKey].module, module);
       verify(module.willLoad);
       verify(module.didLoad);
       verify(module.willUnload);
@@ -204,7 +204,7 @@ void main() {
       event.call(null, dispatchKey);
       await eventCompleter.future;
 
-      verify(bridge.broadcast(expectedEvent));
+      verify(bridge.broadcastSerializedEvent(expectedEvent));
     });
 
     test('should fire the module willLoad event', () async {
@@ -217,7 +217,7 @@ void main() {
       willLoadController.add(null);
       await lifecycleCompleter.future;
 
-      verify(bridge.broadcast(expectedEvent));
+      verify(bridge.broadcastSerializedEvent(expectedEvent));
     });
 
     test('should fire the module didLoad event', () async {
@@ -230,7 +230,7 @@ void main() {
       didLoadController.add(null);
       await lifecycleCompleter.future;
 
-      verify(bridge.broadcast(expectedEvent));
+      verify(bridge.broadcastSerializedEvent(expectedEvent));
     });
 
     test('should fire the module willUnload event', () async {
@@ -243,7 +243,7 @@ void main() {
       willUnloadController.add(null);
       await lifecycleCompleter.future;
 
-      verify(bridge.broadcast(expectedEvent));
+      verify(bridge.broadcastSerializedEvent(expectedEvent));
     });
 
     test('should fire the module didUnload event', () async {
@@ -256,7 +256,7 @@ void main() {
       didUnloadController.add(null);
       await lifecycleCompleter.future;
 
-      verify(bridge.broadcast(expectedEvent));
+      verify(bridge.broadcastSerializedEvent(expectedEvent));
     });
 
     test('should call correct api method', () async {

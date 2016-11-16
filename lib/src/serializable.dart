@@ -17,11 +17,9 @@ library serializable_module.src.serializable;
 @MirrorsUsed(metaTargets: 'serializable_module.src.serializable.Reflectable')
 import 'dart:mirrors';
 import 'dart:async';
-import 'dart:html' show window, CustomEvent;
-import 'dart:js' show JsObject, context;
 
 import 'package:logging/logging.dart';
-import 'package:w_common/w_common.dart' show JsonSerializable;
+import 'package:w_common/w_common.dart' show JsonSerializable, Disposable;
 
 import 'event.dart';
 import 'module.dart';
@@ -32,61 +30,27 @@ class Reflectable {
 }
 
 abstract class Bridge<T> {
-  StreamController<Map> _eventController;
-
-  Bridge() {
-    _eventController = new StreamController<Map>.broadcast();
-  }
-
-  void broadcast(Map dataToSend);
-  void handleEvent(T apiCall);
-
-  Stream<Map> get eventReceived => _eventController.stream;
-}
-
-// This class is used to communicate across a WKWebView in an iOS app
-class WKWebViewBridge extends Bridge<CustomEvent> {
-  WKWebViewBridge() {
-    window.on['bridge'].listen(handleEvent);
-  }
-
-  @override
-  void broadcast(Map dataToSend) {
-    wkBridge?.callMethod('postMessage', [new JsObject.jsify(dataToSend)]);
-  }
-
-  @override
-  void handleEvent(CustomEvent apiCall) {
-    _eventController.add(apiCall.detail);
-  }
-
-  JsObject get wkBridge {
-    if (context['webkit'] != null) {
-      return context['webkit']['messageHandlers']['bridge'];
-    } else {
-      return null;
-    }
-  }
+  final Stream<Map> apiCallReceived;
+  Bridge(this.apiCallReceived);
+  void broadcastSerializedEvent(Map event);
+  void handleSerializedApiCall(T apiCall);
 }
 
 class SerializableEvent<T> extends Event<T> {
+  String _eventKey;
+
   SerializableEvent(this._eventKey, DispatchKey dispatchKey)
       : super(dispatchKey);
 
-  String _eventKey;
   String get eventKey => _eventKey;
 }
 
 abstract class SerializableEvents {
-  List<SerializableEvent> get allEvents => [];
+  List<SerializableEvent> get allEvents;
 }
 
 abstract class SerializableModule extends Module {
   SerializableModule() {
-    _registerWithSerializableBus();
-  }
-
-  void _registerWithSerializableBus() {
     SerializableBus.sharedBus.registerModule(this);
   }
 
@@ -96,35 +60,122 @@ abstract class SerializableModule extends Module {
   String get serializableKey => null;
 }
 
-class SerializableBus {
-  SerializableBus() {
-    _registeredModules = new Map<String, SerializableModule>();
-    _logger = new Logger('Serializable Bus');
-  }
+class _ModuleRegistration extends Object with Disposable {
+  final SerializableModule module;
 
-  static final SerializableBus _singleton = new SerializableBus();
-  static SerializableBus get sharedBus => _singleton;
+  _ModuleRegistration(this.module);
+
+  @override
+  void manageStreamSubscription(StreamSubscription subscription) {
+    super.manageStreamSubscription(subscription);
+  }
+}
+
+class SerializableBus {
+  static final SerializableBus sharedBus = new SerializableBus();
 
   Bridge _bridge;
-  Logger _logger;
-  Map<String, SerializableModule> _registeredModules;
+  final Logger _logger = new Logger('Serializable Bus');
+  Map<String, _ModuleRegistration> _moduleRegistrations =
+      <String, _ModuleRegistration>{};
+
+  Bridge get bridge => _bridge;
+  Map<String, _ModuleRegistration> get moduleRegistrations =>
+      _moduleRegistrations;
+
+  set bridge(Bridge bridge) {
+    _bridge = bridge;
+    _bridge.apiCallReceived.listen(_handleApiCall);
+  }
 
   void reset() {
-    _registeredModules = new Map<String, SerializableModule>();
+    _moduleRegistrations.clear();
     _bridge = null;
+  }
+
+  void deregisterModule(SerializableModule module) {
+    if (module.serializableKey == null) return;
+    if (_moduleRegistrations.containsKey(module.serializableKey)) {
+      _moduleRegistrations[module.serializableKey].dispose();
+      _moduleRegistrations.remove(module.serializableKey);
+    }
   }
 
   void registerModule(SerializableModule module) {
     if (module.serializableKey != null) {
-      _registerForLifecylceEvents(module);
-      _registeredModules[module.serializableKey] = module;
+      final registration = new _ModuleRegistration(module);
+      _registerForLifecycleEvents(registration);
+      _moduleRegistrations[module.serializableKey] = registration;
     } else {
       _logger.warning('Unable to serialize module without serializableKey');
     }
   }
 
-  void deregisterModule(SerializableModule module) {
-    _registeredModules.remove(module.serializableKey);
+  void _handleApiCall(Map apiCall) {
+    String module = apiCall['module'];
+    String method = apiCall['method'];
+    Object data = apiCall['data'];
+
+    SerializableModule targetModule = _moduleRegistrations[module].module;
+
+    if (targetModule != null) {
+      _deserializeAndCall(targetModule, method, data);
+    }
+  }
+
+  void _deserializeAndCall(
+      SerializableModule module, String method, List data) {
+    InstanceMirror apiMirror = reflect(module.api);
+
+    if (apiMirror != null) {
+      ClassMirror classMirror = apiMirror.type;
+
+      if (ClassMirror != null) {
+        MethodMirror apiMethodMirror =
+            classMirror.declarations[new Symbol(method)];
+
+        if (apiMethodMirror == null) {
+          _logger.warning(
+              'Method $method does not exist on ${module.serializableKey}\' module\'s API');
+          return;
+        }
+
+        // Check here that the position args in data match the expected params of the method being called
+        if (apiMethodMirror.parameters.length == data.length) {
+          for (var i = 0; i < apiMethodMirror.parameters.length; i++) {
+            var param = apiMethodMirror.parameters[i];
+
+            if (data[i] is Map && param.type.reflectedType != Map) {
+              ClassMirror paramClassMirror =
+                  reflectClass(param.type.reflectedType);
+
+              // Paramter type must implement fromJson name constructor that takes a Map
+              try {
+                var instance = paramClassMirror
+                    .newInstance(new Symbol('fromJson'), [data[i]]).reflectee;
+                data[i] = instance;
+              } on NoSuchMethodError {
+                _logger.warning(
+                    '${paramClassMirror.simpleName.toString()} does not implement fromJson named constructor');
+                return;
+              }
+            }
+          }
+
+          if (apiMirror != null) {
+            try {
+              apiMirror.invoke(new Symbol(method), data);
+            } catch (e) {
+              _logger.severe(
+                  'Unable to call $method on ${module.serializableKey} w_module, ${e.toString()}');
+            }
+          }
+        } else {
+          _logger.warning(
+              'Unable to call api method $method in ${module.serializableKey} w_module, mismatched params');
+        }
+      }
+    }
   }
 
   void _registerForAllEvents(SerializableModule module) {
@@ -136,102 +187,38 @@ class SerializableBus {
         }
       }
     } else {
-      _logger
-          .warning('Events not defined for ${module.serializableKey} module');
+      _logger.info('Events not defined for ${module.serializableKey} module');
     }
   }
 
-  void _registerForLifecylceEvents(SerializableModule module) {
-    module.willLoad.listen((_) {
-      _registerForAllEvents(module);
-      _sendEvent(module, 'willLoad', null);
-    });
-    module.didLoad.listen((_) => _sendEvent(module, 'didLoad', null));
-    module.willUnload.listen((_) => _sendEvent(module, 'willUnload', null));
-    module.didUnload.listen((_) {
-      _sendEvent(module, 'didUnload', null);
-      deregisterModule(module);
-    });
+  void _registerForLifecycleEvents(_ModuleRegistration registration) {
+    registration
+        .manageStreamSubscription(registration.module.willLoad.listen((_) {
+      _registerForAllEvents(registration.module);
+      _sendEvent(registration.module, 'willLoad', null);
+    }));
+    registration.manageStreamSubscription(registration.module.didLoad
+        .listen((_) => _sendEvent(registration.module, 'didLoad', null)));
+    registration.manageStreamSubscription(registration.module.willUnload
+        .listen((_) => _sendEvent(registration.module, 'willUnload', null)));
+    registration
+        .manageStreamSubscription(registration.module.didUnload.listen((_) {
+      _sendEvent(registration.module, 'didUnload', null);
+      deregisterModule(registration.module);
+    }));
   }
 
   void _sendEvent(SerializableModule module, String eventKey, Object data) {
-    Map dataToSend = new Map();
-    dataToSend['module'] = module.serializableKey;
-    dataToSend['event'] = eventKey;
+    Map event = <String, dynamic>{};
+    event['module'] = module.serializableKey;
+    event['event'] = eventKey;
 
     if (data is JsonSerializable) {
       data = (data as JsonSerializable).toJson();
     }
 
-    dataToSend['data'] = data;
+    event['data'] = data;
 
-    _bridge?.broadcast(dataToSend);
-  }
-
-  void _handleApiCall(Map apiCall) {
-    String module = apiCall['module'];
-    String method = apiCall['method'];
-    Object data = apiCall["data"];
-
-    SerializableModule targetModule = _registeredModules[module];
-
-    _deserializeAndCall(targetModule, method, data);
-  }
-
-  void _deserializeAndCall(
-      SerializableModule module, String method, List data) {
-    InstanceMirror apiMirror = reflect(module.api);
-    ClassMirror classMirror = apiMirror.type;
-    MethodMirror apiMethodMirror = classMirror.declarations[new Symbol(method)];
-
-    if (apiMethodMirror == null) {
-      _logger.warning(
-          'Method $method does not exist on ${module.serializableKey}\' module\'s API');
-      return;
-    }
-
-    // Check here that the position args in data match the expected params of the method being called
-    if (data is List && apiMethodMirror.parameters.length == data.length) {
-      for (var i = 0; i < apiMethodMirror.parameters.length; i++) {
-        var param = apiMethodMirror.parameters[i];
-
-        // If the type data being passed to this param is not equal to the expected type
-        // try to serialize it into an Dart class
-        if (param.type.reflectedType != data[i].runtimeType) {
-          if (data[i] is Map) {
-            ClassMirror paramClassMirror =
-                reflectClass(param.type.reflectedType);
-
-            // Paramter type must implement fromJson name constructor that takes a Map
-            try {
-              var instance = paramClassMirror
-                  .newInstance(new Symbol('fromJson'), [data[i]]).reflectee;
-              data[i] = instance;
-            } on NoSuchMethodError {
-              _logger.warning(
-                  '${paramClassMirror.simpleName.toString()} does not implement fromJson named constructor');
-              return;
-            }
-          } else {
-            _logger.warning('Incompatiable type for deserialization');
-            return;
-          }
-        }
-      }
-
-      if (apiMirror != null) {
-        apiMirror.invoke(new Symbol(method), data);
-      }
-    } else {
-      _logger.warning(
-          'Unable to call api method $method in $module w_module, mismatched params');
-    }
-  }
-
-  Map<String, SerializableModule> get registeredModules => _registeredModules;
-
-  set bridge(Bridge bridge) {
-    _bridge = bridge;
-    _bridge.eventReceived.listen(_handleApiCall);
+    _bridge?.broadcastSerializedEvent(event);
   }
 }
