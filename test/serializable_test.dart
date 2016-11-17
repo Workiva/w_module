@@ -166,6 +166,7 @@ void main() {
 
       when(bridge.apiCallReceived).thenReturn(bridgeEventController.stream);
 
+      bus.reset();
       bus.registerModule(module);
       bus.bridge = bridge;
     });
@@ -303,23 +304,6 @@ void main() {
           {'name': 'Rob Stark'},
           {'one': 'tomany'}
         ]
-      };
-
-      bridgeEventController.stream.listen((_) => completer.complete());
-      bridgeEventController.add(apiCall);
-
-      await completer.future;
-
-      expect(api.removeCalled, isFalse);
-    });
-
-    test('should not call api method if paramater types are mismatched',
-        () async {
-      Completer completer = new Completer();
-      Map<String, dynamic> apiCall = {
-        'module': serializableKey,
-        'method': 'remove',
-        'data': ['wrongType']
       };
 
       bridgeEventController.stream.listen((_) => completer.complete());
