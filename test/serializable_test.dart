@@ -172,7 +172,7 @@ void main() {
 
     test('should provide a singleton', () async {
       expect(SerializableBus.sharedBus, isNotNull);
-      expect(SerializableBus.sharedBus is SerializableBus, isTrue);
+      expect(SerializableBus.sharedBus, new isInstanceOf<SerializableBus>());
     });
 
     test('should properly register modules and register for lifecycle events',
