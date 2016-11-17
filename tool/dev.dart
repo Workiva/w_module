@@ -31,7 +31,6 @@ Future<Null> main(List<String> args) async {
   ];
   config.copyLicense.directories = directories;
   config.format.directories = directories;
-  config.test.platforms = ['content-shell', 'vm'];
 
   await dev(args);
 }

@@ -19,10 +19,11 @@ import 'dart:mirrors';
 import 'dart:async';
 
 import 'package:logging/logging.dart';
-import 'package:w_common/w_common.dart' show JsonSerializable, Disposable;
+import 'package:w_common/disposable.dart' show Disposable;
+import 'package:w_common/json_serializable.dart' show JsonSerializable;
 
-import 'event.dart';
-import 'module.dart';
+import 'package:w_module/src/event.dart';
+import 'package:w_module/src/module.dart';
 
 // Any classes / methods that are going to be reflected must annotate with this
 class Reflectable {
@@ -80,13 +81,14 @@ class SerializableBus {
       <String, _ModuleRegistration>{};
 
   Bridge get bridge => _bridge;
-  Map<String, _ModuleRegistration> get moduleRegistrations =>
-      _moduleRegistrations;
-
   set bridge(Bridge bridge) {
     _bridge = bridge;
     _bridge.apiCallReceived.listen(_handleApiCall);
   }
+
+  Map<String, SerializableModule> get registeredModules =>
+      new Map.fromIterable(_moduleRegistrations.keys,
+          value: (key) => _moduleRegistrations[key].module);
 
   void reset() {
     _moduleRegistrations.clear();
@@ -118,7 +120,7 @@ class SerializableBus {
 
     SerializableModule targetModule = _moduleRegistrations[module].module;
 
-    if (targetModule != null) {
+    if (targetModule != null && data is List) {
       _deserializeAndCall(targetModule, method, data);
     }
   }
@@ -127,74 +129,72 @@ class SerializableBus {
       SerializableModule module, String method, List data) {
     InstanceMirror apiMirror = reflect(module.api);
 
-    if (apiMirror != null) {
-      ClassMirror classMirror = apiMirror.type;
+    if (apiMirror == null) {
+      _logger.warning(
+          'Unable to create mirror on api for ${module.serializableKey}');
+      return;
+    }
 
-      if (ClassMirror != null) {
-        MethodMirror apiMethodMirror =
-            classMirror.declarations[new Symbol(method)];
+    ClassMirror classMirror = apiMirror.type;
+    MethodMirror apiMethodMirror = classMirror.declarations[new Symbol(method)];
 
-        if (apiMethodMirror == null) {
-          _logger.warning(
-              'Method $method does not exist on ${module.serializableKey}\' module\'s API');
-          return;
-        }
+    if (apiMethodMirror == null) {
+      _logger.warning(
+          'Method $method does not exist on ${module.serializableKey}\' module\'s API');
+      return;
+    }
 
-        // Check here that the position args in data match the expected params of the method being called
-        if (apiMethodMirror.parameters.length == data.length) {
-          for (var i = 0; i < apiMethodMirror.parameters.length; i++) {
-            var param = apiMethodMirror.parameters[i];
+    // Check here that the position args in data match the expected params of the method being called
+    if (apiMethodMirror.parameters.length == data.length) {
+      for (var i = 0; i < apiMethodMirror.parameters.length; i++) {
+        var param = apiMethodMirror.parameters[i];
 
-            if (data[i] is Map && param.type.reflectedType != Map) {
-              ClassMirror paramClassMirror =
-                  reflectClass(param.type.reflectedType);
+        if (data[i] is Map && param.type.reflectedType != Map) {
+          ClassMirror paramClassMirror = reflectClass(param.type.reflectedType);
 
-              // Paramter type must implement fromJson name constructor that takes a Map
-              try {
-                var instance = paramClassMirror
-                    .newInstance(new Symbol('fromJson'), [data[i]]).reflectee;
-                data[i] = instance;
-              } on NoSuchMethodError {
-                _logger.warning(
-                    '${paramClassMirror.simpleName.toString()} does not implement fromJson named constructor');
-                return;
-              }
-            }
+          // Paramter type must implement fromJson name constructor that takes a Map
+          try {
+            var instance = paramClassMirror
+                .newInstance(new Symbol('fromJson'), [data[i]]).reflectee;
+            data[i] = instance;
+          } on NoSuchMethodError {
+            _logger.warning(
+                '${paramClassMirror.simpleName.toString()} does not implement fromJson named constructor');
+            return;
           }
-
-          if (apiMirror != null) {
-            try {
-              apiMirror.invoke(new Symbol(method), data);
-            } catch (e) {
-              _logger.severe(
-                  'Unable to call $method on ${module.serializableKey} w_module, ${e.toString()}');
-            }
-          }
-        } else {
-          _logger.warning(
-              'Unable to call api method $method in ${module.serializableKey} w_module, mismatched params');
         }
       }
+
+      try {
+        apiMirror.invoke(new Symbol(method), data);
+      } catch (e) {
+        _logger.severe(
+            'Unable to call $method on ${module.serializableKey} w_module, ${e.toString()}');
+      }
+    } else {
+      _logger.warning(
+          'Unable to call api method $method in ${module.serializableKey} w_module, mismatched params');
     }
   }
 
-  void _registerForAllEvents(SerializableModule module) {
-    if (module.events != null) {
-      for (var event in module.events.allEvents) {
+  void _registerForAllEvents(_ModuleRegistration registration) {
+    if (registration.module.events != null) {
+      for (var event in registration.module.events.allEvents) {
         if (event is SerializableEvent) {
-          event
-              .listen((payload) => _sendEvent(module, event.eventKey, payload));
+          registration.manageStreamSubscription(event.listen((payload) =>
+              _sendEvent(registration.module, event.eventKey, payload)));
         }
       }
     } else {
-      _logger.info('Events not defined for ${module.serializableKey} module');
+      _logger.info(
+          'Events not defined for ${registration.module.serializableKey} module');
     }
   }
 
   void _registerForLifecycleEvents(_ModuleRegistration registration) {
     registration
         .manageStreamSubscription(registration.module.willLoad.listen((_) {
-      _registerForAllEvents(registration.module);
+      _registerForAllEvents(registration);
       _sendEvent(registration.module, 'willLoad', null);
     }));
     registration.manageStreamSubscription(registration.module.didLoad

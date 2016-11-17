@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-@TestOn('browser')
+@TestOn('vm || browser')
 library serializable_module.test.serializable_test;
 
 import 'dart:async';
 
 import 'package:w_module/serializable_module.dart';
-import 'package:w_common/w_common.dart';
+import 'package:w_common/json_serializable.dart' show JsonSerializable;
 import 'package:w_module/w_module.dart';
 import 'package:test/test.dart';
 import 'package:mockito/mockito.dart';
@@ -177,7 +177,7 @@ void main() {
 
     test('should properly register modules and register for lifecycle events',
         () async {
-      expect(bus.moduleRegistrations[serializableKey].module, module);
+      expect(bus.registeredModules[serializableKey], module);
       verify(module.willLoad);
       verify(module.didLoad);
       verify(module.willUnload);
