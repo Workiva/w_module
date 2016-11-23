@@ -228,8 +228,8 @@ class SerializableBus {
     if (_bridge != null) {
       _bridge.broadcastSerializedEvent(event);
     } else {
-      _logger.warning('Unable to send $event for ${module.serializableKey}, no bridge defined');
+      _logger.warning(
+          'Unable to send $event for ${module.serializableKey}, no bridge defined');
     }
-
   }
 }
