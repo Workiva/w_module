@@ -85,6 +85,10 @@ class SerializableBus {
 
   Bridge get bridge => _bridge;
   set bridge(Bridge bridge) {
+    if (_bridge != null) {
+      _bridge.dispose();
+    }
+
     _bridge = bridge;
     _bridge.manageStreamSubscription(
         bridge.apiCallReceived.listen(_handleApiCall));
