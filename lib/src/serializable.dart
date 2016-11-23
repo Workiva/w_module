@@ -14,9 +14,9 @@
 
 library serializable_module.src.serializable;
 
+import 'dart:async';
 @MirrorsUsed(metaTargets: 'serializable_module.src.serializable.Reflectable')
 import 'dart:mirrors';
-import 'dart:async';
 
 import 'package:logging/logging.dart';
 import 'package:w_common/disposable.dart' show Disposable;
@@ -30,20 +30,23 @@ class Reflectable {
   const Reflectable();
 }
 
-abstract class Bridge<T> {
+abstract class Bridge<T> extends Object with Disposable {
   final Stream<Map> apiCallReceived;
   Bridge(this.apiCallReceived);
   void broadcastSerializedEvent(Map event);
   void handleSerializedApiCall(T apiCall);
+
+  @override
+  void manageStreamSubscription(StreamSubscription subscription) {
+    super.manageStreamSubscription(subscription);
+  }
 }
 
 class SerializableEvent<T> extends Event<T> {
-  String _eventKey;
+  final String eventKey;
 
-  SerializableEvent(this._eventKey, DispatchKey dispatchKey)
+  SerializableEvent(this.eventKey, DispatchKey dispatchKey)
       : super(dispatchKey);
-
-  String get eventKey => _eventKey;
 }
 
 abstract class SerializableEvents {
@@ -83,7 +86,8 @@ class SerializableBus {
   Bridge get bridge => _bridge;
   set bridge(Bridge bridge) {
     _bridge = bridge;
-    _bridge.apiCallReceived.listen(_handleApiCall);
+    _bridge.manageStreamSubscription(
+        bridge.apiCallReceived.listen(_handleApiCall));
   }
 
   Map<String, SerializableModule> get registeredModules =>
@@ -92,6 +96,7 @@ class SerializableBus {
 
   void reset() {
     _moduleRegistrations.clear();
+    _bridge.dispose();
     _bridge = null;
   }
 
@@ -145,35 +150,36 @@ class SerializableBus {
     }
 
     // Check here that the position args in data match the expected params of the method being called
-    if (apiMethodMirror.parameters.length == data.length) {
-      for (var i = 0; i < apiMethodMirror.parameters.length; i++) {
-        var param = apiMethodMirror.parameters[i];
-
-        if (data[i] is Map && param.type.reflectedType != Map) {
-          ClassMirror paramClassMirror = reflectClass(param.type.reflectedType);
-
-          // Paramter type must implement fromJson name constructor that takes a Map
-          try {
-            var instance = paramClassMirror
-                .newInstance(new Symbol('fromJson'), [data[i]]).reflectee;
-            data[i] = instance;
-          } on NoSuchMethodError {
-            _logger.warning(
-                '${paramClassMirror.simpleName.toString()} does not implement fromJson named constructor');
-            return;
-          }
-        }
-      }
-
-      try {
-        apiMirror.invoke(new Symbol(method), data);
-      } catch (e) {
-        _logger.severe(
-            'Unable to call $method on ${module.serializableKey} w_module, ${e.toString()}');
-      }
-    } else {
+    if (apiMethodMirror.parameters.length != data.length) {
       _logger.warning(
           'Unable to call api method $method in ${module.serializableKey} w_module, mismatched params');
+      return;
+    }
+
+    for (var i = 0; i < apiMethodMirror.parameters.length; i++) {
+      var param = apiMethodMirror.parameters[i];
+
+      if (data[i] is Map && param.type.reflectedType != Map) {
+        ClassMirror paramClassMirror = reflectClass(param.type.reflectedType);
+
+        // Paramter type must implement fromJson name constructor that takes a Map
+        try {
+          var instance = paramClassMirror
+              .newInstance(new Symbol('fromJson'), [data[i]]).reflectee;
+          data[i] = instance;
+        } on NoSuchMethodError {
+          _logger.warning(
+              '${paramClassMirror.simpleName.toString()} does not implement fromJson named constructor');
+          return;
+        }
+      }
+    }
+
+    try {
+      apiMirror.invoke(new Symbol(method), data);
+    } catch (e) {
+      _logger.severe(
+          'Unable to call $method on ${module.serializableKey} w_module, ${e.toString()}');
     }
   }
 

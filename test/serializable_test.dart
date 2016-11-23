@@ -17,11 +17,11 @@ library serializable_module.test.serializable_test;
 
 import 'dart:async';
 
+import 'package:mockito/mockito.dart';
+import 'package:w_module/w_module.dart';
 import 'package:w_module/serializable_module.dart';
 import 'package:w_common/json_serializable.dart' show JsonSerializable;
-import 'package:w_module/w_module.dart';
 import 'package:test/test.dart';
-import 'package:mockito/mockito.dart';
 
 DispatchKey dispatchKey = new DispatchKey('serializable');
 
@@ -166,7 +166,6 @@ void main() {
 
       when(bridge.apiCallReceived).thenReturn(bridgeEventController.stream);
 
-      bus.reset();
       bus.registerModule(module);
       bus.bridge = bridge;
     });
