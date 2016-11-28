@@ -36,8 +36,7 @@ abstract class Bridge<T> extends Object with Disposable {
   void broadcastSerializedEvent(Map event);
   void handleSerializedApiCall(T apiCall);
 
-  @override
-  void manageStreamSubscription(StreamSubscription subscription) {
+  void _manageStreamSubscription(StreamSubscription subscription) {
     super.manageStreamSubscription(subscription);
   }
 }
@@ -85,13 +84,15 @@ class SerializableBus {
 
   Bridge get bridge => _bridge;
   set bridge(Bridge bridge) {
-    if (_bridge != null) {
-      _bridge.dispose();
-    }
+    _bridge?.dispose();
 
-    _bridge = bridge;
-    _bridge.manageStreamSubscription(
-        bridge.apiCallReceived.listen(_handleApiCall));
+    if (bridge != null) {
+      _bridge = bridge;
+      _bridge?._manageStreamSubscription(
+          bridge.apiCallReceived.listen(_handleApiCall));
+    } else {
+      _logger.warning('Attempt to set bridge to null');
+    }
   }
 
   Map<String, SerializableModule> get registeredModules =>
