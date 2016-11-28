@@ -175,6 +175,17 @@ void main() {
       expect(SerializableBus.sharedBus, new isInstanceOf<SerializableBus>());
     });
 
+    test('should reset the bus', () async {
+      bus.reset();
+      expect(bus.registeredModules.keys.length, equals(0));
+      expect(bus.bridge, isNull);
+    });
+
+    test('should not allow a bridge to be set to null', () async {
+      bus.bridge = null;
+      expect(bus.bridge, isNotNull);
+    });
+
     test('should properly register modules and register for lifecycle events',
         () async {
       expect(bus.registeredModules[serializableKey], module);
@@ -253,10 +264,21 @@ void main() {
         'data': null
       };
 
+      clearInteractions(bridge);
       didUnloadController.add(null);
       await lifecycleCompleter.future;
 
       verify(bridge.broadcastSerializedEvent(expectedEvent));
+    });
+
+    test('should not broadcast an event if the bridge is not set', () async {
+      bus.reset();
+
+      clearInteractions(bridge);
+      didUnloadController.add(null);
+      await lifecycleCompleter.future;
+
+      verifyZeroInteractions(bridge);
     });
 
     test('should call correct api method', () async {
