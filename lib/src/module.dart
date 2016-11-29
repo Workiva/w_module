@@ -14,7 +14,7 @@
 
 library w_module.src.module;
 
-import 'lifecycle_module.dart';
+import 'package:w_module/src/lifecycle_module.dart';
 
 /// A [Module] encapsulates a well-scoped logical unit of functionality and
 /// exposes a discrete public interface for consumers.  It extends
