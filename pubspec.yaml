@@ -9,21 +9,23 @@ authors:
   - Max Peterson <maxwell.peterson@workiva.com>
   - Trent Grover <trent.grover@workiva.com>
 homepage: https://github.com/Workiva/w_module
+
 dependencies:
-  logging: "^0.11.0"
-  meta: "^1.0.0"
-  w_common: "^1.0.0"
+  logging: ^0.11.0
+  meta: ^1.0.0
+  w_common: ^1.0.0
 
 dev_dependencies:
-  browser: "^0.10.0+2"
-  browser_detect: "^1.0.3"
-  coverage: "^0.7.3"
-  dart_dev: "^1.0.0"
-  dart_style: "^0.2.1"
-  dartdoc: "^0.8.0"
-  mockito: "^1.0.1"
+  browser: ^0.10.0+2
+  browser_detect: ^1.0.3
+  coverage: ^0.7.3
+  dart_dev: ^1.0.0
+  dart_style: ^0.2.1
+  dartdoc: ^0.8.0
+  mockito: ^1.0.1
   react: ">=0.5.0 <0.8.0"
-  test: "^0.12.0"
-  w_flux: "^1.0.0"
+  test: ^0.12.0
+  w_flux: ^1.0.0
+
 environment:
   sdk: ">=1.9.0 <2.0.0"

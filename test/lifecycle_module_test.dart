@@ -62,6 +62,9 @@ class TestLifecycleModule extends LifecycleModule {
     didResume.listen((_) {
       eventList.add('didResume');
     });
+    didDispose.then((_) {
+      eventList.add('didDispose');
+    });
 
     // Child module events:
     willLoadChildModule.listen((_) {
@@ -146,6 +149,13 @@ class TestLifecycleModule extends LifecycleModule {
     await new Future.delayed(new Duration(milliseconds: 1));
     eventList.add('onResume');
   }
+
+  @override
+  @protected
+  Future<Null> onDispose() async {
+    await new Future.delayed(new Duration(milliseconds: 1));
+    eventList.add('onDispose');
+  }
 }
 
 void main() {
@@ -199,8 +209,16 @@ void main() {
       await module.load();
       module.eventList.clear();
       await module.unload();
-      expect(module.eventList,
-          equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      expect(
+          module.eventList,
+          equals([
+            'onShouldUnload',
+            'willUnload',
+            'onUnload',
+            'didUnload',
+            'onDispose',
+            'didDispose'
+          ]));
     });
 
     test('should set isLoaded when module is unloaded', () async {
@@ -210,10 +228,36 @@ void main() {
       expect(module.isLoaded, isFalse);
     });
 
+    test('should dispose the module when the module is unloaded', () async {
+      await module.load();
+      expect(module.isDisposed, isFalse);
+      await module.unload();
+      expect(module.isDisposed, isTrue);
+    });
+
     test('should do nothing when the module is unloaded if it was never loaded',
         () async {
       await module.unload();
       expect(module.eventList, equals([]));
+    });
+
+    test('should alias dispose to unload', () async {
+      await module.load();
+      module.eventList.clear();
+      // ignore: deprecated_member_use
+      await module.dispose();
+      expect(
+          module.eventList,
+          equals([
+            'onShouldUnload',
+            'willUnload',
+            'onUnload',
+            'didUnload',
+            'onDispose',
+            'didDispose'
+          ]));
+      expect(module.isLoaded, isFalse);
+      expect(module.isDisposed, isTrue);
     });
 
     test(
@@ -412,7 +456,9 @@ void main() {
             'onDidUnloadChildModule',
             'didUnloadChildModule',
             'onUnload',
-            'didUnload'
+            'didUnload',
+            'onDispose',
+            'didDispose'
           ]));
       expect(
           childModule.eventList,
@@ -421,7 +467,9 @@ void main() {
             'onShouldUnload',
             'willUnload',
             'onUnload',
-            'didUnload'
+            'didUnload',
+            'onDispose',
+            'didDispose'
           ]));
     });
 
@@ -434,8 +482,16 @@ void main() {
       childModule.eventList.clear();
 
       await childModule.unload();
-      expect(childModule.eventList,
-          equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      expect(
+          childModule.eventList,
+          equals([
+            'onShouldUnload',
+            'willUnload',
+            'onUnload',
+            'didUnload',
+            'onDispose',
+            'didDispose'
+          ]));
       await new Future(() {});
       expect(
           parentModule.eventList,
@@ -448,16 +504,17 @@ void main() {
       parentModule.eventList.clear();
       childModule.eventList.clear();
 
-      // Verify that subscriptions have been canceled.
-      await childModule.load();
-      await childModule.unload();
-      await new Future(() {});
-      expect(parentModule.eventList, equals([]));
-      childModule.eventList.clear();
-
       await parentModule.unload();
-      expect(parentModule.eventList,
-          equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      expect(
+          parentModule.eventList,
+          equals([
+            'onShouldUnload',
+            'willUnload',
+            'onUnload',
+            'didUnload',
+            'onDispose',
+            'didDispose'
+          ]));
       expect(childModule.eventList, equals([]));
     });
 
