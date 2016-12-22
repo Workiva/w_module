@@ -24,11 +24,9 @@ import 'package:w_common/disposable.dart';
 /// unified lifecycle API.
 abstract class LifecycleModule extends Object with Disposable {
   bool _isLoaded = false;
-
   bool _isSuspended = false;
-
+  bool _isUnloadedOrUnloading = false;
   Logger _logger;
-
   String _name = 'Module';
 
   // constructor necessary to init load / unload state stream
@@ -148,8 +146,14 @@ abstract class LifecycleModule extends Object with Disposable {
   ///
   /// Calls the onLoad() method, which can be implemented on a Module.
   /// Executes the willLoad and didLoad event streams.
-  /// TODO: Do we want to support re-loading of child modules here?
+  ///
+  /// [LifecycleModule] only supports one load/unload cycle. If [load] is called
+  /// again after a module has been unloaded, a [StateError] is thrown.
   Future<Null> load() {
+    if (_isUnloadedOrUnloading) {
+      throw new StateError('Module "$name" cannot be reloaded.');
+    }
+
     final completer = new Completer<Null>();
     if (!_isLoaded) {
       _willLoadController.add(this);
@@ -279,6 +283,7 @@ abstract class LifecycleModule extends Object with Disposable {
     if (_isLoaded) {
       ShouldUnloadResult canUnload = shouldUnload();
       if (canUnload.shouldUnload) {
+        _isUnloadedOrUnloading = true;
         _willUnloadController.add(this);
         final unloadChildren = _childModules.map((c) => c.unload());
         Future.wait(unloadChildren).then((_) {

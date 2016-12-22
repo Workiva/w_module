@@ -287,6 +287,13 @@ void main() {
       expect(lastLogMessage.level, equals(Level.WARNING));
     });
 
+    test('should throw StateError when attempting to reload a module',
+        () async {
+      await module.load();
+      await module.unload();
+      expect(module.load, throwsStateError);
+    });
+
     test(
         'should trigger suspend events and call onSuspend when module is suspended',
         () async {
