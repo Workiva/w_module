@@ -150,12 +150,11 @@ abstract class LifecycleModule extends Object with Disposable {
   /// [LifecycleModule] only supports one load/unload cycle. If [load] is called
   /// again after a module has been unloaded, a [StateError] is thrown.
   Future<Null> load() {
-    if (_isUnloadedOrUnloading) {
-      throw new StateError('Module "$name" cannot be reloaded.');
-    }
-
     final completer = new Completer<Null>();
-    if (!_isLoaded) {
+    if (_isUnloadedOrUnloading) {
+      completer
+          .completeError(new StateError('Module "$name" cannot be reloaded.'));
+    } else if (!_isLoaded) {
       _willLoadController.add(this);
       onLoad().then((_) {
         _didLoadController.add(this);

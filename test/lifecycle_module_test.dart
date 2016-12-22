@@ -291,7 +291,7 @@ void main() {
         () async {
       await module.load();
       await module.unload();
-      expect(module.load, throwsStateError);
+      expect(module.load(), throwsStateError);
     });
 
     test(
