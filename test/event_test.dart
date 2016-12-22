@@ -53,10 +53,10 @@ void main() {
       // The point of this test is to exercise the `where` method which is made available
       // on an action by extending stream and overriding `listen`
       Stream<String> filteredStream = event.where((value) => value == 'water');
-      expectAsync(filteredStream.listen)((payload) {
+      filteredStream.listen(expectAsync1((payload) {
         expect(payload, equals('water'));
         completer.complete();
-      });
+      }));
 
       event('water', key);
       return completer.future;

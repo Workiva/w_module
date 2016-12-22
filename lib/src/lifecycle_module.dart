@@ -18,10 +18,11 @@ import 'dart:async';
 
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart' show protected;
+import 'package:w_common/disposable.dart';
 
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
-abstract class LifecycleModule {
+abstract class LifecycleModule extends Object with Disposable {
   bool _isLoaded = false;
 
   bool _isSuspended = false;
@@ -32,22 +33,25 @@ abstract class LifecycleModule {
 
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
-    _willLoadController = new StreamController<LifecycleModule>.broadcast();
-    _didLoadController = new StreamController<LifecycleModule>.broadcast();
-    _willUnloadController = new StreamController<LifecycleModule>.broadcast();
-    _didUnloadController = new StreamController<LifecycleModule>.broadcast();
-    _willLoadChildModuleController =
-        new StreamController<LifecycleModule>.broadcast();
-    _didLoadChildModuleController =
-        new StreamController<LifecycleModule>.broadcast();
-    _willUnloadChildModuleController =
-        new StreamController<LifecycleModule>.broadcast();
-    _didUnloadChildModuleController =
-        new StreamController<LifecycleModule>.broadcast();
-    _willSuspendController = new StreamController<LifecycleModule>.broadcast();
-    _didSuspendController = new StreamController<LifecycleModule>.broadcast();
-    _willResumeController = new StreamController<LifecycleModule>.broadcast();
-    _didResumeController = new StreamController<LifecycleModule>.broadcast();
+    [
+      _willLoadController = new StreamController<LifecycleModule>.broadcast(),
+      _didLoadController = new StreamController<LifecycleModule>.broadcast(),
+      _willUnloadController = new StreamController<LifecycleModule>.broadcast(),
+      _didUnloadController = new StreamController<LifecycleModule>.broadcast(),
+      _willLoadChildModuleController =
+          new StreamController<LifecycleModule>.broadcast(),
+      _didLoadChildModuleController =
+          new StreamController<LifecycleModule>.broadcast(),
+      _willUnloadChildModuleController =
+          new StreamController<LifecycleModule>.broadcast(),
+      _didUnloadChildModuleController =
+          new StreamController<LifecycleModule>.broadcast(),
+      _willSuspendController =
+          new StreamController<LifecycleModule>.broadcast(),
+      _didSuspendController = new StreamController<LifecycleModule>.broadcast(),
+      _willResumeController = new StreamController<LifecycleModule>.broadcast(),
+      _didResumeController = new StreamController<LifecycleModule>.broadcast()
+    ].forEach(manageStreamController);
 
     _logger = new Logger('w_module');
   }
@@ -283,7 +287,9 @@ abstract class LifecycleModule {
             _didUnloadController.add(this);
             _isLoaded = false;
             _isSuspended = false;
-            completer.complete();
+            super.dispose().then((_) {
+              completer.complete();
+            });
           });
         });
       } else {
@@ -296,6 +302,13 @@ abstract class LifecycleModule {
     }
     return completer.future;
   }
+
+  /// Aliased to [unload].
+  ///
+  /// Deprecated: Use the method [unload] instead.
+  @deprecated
+  @override
+  Future<Null> dispose() => unload();
 
   //--------------------------------------------------------
   // Methods that can be optionally implemented by subclasses
@@ -359,6 +372,12 @@ abstract class LifecycleModule {
   /// has finished unloading.
   @protected
   Future<Null> onUnload() async {}
+
+  /// Deprecated: override [onUnload] instead.
+  @deprecated
+  @protected
+  @override
+  Future<Null> onDispose() async {}
 }
 
 /// Exception thrown when unload fails.

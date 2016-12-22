@@ -225,7 +225,8 @@ class SerializableBus {
     event['event'] = eventKey;
 
     if (data is JsonSerializable) {
-      data = (data as JsonSerializable).toJson();
+      JsonSerializable serializeData = data;
+      data = serializeData.toJson();
     }
 
     event['data'] = data;
