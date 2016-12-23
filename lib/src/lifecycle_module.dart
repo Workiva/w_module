@@ -20,14 +20,40 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart' show protected;
 import 'package:w_common/disposable.dart';
 
+/// Possible states a [LifecycleModule] may occupy.
+enum LifecycleState {
+  /// The module has been instantiated.
+  initialized,
+
+  /// The module is in the process of being loaded.
+  loading,
+
+  /// The module has been loaded.
+  loaded,
+
+  /// The module is in the process of being suspended.
+  suspending,
+
+  /// The module has been suspended.
+  suspended,
+
+  /// The module is in the process of resuming from the suspended state.
+  resuming,
+
+  /// The module is in the process of unloading.
+  unloading,
+
+  /// The module has been unloaded.
+  unloaded
+}
+
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
 abstract class LifecycleModule extends Object with Disposable {
-  bool _isLoaded = false;
-  bool _isSuspended = false;
-  bool _isUnloadedOrUnloading = false;
   Logger _logger;
   String _name = 'Module';
+  LifecycleState _state = LifecycleState.initialized;
+  Future<Null> _transitionFuture;
 
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
@@ -130,12 +156,28 @@ abstract class LifecycleModule extends Object with Disposable {
       _didUnloadChildModuleSubscriptions = {};
 
   /// Whether the module is currently loaded.
-  bool get isLoaded => _isLoaded;
+  bool get isLoaded => _state == LifecycleState.loaded;
+
+  /// Whether the module is currently loading.
+  bool get isLoading => _state == LifecycleState.loading;
+
+  /// Whether the module is currently resuming.
+  bool get isResuming => _state == LifecycleState.resuming;
 
   /// Whether the module is currently suspended.
-  ///
-  /// This will always be false when the module is not loaded.
-  bool get isSuspended => _isSuspended;
+  bool get isSuspended => _state == LifecycleState.suspended;
+
+  /// Whether the module is currently suspending.
+  bool get isSuspending => _state == LifecycleState.suspending;
+
+  /// Whether the module is currently unloaded.
+  bool get isUnloaded => _state == LifecycleState.unloaded;
+
+  /// Whether the module is currently unloading.
+  bool get isUnloading => _state == LifecycleState.unloading;
+
+  /// The current lifecycle state of the module.
+  LifecycleState get state => _state;
 
   //--------------------------------------------------------
   // Public methods that can be used directly to trigger
@@ -147,24 +189,41 @@ abstract class LifecycleModule extends Object with Disposable {
   /// Calls the onLoad() method, which can be implemented on a Module.
   /// Executes the willLoad and didLoad event streams.
   ///
-  /// [LifecycleModule] only supports one load/unload cycle. If [load] is called
-  /// again after a module has been unloaded, a [StateError] is thrown.
+  /// Initiates the loading process when the module is in the initialized state.
+  /// If the module is in the loaded or loading state a warning is logged and
+  /// the method is a noop. If the module is in any other state, a StateError is
+  /// thrown.
+  ///
+  /// Note that [LifecycleModule] only supports one load/unload cycle. If [load]
+  /// is called after a module has been unloaded, a [StateError] is thrown.
   Future<Null> load() {
-    final completer = new Completer<Null>();
-    if (_isUnloadedOrUnloading) {
-      completer
-          .completeError(new StateError('Module "$name" cannot be reloaded.'));
-    } else if (!_isLoaded) {
-      _willLoadController.add(this);
-      onLoad().then((_) {
-        _didLoadController.add(this);
-        _isLoaded = true;
-        completer.complete();
-      });
-    } else {
-      _logger.warning('Module "$name" is already loaded, cannot load.');
-      completer.complete();
+    if (isLoading) {
+      _logger.warning('Module "$name" is already loading, cannot load.');
+      return _transitionFuture;
     }
+
+    if (isLoaded) {
+      _logger.warning('Module "$name" is already loaded, cannot load.');
+      return new Future.value(null);
+    }
+
+    if (_state != LifecycleState.initialized) {
+      return new Future.error(
+          new StateError('Module "$name" state is $_state, cannot load.'));
+    }
+
+    _state = LifecycleState.loading;
+    final completer = new Completer<Null>();
+    _transitionFuture = completer.future;
+    _willLoadController.add(this);
+
+    onLoad().then((_) {
+      _didLoadController.add(this);
+      _state = LifecycleState.loaded;
+      _transitionFuture = null;
+      completer.complete();
+    });
+
     return completer.future;
   }
 
@@ -207,22 +266,41 @@ abstract class LifecycleModule extends Object with Disposable {
   /// Suspend indicates to the module that it should go into a low-activity
   /// state. For example, by disconnecting from backend services and unloading
   /// heavy data structures.
-  Future suspend() {
-    Completer completer = new Completer();
-    if (!_isSuspended && _isLoaded) {
-      _willSuspendController.add(this);
-      Future.wait(_childModules.map((c) => c.suspend())).then((_) {
-        onSuspend().then((_) {
-          _didSuspendController.add(this);
-          _isSuspended = true;
-          completer.complete();
-        });
-      });
-    } else {
-      _logger.warning(
-          'Module "$name" is ${_isLoaded ? 'already suspended' : 'not loaded'}, cannot suspend.');
-      completer.complete();
+  ///
+  /// Initiates the suspend process when the module is in the loaded state. If
+  /// the module is in the suspended or suspending state a warning is logged and
+  /// the method is a noop. If the module is in any other state, a StateError is
+  /// thrown.
+  Future<Null> suspend() {
+    if (isSuspending) {
+      _logger.warning('Module "$name" is already suspending, cannot suspend.');
+      return _transitionFuture;
     }
+
+    if (isSuspended) {
+      _logger.warning('Module "$name" is already suspended, cannot suspend.');
+      return new Future.value(null);
+    }
+
+    if (!isLoaded) {
+      return new Future.error(
+          new StateError('Module "$name" state is $_state, cannot suspend.'));
+    }
+
+    _state = LifecycleState.suspending;
+    final completer = new Completer<Null>();
+    _transitionFuture = completer.future;
+    _willSuspendController.add(this);
+
+    Future.wait(_childModules.map((c) => c.suspend())).then((_) {
+      onSuspend().then((_) {
+        _didSuspendController.add(this);
+        _state = LifecycleState.suspended;
+        _transitionFuture = null;
+        completer.complete();
+      });
+    });
+
     return completer.future;
   }
 
@@ -230,22 +308,36 @@ abstract class LifecycleModule extends Object with Disposable {
   ///
   /// This should put the module back into its normal state after the module
   /// was suspended.
-  Future resume() {
-    Completer completer = new Completer();
-    if (_isSuspended && _isLoaded) {
-      _willResumeController.add(this);
-      Future.wait(_childModules.map((c) => c.resume())).then((_) {
-        onResume().then((_) {
-          _didResumeController.add(this);
-          _isSuspended = false;
-          completer.complete();
-        });
-      });
-    } else {
-      _logger.warning(
-          'Module "$name" is ${_isLoaded ? 'not suspended' : 'not loaded'}, cannot suspend.');
-      completer.complete();
+  ///
+  /// Only initiates the resume process when the module is in the suspended
+  /// state. If the module is in the resuming state a warning is logged and the
+  /// method is a noop. If the module is in any other state, a StateError is
+  /// thrown.
+  Future<Null> resume() {
+    if (isResuming) {
+      _logger.warning('Module "$name" is already resuming, cannot resume.');
+      return _transitionFuture;
     }
+
+    if (!isSuspended) {
+      return new Future.error(
+          new StateError('Module "$name" state is $_state, cannot resume.'));
+    }
+
+    _state = LifecycleState.resuming;
+    final completer = new Completer<Null>();
+    _transitionFuture = completer.future;
+    _willResumeController.add(this);
+
+    Future.wait(_childModules.map((c) => c.resume())).then((_) {
+      onResume().then((_) {
+        _didResumeController.add(this);
+        _state = LifecycleState.loaded;
+        _transitionFuture = null;
+        completer.complete();
+      });
+    });
+
     return completer.future;
   }
 
@@ -274,36 +366,54 @@ abstract class LifecycleModule extends Object with Disposable {
 
   /// Public method to trigger the Module unload cycle.
   ///
-  /// Calls shouldUnload(), and, if that completes successfully,
-  /// continues to call onUnload() on the module and all registered child modules.
-  /// If unloading is rejected, this method will complete with an error.
+  /// Calls shouldUnload(), and, if that completes successfully, continues to
+  /// call onUnload() on the module and all registered child modules. If
+  /// unloading is rejected, this method will complete with an error.
+  ///
+  /// Initiates the unload process when the module is in the loaded or suspended
+  /// state. If the module is in the unloading or unloaded state a warning is
+  /// logged and the method is a noop. If the module is in any other state, a
+  /// StateError is thrown.
   Future<Null> unload() {
-    final completer = new Completer<Null>();
-    if (_isLoaded) {
-      ShouldUnloadResult canUnload = shouldUnload();
-      if (canUnload.shouldUnload) {
-        _isUnloadedOrUnloading = true;
-        _willUnloadController.add(this);
-        final unloadChildren = _childModules.map((c) => c.unload());
-        Future.wait(unloadChildren).then((_) {
-          _childModules.clear();
-          onUnload().then((_) {
-            _didUnloadController.add(this);
-            _isLoaded = false;
-            _isSuspended = false;
-            super.dispose().then((_) {
-              completer.complete();
-            });
-          });
-        });
-      } else {
-        // reject with shouldUnload messages
-        throw new ModuleUnloadCanceledException(canUnload.messagesAsString());
-      }
-    } else {
-      _logger.warning('Module "$name" is already unloaded, cannot unload.');
-      completer.complete();
+    if (isUnloading) {
+      _logger.warning('Module "$name" is already unloading, cannot unload.');
+      return _transitionFuture;
     }
+
+    if (isUnloaded) {
+      _logger.warning('Module "$name" is already unloaded, cannot unload.');
+      return new Future.value(null);
+    }
+
+    if (!(isLoaded || isSuspended)) {
+      return new Future.error(
+          new StateError('Module "$name" state is $_state, cannot unload.'));
+    }
+
+    ShouldUnloadResult canUnload = shouldUnload();
+    if (!canUnload.shouldUnload) {
+      // reject with shouldUnload messages
+      return new Future.error(
+          new ModuleUnloadCanceledException(canUnload.messagesAsString()));
+    }
+
+    _state = LifecycleState.unloading;
+    final completer = new Completer<Null>();
+    _transitionFuture = completer.future;
+    _willUnloadController.add(this);
+
+    final unloadChildren = _childModules.map((c) => c.unload());
+    Future.wait(unloadChildren).then((_) {
+      _childModules.clear();
+      onUnload().then((_) {
+        _didUnloadController.add(this);
+        super.dispose().then((_) {
+          _state = LifecycleState.unloaded;
+          _transitionFuture = null;
+          completer.complete();
+        });
+      });
+    });
     return completer.future;
   }
 

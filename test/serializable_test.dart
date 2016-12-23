@@ -13,8 +13,6 @@
 // limitations under the License.
 
 @TestOn('vm || browser')
-library serializable_module.test.serializable_test;
-
 import 'dart:async';
 
 import 'package:mockito/mockito.dart';
