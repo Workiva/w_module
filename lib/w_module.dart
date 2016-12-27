@@ -22,5 +22,5 @@
 library w_module;
 
 export 'package:w_module/src/event.dart';
-export 'package:w_module/src/lifecycle_module.dart';
+export 'package:w_module/src/lifecycle_module.dart' hide LifecycleState;
 export 'package:w_module/src/module.dart';

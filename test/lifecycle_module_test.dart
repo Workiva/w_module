@@ -18,7 +18,8 @@ import 'dart:async';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart' show protected;
 import 'package:test/test.dart';
-import 'package:w_module/w_module.dart';
+
+import 'package:w_module/src/lifecycle_module.dart';
 
 const String shouldUnloadError = 'Mock shouldUnload false message';
 
@@ -156,8 +157,39 @@ class TestLifecycleModule extends LifecycleModule {
   }
 }
 
+void expectInLifecycleState(LifecycleModule module, LifecycleState state) {
+  var isInState = false;
+  switch (state) {
+    case LifecycleState.instantiated:
+      isInState = module.isInstantiated;
+      break;
+    case LifecycleState.loaded:
+      isInState = module.isLoaded;
+      break;
+    case LifecycleState.loading:
+      isInState = module.isLoading;
+      break;
+    case LifecycleState.resuming:
+      isInState = module.isResuming;
+      break;
+    case LifecycleState.suspended:
+      isInState = module.isSuspended;
+      break;
+    case LifecycleState.suspending:
+      isInState = module.isSuspending;
+      break;
+    case LifecycleState.unloaded:
+      isInState = module.isUnloaded;
+      break;
+    case LifecycleState.unloading:
+      isInState = module.isUnloading;
+      break;
+  }
+  expect(isInState, isTrue);
+}
+
 Future<Null> gotoState(LifecycleModule module, LifecycleState state) async {
-  if (state == LifecycleState.initialized) {
+  if (state == LifecycleState.instantiated) {
     return;
   }
 
@@ -227,7 +259,7 @@ void main() {
       invalidStates.forEach((fromState) {
         test('should throw StateError when state is $fromState', () async {
           await gotoState(module, fromState);
-          expect(module.state, fromState);
+          expectInLifecycleState(module, fromState);
           expect(executeStateTransition(module, state), throwsStateError);
         });
       });
@@ -256,20 +288,28 @@ void main() {
       });
 
       test('should update module state', () async {
-        expect(module.state, equals(LifecycleState.initialized));
+        expectInLifecycleState(module, LifecycleState.instantiated);
         var future = module.load();
-        expect(module.state, equals(LifecycleState.loading));
+        expectInLifecycleState(module, LifecycleState.loading);
         await future;
-        expect(module.state, equals(LifecycleState.loaded));
+        expectInLifecycleState(module, LifecycleState.loaded);
       });
 
-      test('should return a useful future if it is already loading', () async {
+      test('should return pending future if it is already loading', () async {
         await gotoState(module, LifecycleState.loading);
-        expect(module.isLoading, isTrue);
-        var future = module.load();
-        expect(module.isLoaded, isFalse);
-        await future;
-        expect(module.isLoaded, isTrue);
+        var future1 = module.load();
+        var future2 = module.load();
+        expect(future1, same(future2));
+      });
+
+      test('should return new future if load is called after module has loaded',
+          () async {
+        await gotoState(module, LifecycleState.loading);
+        var future1 = module.load();
+        await future1;
+        var future2 = module.load();
+
+        expect(future1, isNot(same(future2)));
       });
 
       test('should only load once if it is already loading', () async {
@@ -286,13 +326,6 @@ void main() {
         await module.load();
         expect(lastLogMessage, isNotNull);
         expect(lastLogMessage.level, equals(Level.WARNING));
-      });
-
-      test('should do nothing if it was already loaded', () async {
-        await module.load();
-        module.eventList.clear();
-        await module.load();
-        expect(module.eventList, equals([]));
       });
 
       test('should warn if it was already loaded', () async {
@@ -317,9 +350,9 @@ void main() {
         'onShouldUnload',
         'willUnload',
         'onUnload',
-        'didUnload',
         'onDispose',
-        'didDispose'
+        'didDispose',
+        'didUnload'
       ];
 
       test('should dispatch events and call onShouldUnload and onUnload',
@@ -348,11 +381,11 @@ void main() {
 
       test('should update module state', () async {
         await module.load();
-        expect(module.state, equals(LifecycleState.loaded));
+        expectInLifecycleState(module, LifecycleState.loaded);
         var future = module.unload();
-        expect(module.state, equals(LifecycleState.unloading));
+        expectInLifecycleState(module, LifecycleState.unloading);
         await future;
-        expect(module.state, equals(LifecycleState.unloaded));
+        expectInLifecycleState(module, LifecycleState.unloaded);
       });
 
       test('should dispose the module', () async {
@@ -376,23 +409,31 @@ void main() {
         await gotoState(module, LifecycleState.suspended);
         module.eventList.clear();
         expect(module.isSuspended, isTrue);
-        expect(module.state, LifecycleState.suspended);
+        expectInLifecycleState(module, LifecycleState.suspended);
 
         await module.unload();
 
         expect(module.isUnloaded, isTrue);
-        expect(module.state, LifecycleState.unloaded);
+        expectInLifecycleState(module, LifecycleState.unloaded);
         expect(module.eventList, equals(expectedUnloadEvents));
       });
 
-      test('should return a useful future if it is already unloading',
+      test('should return pending future if it is already unloading', () async {
+        await gotoState(module, LifecycleState.unloading);
+        var future1 = module.unload();
+        var future2 = module.unload();
+        expect(future1, same(future2));
+      });
+
+      test(
+          'should return new future if unload is called after module has unloaded',
           () async {
         await gotoState(module, LifecycleState.unloading);
-        expect(module.isUnloading, isTrue);
-        var future = module.unload();
-        expect(module.isUnloaded, isFalse);
-        await future;
-        expect(module.isUnloaded, isTrue);
+        var future1 = module.unload();
+        await future1;
+        var future2 = module.unload();
+
+        expect(future1, isNot(same(future2)));
       });
 
       test('should only unload once if it is already unloading', () async {
@@ -411,13 +452,6 @@ void main() {
         await module.unload();
         expect(lastLogMessage, isNotNull);
         expect(lastLogMessage.level, equals(Level.WARNING));
-      });
-
-      test('should do nothing if it was already unloaded', () async {
-        await gotoState(module, LifecycleState.unloaded);
-        module.eventList.clear();
-        await module.unload();
-        expect(module.eventList, equals([]));
       });
 
       test('should warn if it was already unloaded', () async {
@@ -445,7 +479,7 @@ void main() {
       });
 
       testInvalidTransitions(LifecycleState.unloading, [
-        LifecycleState.initialized,
+        LifecycleState.instantiated,
         LifecycleState.loading,
         LifecycleState.suspending,
         LifecycleState.resuming
@@ -480,21 +514,30 @@ void main() {
 
       test('should update module state', () async {
         await module.load();
-        expect(module.state, equals(LifecycleState.loaded));
+        expectInLifecycleState(module, LifecycleState.loaded);
         var future = module.suspend();
-        expect(module.state, equals(LifecycleState.suspending));
+        expectInLifecycleState(module, LifecycleState.suspending);
         await future;
-        expect(module.state, equals(LifecycleState.suspended));
+        expectInLifecycleState(module, LifecycleState.suspended);
       });
 
-      test('should return a useful future if it is already suspending',
+      test('should return pending future if it is already suspending',
           () async {
         await gotoState(module, LifecycleState.suspending);
-        expect(module.isSuspending, isTrue);
-        var future = module.suspend();
-        expect(module.isSuspended, isFalse);
-        await future;
-        expect(module.isSuspended, isTrue);
+        var future1 = module.suspend();
+        var future2 = module.suspend();
+        expect(future1, same(future2));
+      });
+
+      test(
+          'should return new future if suspend is called after module has suspended',
+          () async {
+        await gotoState(module, LifecycleState.suspending);
+        var future1 = module.suspend();
+        await future1;
+        var future2 = module.suspend();
+
+        expect(future1, isNot(same(future2)));
       });
 
       test('should only suspend once if it is already suspending', () async {
@@ -515,13 +558,6 @@ void main() {
         expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
-      test('should do nothing if it was already suspended', () async {
-        await gotoState(module, LifecycleState.suspended);
-        module.eventList.clear();
-        await module.suspend();
-        expect(module.eventList, equals([]));
-      });
-
       test('should warn if it is already suspended', () async {
         await gotoState(module, LifecycleState.suspended);
         expect(lastLogMessage, isNull);
@@ -531,7 +567,7 @@ void main() {
       });
 
       testInvalidTransitions(LifecycleState.suspending, [
-        LifecycleState.initialized,
+        LifecycleState.instantiated,
         LifecycleState.loading,
         LifecycleState.resuming,
         LifecycleState.unloading,
@@ -567,21 +603,29 @@ void main() {
 
       test('should update module state', () async {
         await gotoState(module, LifecycleState.suspended);
-        expect(module.state, equals(LifecycleState.suspended));
+        expectInLifecycleState(module, LifecycleState.suspended);
         var future = module.resume();
-        expect(module.state, equals(LifecycleState.resuming));
+        expectInLifecycleState(module, LifecycleState.resuming);
         await future;
-        expect(module.state, equals(LifecycleState.loaded));
+        expectInLifecycleState(module, LifecycleState.loaded);
       });
 
-      test('should return a useful future if it is already resuming', () async {
+      test('should return pending future if it is already resuming', () async {
         await gotoState(module, LifecycleState.resuming);
-        expect(module.isResuming, isTrue);
-        var future = module.resume();
-        expect(module.isResuming, isTrue);
-        await future;
-        expect(module.isResuming, isFalse);
-        expect(module.isLoaded, isTrue);
+        var future1 = module.resume();
+        var future2 = module.resume();
+        expect(future1, same(future2));
+      });
+
+      test(
+          'should return new future if resume is called after module has resumed',
+          () async {
+        await gotoState(module, LifecycleState.resuming);
+        var future1 = module.resume();
+        await future1;
+        var future2 = module.resume();
+
+        expect(future1, isNot(same(future2)));
       });
 
       test('should only resume once if it is already resuming', () async {
@@ -606,9 +650,8 @@ void main() {
       });
 
       testInvalidTransitions(LifecycleState.resuming, [
-        LifecycleState.initialized,
+        LifecycleState.instantiated,
         LifecycleState.loading,
-        LifecycleState.loaded,
         LifecycleState.suspending,
         LifecycleState.unloading,
         LifecycleState.unloaded
@@ -690,9 +733,9 @@ void main() {
             'onDidUnloadChildModule',
             'didUnloadChildModule',
             'onUnload',
-            'didUnload',
             'onDispose',
-            'didDispose'
+            'didDispose',
+            'didUnload'
           ]));
       expect(
           childModule.eventList,
@@ -701,9 +744,9 @@ void main() {
             'onShouldUnload',
             'willUnload',
             'onUnload',
-            'didUnload',
             'onDispose',
-            'didDispose'
+            'didDispose',
+            'didUnload'
           ]));
     });
 
@@ -722,9 +765,9 @@ void main() {
             'onShouldUnload',
             'willUnload',
             'onUnload',
-            'didUnload',
             'onDispose',
-            'didDispose'
+            'didDispose',
+            'didUnload'
           ]));
       await new Future(() {});
       expect(
@@ -745,9 +788,9 @@ void main() {
             'onShouldUnload',
             'willUnload',
             'onUnload',
-            'didUnload',
             'onDispose',
-            'didDispose'
+            'didDispose',
+            'didUnload'
           ]));
       expect(childModule.eventList, equals([]));
     });
