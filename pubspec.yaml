@@ -27,5 +27,10 @@ dev_dependencies:
   test: ^0.12.0
   w_flux: ^1.0.0
 
+dependency_overrides:
+  w_common:
+    git:
+      url: https://github.com/Workiva/w_common.git
+      ref: 33da10e3790f9fb685122393f4321422e5b178c5
 environment:
   sdk: ">=1.9.0 <2.0.0"

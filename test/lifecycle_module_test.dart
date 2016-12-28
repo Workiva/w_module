@@ -17,24 +17,45 @@ import 'dart:async';
 
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart' show protected;
+import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
+import 'package:w_common/disposable.dart';
 
 import 'package:w_module/src/lifecycle_module.dart';
 
 const String shouldUnloadError = 'Mock shouldUnload false message';
 
+class MockStreamSubscription extends Mock implements StreamSubscription<Null> {}
+
 class TestLifecycleModule extends LifecycleModule {
+  bool _managedDisposerWasCalled = false;
+  final Disposable managedDisposable;
+  final StreamController<Null> managedStreamController;
+  final MockStreamSubscription managedStreamSubscription;
+
   @override
-  final String name = 'TestLifecycleModule';
+  final String name;
 
   // mock data to be used for test validation
   List<String> eventList;
   bool mockShouldUnload;
 
-  TestLifecycleModule() {
+  TestLifecycleModule()
+      : managedDisposable = new Disposable(),
+        managedStreamController = new StreamController<Null>(),
+        managedStreamSubscription = new MockStreamSubscription(),
+        name = 'TestLifecycleModule' {
     // init test validation data
     eventList = [];
     mockShouldUnload = true;
+
+    // Mangage disposables
+    manageDisposable(managedDisposable);
+    manageDisposer(() {
+      _managedDisposerWasCalled = true;
+    });
+    manageStreamController(managedStreamController);
+    manageStreamSubscription(managedStreamSubscription);
 
     // Parent module events:
     willLoad.listen((_) {
@@ -61,9 +82,6 @@ class TestLifecycleModule extends LifecycleModule {
     didResume.listen((_) {
       eventList.add('didResume');
     });
-    didDispose.then((_) {
-      eventList.add('didDispose');
-    });
 
     // Child module events:
     willLoadChildModule.listen((_) {
@@ -79,6 +97,8 @@ class TestLifecycleModule extends LifecycleModule {
       eventList.add('didUnloadChildModule');
     });
   }
+
+  bool get managedDisposerWasCalled => _managedDisposerWasCalled;
 
   // Overriding without re-applying the @protected annotation allows us to call
   // loadChildModule in our tests below.
@@ -147,13 +167,6 @@ class TestLifecycleModule extends LifecycleModule {
   Future<Null> onResume() async {
     await new Future.delayed(new Duration(milliseconds: 1));
     eventList.add('onResume');
-  }
-
-  @override
-  @protected
-  Future<Null> onDispose() async {
-    await new Future.delayed(new Duration(milliseconds: 1));
-    eventList.add('onDispose');
   }
 }
 
@@ -350,8 +363,6 @@ void main() {
         'onShouldUnload',
         'willUnload',
         'onUnload',
-        'onDispose',
-        'didDispose',
         'didUnload'
       ];
 
@@ -386,23 +397,6 @@ void main() {
         expectInLifecycleState(module, LifecycleState.unloading);
         await future;
         expectInLifecycleState(module, LifecycleState.unloaded);
-      });
-
-      test('should dispose the module', () async {
-        await module.load();
-        expect(module.isDisposed, isFalse);
-        await module.unload();
-        expect(module.isDisposed, isTrue);
-      });
-
-      test('should alias dispose to unload', () async {
-        await module.load();
-        module.eventList.clear();
-        // ignore: deprecated_member_use
-        await module.dispose();
-        expect(module.eventList, equals(expectedUnloadEvents));
-        expect(module.isLoaded, isFalse);
-        expect(module.isDisposed, isTrue);
       });
 
       test('should support unloading from suspended state', () async {
@@ -476,6 +470,20 @@ void main() {
         expect(error, isNotNull);
         expect(error.message, equals(shouldUnloadError));
         expect(module.eventList, equals(['onShouldUnload']));
+      });
+
+      test('should dispose managed disposables', () async {
+        await module.load();
+        expect(module.managedDisposable.isDisposed, isFalse);
+        expect(module.managedDisposerWasCalled, isFalse);
+        expect(module.managedStreamController.isClosed, isFalse);
+        verifyNever(module.managedStreamSubscription.cancel());
+
+        await module.unload();
+        expect(module.managedDisposable.isDisposed, isTrue);
+        expect(module.managedDisposerWasCalled, isTrue);
+        expect(module.managedStreamController.isClosed, isTrue);
+        verify(module.managedStreamSubscription.cancel());
       });
 
       testInvalidTransitions(LifecycleState.unloading, [
@@ -733,8 +741,6 @@ void main() {
             'onDidUnloadChildModule',
             'didUnloadChildModule',
             'onUnload',
-            'onDispose',
-            'didDispose',
             'didUnload'
           ]));
       expect(
@@ -744,8 +750,6 @@ void main() {
             'onShouldUnload',
             'willUnload',
             'onUnload',
-            'onDispose',
-            'didDispose',
             'didUnload'
           ]));
     });
@@ -759,16 +763,8 @@ void main() {
       childModule.eventList.clear();
 
       await childModule.unload();
-      expect(
-          childModule.eventList,
-          equals([
-            'onShouldUnload',
-            'willUnload',
-            'onUnload',
-            'onDispose',
-            'didDispose',
-            'didUnload'
-          ]));
+      expect(childModule.eventList,
+          equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
       await new Future(() {});
       expect(
           parentModule.eventList,
@@ -782,16 +778,8 @@ void main() {
       childModule.eventList.clear();
 
       await parentModule.unload();
-      expect(
-          parentModule.eventList,
-          equals([
-            'onShouldUnload',
-            'willUnload',
-            'onUnload',
-            'onDispose',
-            'didDispose',
-            'didUnload'
-          ]));
+      expect(parentModule.eventList,
+          equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
       expect(childModule.eventList, equals([]));
     });
 
