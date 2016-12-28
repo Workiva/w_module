@@ -13,8 +13,6 @@
 // limitations under the License.
 
 @TestOn('vm || browser')
-library w_module.test.lifecycle_module_test;
-
 import 'package:w_module/w_module.dart';
 import 'package:test/test.dart';
 
@@ -28,15 +26,15 @@ void main() {
       module = new TestModule();
     });
 
-    test('should return null from api getter by default', () async {
+    test('should return null from api getter by default', () {
       expect(module.api, isNull);
     });
 
-    test('should return null from components getter by default', () async {
+    test('should return null from components getter by default', () {
       expect(module.components, isNull);
     });
 
-    test('should return null from events getter by default', () async {
+    test('should return null from events getter by default', () {
       expect(module.events, isNull);
     });
   });

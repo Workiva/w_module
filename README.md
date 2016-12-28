@@ -295,6 +295,14 @@ Method         | Description
 `shouldUnload` | Returns the unloadable state of the `Module` and its child modules as a `ShouldUnloadResult`.  Internally, this executes the module's `onShouldUnload` method.
 `unload`       | Triggers unloading of a `Module` and all of its child modules.  Internally, this executes the module's `shouldUnload` method, and, if that completes successfully, executes the module's `onUnload` method. If unloading is rejected, this method will complete with an error.
 
+![lifecycle module - lifecycle](https://cloud.githubusercontent.com/assets/11619752/21526229/d7a5ae1c-ccdf-11e6-9e95-ff16a83e3a7f.png)
+
+The graphic above illustrates legal lifecycle state transitions. Any state
+transition that is not defined will throw a `StateError`. No-op transitions are
+illustrated with blue arrows. Calling the lifecycle method when the module is
+already in the given state will result in a logger warning. If a no-op is
+performed on a transitioning state the pending transition future is returned.
+
 ### Lifecycle Events
 
 `Module` also exposes lifecycle event streams that an external consumer can listen to:

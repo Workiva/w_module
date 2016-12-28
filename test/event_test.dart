@@ -13,8 +13,6 @@
 // limitations under the License.
 
 @TestOn('vm || browser')
-library w_module.test.event_test;
-
 import 'dart:async';
 
 import 'package:w_module/w_module.dart';
