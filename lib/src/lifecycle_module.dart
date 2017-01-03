@@ -49,7 +49,8 @@ enum LifecycleState {
 
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
-abstract class LifecycleModule extends Object with Disposable {
+abstract class LifecycleModule implements DisposableManager {
+  final Disposable _disposableProxy = new Disposable();
   Logger _logger;
   String _name = 'Module';
   LifecycleState _state = LifecycleState.instantiated;
@@ -262,6 +263,28 @@ abstract class LifecycleModule extends Object with Disposable {
     return completer.future;
   }
 
+  /// Ensures a given [Disposable] is disposed when the [LifecycleModule] is
+  /// unloaded.
+  @override
+  void manageDisposable(Disposable disposable) =>
+      _disposableProxy.manageDisposable(disposable);
+
+  /// Ensures a given [Disposer] callback is called when the module is unloaded.
+  @override
+  void manageDisposer(Disposer disposer) =>
+      _disposableProxy.manageDisposer(disposer);
+
+  /// Ensures a given [StreamController] is closed when the module is unloaded.
+  @override
+  void manageStreamController(StreamController controller) =>
+      _disposableProxy.manageStreamController(controller);
+
+  /// Ensures a given [StreamSubscription] is cancelled when the module is
+  /// unloaded.
+  @override
+  void manageStreamSubscription(StreamSubscription subscription) =>
+      _disposableProxy.manageStreamSubscription(subscription);
+
   /// Public method to suspend the module.
   ///
   /// Suspend indicates to the module that it should go into a low-activity
@@ -407,7 +430,7 @@ abstract class LifecycleModule extends Object with Disposable {
     Future.wait(unloadChildren).then((_) {
       _childModules.clear();
       onUnload().then((_) {
-        super.dispose().then((_) {
+        _disposableProxy.dispose().then((_) {
           _state = LifecycleState.unloaded;
           _didUnloadController
             ..add(this)
@@ -419,13 +442,6 @@ abstract class LifecycleModule extends Object with Disposable {
     });
     return completer.future;
   }
-
-  /// Aliased to [unload].
-  ///
-  /// Deprecated: Use the method [unload] instead.
-  @deprecated
-  @override
-  Future<Null> dispose() => unload();
 
   //--------------------------------------------------------
   // Methods that can be optionally implemented by subclasses
@@ -489,12 +505,6 @@ abstract class LifecycleModule extends Object with Disposable {
   /// has finished unloading.
   @protected
   Future<Null> onUnload() async {}
-
-  /// Deprecated: override [onUnload] instead.
-  @deprecated
-  @protected
-  @override
-  Future<Null> onDispose() async {}
 
   /// Returns a new [Future] error with a constructed reason.
   Future<Null> _buildIllegalTransitionResponse(
