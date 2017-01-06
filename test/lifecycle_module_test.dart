@@ -659,7 +659,6 @@ void main() {
 
       test('should warn if it is already loaded', () async {
         await gotoState(module, LifecycleState.loaded);
-        // ignore: unawaited_futures
         expect(lastLogMessage, isNull);
         await module.resume();
         expect(lastLogMessage.message, contains('loaded'));
