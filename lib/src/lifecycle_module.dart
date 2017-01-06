@@ -206,7 +206,8 @@ abstract class LifecycleModule implements DisposableManager {
       return _buildNoopResponse(
           isTransitioning: isLoading,
           methodName: 'load',
-          currentState: LifecycleState.loaded);
+          currentState:
+              isLoading ? LifecycleState.loading : LifecycleState.loaded);
     }
 
     if (!isInstantiated) {
@@ -300,7 +301,9 @@ abstract class LifecycleModule implements DisposableManager {
       return _buildNoopResponse(
           isTransitioning: isSuspending,
           methodName: 'suspend',
-          currentState: LifecycleState.suspended);
+          currentState: isSuspending
+              ? LifecycleState.suspending
+              : LifecycleState.suspended);
     }
 
     if (!isLoaded) {
@@ -340,7 +343,8 @@ abstract class LifecycleModule implements DisposableManager {
       return _buildNoopResponse(
           isTransitioning: isResuming,
           methodName: 'resume',
-          currentState: LifecycleState.loaded);
+          currentState:
+              isResuming ? LifecycleState.resuming : LifecycleState.loaded);
     }
 
     if (!isSuspended) {
@@ -405,7 +409,8 @@ abstract class LifecycleModule implements DisposableManager {
       return _buildNoopResponse(
           isTransitioning: isUnloading,
           methodName: 'unload',
-          currentState: LifecycleState.unloaded);
+          currentState:
+              isUnloading ? LifecycleState.unloading : LifecycleState.unloaded);
     }
 
     if (!(isLoaded || isSuspended)) {
@@ -531,7 +536,7 @@ abstract class LifecycleModule implements DisposableManager {
   }
 
   /// Obtains the value of a [LifecycleState] enumeration.
-  String _readableStateName(LifecycleState state) => '$state'.split('.').first;
+  String _readableStateName(LifecycleState state) => '$state'.split('.')[1];
 }
 
 /// Exception thrown when unload fails.
