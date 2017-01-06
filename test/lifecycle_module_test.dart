@@ -49,7 +49,7 @@ class TestLifecycleModule extends LifecycleModule {
     eventList = [];
     mockShouldUnload = true;
 
-    // Mangage disposables
+    // Manage disposables
     manageDisposable(managedDisposable);
     manageDisposer(() {
       _managedDisposerWasCalled = true;
@@ -337,7 +337,7 @@ void main() {
         await gotoState(module, LifecycleState.loading);
         expect(lastLogMessage, isNull);
         await module.load();
-        expect(lastLogMessage, isNotNull);
+        expect(lastLogMessage.message, contains('loading'));
         expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
@@ -345,7 +345,7 @@ void main() {
         await module.load();
         expect(lastLogMessage, isNull);
         await module.load();
-        expect(lastLogMessage, isNotNull);
+        expect(lastLogMessage.message, contains('loaded'));
         expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
@@ -444,7 +444,7 @@ void main() {
         await gotoState(module, LifecycleState.unloading);
         expect(lastLogMessage, isNull);
         await module.unload();
-        expect(lastLogMessage, isNotNull);
+        expect(lastLogMessage.message, contains('unloading'));
         expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
@@ -452,7 +452,7 @@ void main() {
         await gotoState(module, LifecycleState.unloaded);
         expect(lastLogMessage, isNull);
         await module.unload();
-        expect(lastLogMessage, isNotNull);
+        expect(lastLogMessage.message, contains('unloaded'));
         expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
@@ -562,7 +562,7 @@ void main() {
         await gotoState(module, LifecycleState.suspending);
         expect(lastLogMessage, isNull);
         await module.suspend();
-        expect(lastLogMessage, isNotNull);
+        expect(lastLogMessage.message, contains('suspending'));
         expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
@@ -570,7 +570,7 @@ void main() {
         await gotoState(module, LifecycleState.suspended);
         expect(lastLogMessage, isNull);
         await module.suspend();
-        expect(lastLogMessage, isNotNull);
+        expect(lastLogMessage.message, contains('suspended'));
         expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
@@ -653,7 +653,16 @@ void main() {
         module.resume();
         expect(lastLogMessage, isNull);
         await module.resume();
-        expect(lastLogMessage, isNotNull);
+        expect(lastLogMessage.message, contains('resuming'));
+        expect(lastLogMessage.level, equals(Level.WARNING));
+      });
+
+      test('should warn if it is already loaded', () async {
+        await gotoState(module, LifecycleState.loaded);
+        // ignore: unawaited_futures
+        expect(lastLogMessage, isNull);
+        await module.resume();
+        expect(lastLogMessage.message, contains('loaded'));
         expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
