@@ -237,6 +237,13 @@ abstract class LifecycleModule implements DisposableManager {
     if (_childModules.contains(newModule)) {
       return new Future(() {});
     }
+
+    if (isUnloaded || isUnloading) {
+      final state = isUnloaded ? 'unloaded' : 'unloading';
+      return new Future.error(
+          new StateError('Cannot load child module when module is $state'));
+    }
+
     final completer = new Completer<Null>();
     onWillLoadChildModule(newModule);
     _willLoadChildModuleController.add(newModule);
