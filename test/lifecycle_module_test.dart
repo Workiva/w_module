@@ -679,12 +679,14 @@ void main() {
     TestLifecycleModule parentModule;
     TestLifecycleModule childModule;
 
-    setUp(() {
+    setUp(() async {
       parentModule = new TestLifecycleModule();
       childModule = new TestLifecycleModule();
+      await parentModule.load();
     });
 
     test('loadChildModule loads a child module', () async {
+      parentModule.eventList.clear();
       await parentModule.loadChildModule(childModule);
       expect(
           parentModule.eventList,
@@ -695,6 +697,18 @@ void main() {
             'didLoadChildModule'
           ]));
       expect(childModule.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
+    });
+
+    test('loadChildModule throws when parent module is unloaded', () async {
+      await parentModule.unload();
+      expect(parentModule.isUnloaded, isTrue);
+      expect(parentModule.loadChildModule(childModule), throwsStateError);
+    });
+
+    test('loadChildModule throws when parent module is unloading', () {
+      parentModule.unload();
+      expect(parentModule.isUnloading, isTrue);
+      expect(parentModule.loadChildModule(childModule), throwsStateError);
     });
 
     test('childModules returns an iterable of loaded child modules', () async {
@@ -709,7 +723,6 @@ void main() {
     });
 
     test('should suspend child modules when parent is suspended', () async {
-      await parentModule.load();
       await parentModule.loadChildModule(childModule);
       parentModule.eventList.clear();
       childModule.eventList.clear();
@@ -721,7 +734,6 @@ void main() {
     });
 
     test('should resume child modules when parent is resumed', () async {
-      await parentModule.load();
       await parentModule.loadChildModule(childModule);
       await parentModule.suspend();
       parentModule.eventList.clear();
@@ -734,7 +746,6 @@ void main() {
     });
 
     test('should unload child modules when parent is unloaded', () async {
-      await parentModule.load();
       await parentModule.loadChildModule(childModule);
       parentModule.eventList.clear();
       childModule.eventList.clear();
@@ -765,7 +776,6 @@ void main() {
     test(
         'unloaded child module should be removed from lifecycle of parent module',
         () async {
-      await parentModule.load();
       await parentModule.loadChildModule(childModule);
       parentModule.eventList.clear();
       childModule.eventList.clear();

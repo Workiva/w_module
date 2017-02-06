@@ -232,11 +232,21 @@ abstract class LifecycleModule implements DisposableManager {
 
   /// Public method to async load a child module and register it
   /// for lifecycle management.
+  ///
+  /// Attempting to load a child module after a module has been unloaded will
+  /// throw a [StateError].
   @protected
   Future<Null> loadChildModule(LifecycleModule newModule) {
     if (_childModules.contains(newModule)) {
-      return new Future(() {});
+      return new Future.value(null);
     }
+
+    if (isUnloaded || isUnloading) {
+      var stateLabel = isUnloaded ? 'unloaded' : 'unloading';
+      return new Future.error(new StateError(
+          'Cannot load child module when module is $stateLabel'));
+    }
+
     final completer = new Completer<Null>();
     onWillLoadChildModule(newModule);
     _willLoadChildModuleController.add(newModule);
