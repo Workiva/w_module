@@ -16,10 +16,10 @@
 import 'dart:async';
 
 import 'package:mockito/mockito.dart';
-import 'package:w_module/w_module.dart';
-import 'package:w_module/serializable_module.dart';
-import 'package:w_common/json_serializable.dart' show JsonSerializable;
 import 'package:test/test.dart';
+import 'package:w_common/json_serializable.dart' show JsonSerializable;
+import 'package:w_module/serializable_module.dart';
+import 'package:w_module/w_module.dart';
 
 DispatchKey dispatchKey = new DispatchKey('serializable');
 

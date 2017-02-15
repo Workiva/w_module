@@ -19,6 +19,7 @@ import 'dart:async';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart' show protected, required;
 import 'package:w_common/disposable.dart';
+import 'package:w_module/w_module.dart';
 
 /// Possible states a [LifecycleModule] may occupy.
 enum LifecycleState {
@@ -49,7 +50,8 @@ enum LifecycleState {
 
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
-abstract class LifecycleModule implements DisposableManager {
+abstract class LifecycleModule extends SimpleModule
+    implements DisposableManager {
   final Disposable _disposableProxy = new Disposable();
   Logger _logger;
   String _name = 'Module';

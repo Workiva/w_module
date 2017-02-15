@@ -1,9 +1,9 @@
 library w_module.src.simple_module;
 
-/// A [Module] encapsulates a well-scoped logical unit of functionality and
+/// A [SimpleModule] encapsulates a well-scoped logical unit of functionality and
 /// exposes a discrete public interface for consumers.
 ///
-/// The public interface of a [Module] is comprised of [api], [events],
+/// The public interface of a [SimpleModule] is comprised of [api], [events],
 /// and [components]:
 /// - The [api] class exposes public methods that can be used to mutate or query
 ///   module data.
