@@ -15,6 +15,7 @@
 library w_module.src.module;
 
 import 'package:w_module/src/lifecycle_module.dart';
+import 'package:w_module/src/simple_module.dart';
 
 /// A [Module] encapsulates a well-scoped logical unit of functionality and
 /// exposes a discrete public interface for consumers.  It extends
@@ -28,7 +29,7 @@ import 'package:w_module/src/lifecycle_module.dart';
 ///   notification of internal module state change.
 /// - The [components] class exposes react-dart compatible UI components that
 ///   can be used to render module data.
-abstract class Module extends LifecycleModule {
+abstract class Module extends LifecycleModule implements SimpleModule {
   /// The [api] object should contain all public methods that a consumer can use
   /// to mutate module state (methods) or query existing module state (getters).
   ///
@@ -41,6 +42,7 @@ abstract class Module extends LifecycleModule {
   /// the source of the mutation (e.g. external api or internal UI).  Likewise,
   /// module methods that expose internal state should usually use existing
   /// getter methods available on stores within the module.
+  @override
   Object get api => null;
 
   /// The [components] object should contain all react-dart compatible UI
@@ -57,6 +59,7 @@ abstract class Module extends LifecycleModule {
   /// proper actions and stores props.  This ensures full functionality of the
   /// [components] without any external exposure of the requisite internal
   /// actions and stores.
+  @override
   ModuleComponents get components => null;
 
   /// The [events] object should contain all public streams that a consumer can
@@ -72,12 +75,6 @@ abstract class Module extends LifecycleModule {
   /// immediate response to actions.  This ensures that the internal
   /// unidirectional data flow is maintained and external [events] represent
   /// confirmed internal state changes.
+  @override
   Object get events => null;
-}
-
-/// Standard [Module.components] class. If a module implements a custom class
-/// for its components, it should extend [ModuleComponents].
-abstract class ModuleComponents {
-  /// The default UI component
-  Object content() => null;
 }
