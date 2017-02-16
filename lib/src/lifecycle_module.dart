@@ -19,7 +19,8 @@ import 'dart:async';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart' show protected, required;
 import 'package:w_common/disposable.dart';
-import 'package:w_module/w_module.dart';
+import 'package:w_module/src/simple_module.dart';
+
 
 /// Possible states a [LifecycleModule] may occupy.
 enum LifecycleState {

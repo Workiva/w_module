@@ -11,7 +11,6 @@ library w_module.src.simple_module;
 ///   notification of internal module state change.
 /// - The [components] class exposes react-dart compatible UI components that
 ///   can be used to render module data.
-
 abstract class SimpleModule {
   /// The [api] object should contain all public methods that a consumer can use
   /// to mutate module state (methods) or query existing module state (getters).
