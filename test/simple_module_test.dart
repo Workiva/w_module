@@ -1,5 +1,6 @@
 @TestOn('vm || browser')
 import 'package:test/test.dart';
+
 import 'package:w_module/src/simple_module.dart';
 
 class TestModule extends SimpleModule {}
