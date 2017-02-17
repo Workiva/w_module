@@ -16,4 +16,16 @@ library w_module.src.module;
 
 import 'package:w_module/src/lifecycle_module.dart';
 
+/// A [Module] encapsulates a well-scoped logical unit of functionality and
+/// exposes a discrete public interface for consumers.  It extends
+/// [LifecycleModule] to ensure that it adheres to a well-defined lifecycle.
+///
+/// The public interface of a [Module] is comprised of [api], [events],
+/// and [components]:
+/// - The [api] class exposes public methods that can be used to mutate or query
+///   module data.
+/// - The [events] class exposes streams that can be listened to for
+///   notification of internal module state change.
+/// - The [components] class exposes react-dart compatible UI components that
+///   can be used to render module data.
 abstract class Module extends LifecycleModule {}
