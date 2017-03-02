@@ -52,7 +52,7 @@ enum LifecycleState {
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
 abstract class LifecycleModule extends SimpleModule
-    implements DisposableManager {
+    implements DisposableManagerV2 {
   final Disposable _disposableProxy = new Disposable();
   Logger _logger;
   String _name = 'Module';
@@ -162,6 +162,15 @@ abstract class LifecycleModule extends SimpleModule
       _willUnloadChildModuleSubscriptions = {};
   final Map<LifecycleModule, StreamSubscription<LifecycleModule>>
       _didUnloadChildModuleSubscriptions = {};
+
+  @override
+  Timer getManagedPeriodicTimer(
+          Duration duration, void callback(Timer timer)) =>
+      _disposableProxy.getManagedPeriodicTimer(duration, callback);
+
+  @override
+  Timer getManagedTimer(Duration duration, void callback()) =>
+      _disposableProxy.getManagedTimer(duration, callback);
 
   /// Whether the module is currently instantiated.
   bool get isInstantiated => _state == LifecycleState.instantiated;
