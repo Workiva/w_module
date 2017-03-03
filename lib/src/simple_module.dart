@@ -58,7 +58,7 @@ abstract class SimpleModule {
   Object get events => null;
 }
 
-/// Standard [Module.components] class. If a module implements a custom class
+/// Standard [ModuleComponents] class. If a module implements a custom class
 /// for its components, it should extend [ModuleComponents].
 abstract class ModuleComponents {
   /// The default UI component

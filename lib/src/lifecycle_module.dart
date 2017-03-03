@@ -237,6 +237,9 @@ abstract class LifecycleModule extends SimpleModule
       _didLoadController.add(this);
       _transitionFuture = null;
       completer.complete();
+    }).catchError((Error error) {
+      _didLoadController.addError(error);
+      completer.completeError(error);
     });
 
     return completer.future;
@@ -248,8 +251,8 @@ abstract class LifecycleModule extends SimpleModule
   /// Attempting to load a child module after a module has been unloaded will
   /// throw a [StateError].
   @protected
-  Future<Null> loadChildModule(LifecycleModule newModule) {
-    if (_childModules.contains(newModule)) {
+  Future<Null> loadChildModule(LifecycleModule childModule) {
+    if (_childModules.contains(childModule)) {
       return new Future.value(null);
     }
 
@@ -260,29 +263,34 @@ abstract class LifecycleModule extends SimpleModule
     }
 
     final completer = new Completer<Null>();
-    onWillLoadChildModule(newModule);
-    _willLoadChildModuleController.add(newModule);
-    _willUnloadChildModuleSubscriptions[newModule] =
-        newModule.willUnload.listen((_) {
-      onWillUnloadChildModule(newModule);
-      _willUnloadChildModuleController.add(newModule);
-      _childModules.remove(newModule);
-      _willUnloadChildModuleSubscriptions[newModule].cancel();
-      _willUnloadChildModuleSubscriptions.remove(newModule);
+    onWillLoadChildModule(childModule).then((LifecycleModule _) async {
+      _willLoadChildModuleController.add(childModule);
+
+      _didUnloadChildModuleSubscriptions[childModule] = childModule.didUnload
+          .listen(_onChildModuleDidUnload,
+              onError: _onChildModuleDidUnloadError);
+
+      _willUnloadChildModuleSubscriptions[childModule] = childModule.willUnload
+          .listen(_onChildModuleWillUnload,
+              onError: _onChildModuleWillUnloadError);
+
+      try {
+        await childModule.load();
+        await onDidLoadChildModule(childModule);
+        _childModules.add(childModule);
+        _didLoadChildModuleController.add(childModule);
+        completer.complete();
+      } catch (error) {
+        _didUnloadChildModuleSubscriptions[childModule]?.cancel();
+        _willUnloadChildModuleSubscriptions[childModule]?.cancel();
+        _didLoadChildModuleController.addError(error);
+        completer.completeError(error);
+      }
+    }).catchError((Error error) {
+      _willLoadChildModuleController.addError(error);
+      completer.completeError(error);
     });
-    _didUnloadChildModuleSubscriptions[newModule] =
-        newModule.didUnload.listen((_) {
-      onDidUnloadChildModule(newModule);
-      _didUnloadChildModuleController.add(newModule);
-      _didUnloadChildModuleSubscriptions[newModule].cancel();
-      _didUnloadChildModuleSubscriptions.remove(newModule);
-    });
-    newModule.load().then((_) {
-      _childModules.add(newModule);
-      onDidLoadChildModule(newModule);
-      _didLoadChildModuleController.add(newModule);
-      completer.complete();
-    });
+
     return completer.future;
   }
 
@@ -339,13 +347,17 @@ abstract class LifecycleModule extends SimpleModule
     _transitionFuture = completer.future;
     _willSuspendController.add(this);
 
-    Future.wait(_childModules.map((c) => c.suspend())).then((_) {
-      onSuspend().then((_) {
-        _state = LifecycleState.suspended;
-        _didSuspendController.add(this);
-        _transitionFuture = null;
-        completer.complete();
-      });
+    Future
+        .wait(_childModules.map((c) => c.suspend()))
+        .then((_) => onSuspend().then((_) {
+              _state = LifecycleState.suspended;
+              _didSuspendController.add(this);
+              _transitionFuture = null;
+              completer.complete();
+            }))
+        .catchError((Error error) {
+      _didSuspendController.addError(error);
+      completer.completeError(error);
     });
 
     return completer.future;
@@ -381,13 +393,17 @@ abstract class LifecycleModule extends SimpleModule
     _transitionFuture = completer.future;
     _willResumeController.add(this);
 
-    Future.wait(_childModules.map((c) => c.resume())).then((_) {
-      onResume().then((_) {
-        _state = LifecycleState.loaded;
-        _didResumeController.add(this);
-        _transitionFuture = null;
-        completer.complete();
-      });
+    Future
+        .wait(_childModules.map((c) => c.resume()))
+        .then((_) => onResume().then((_) {
+              _state = LifecycleState.loaded;
+              _didResumeController.add(this);
+              _transitionFuture = null;
+              completer.complete();
+            }))
+        .catchError((Error error) {
+      _didResumeController.addError(error);
+      completer.completeError(error);
     });
 
     return completer.future;
@@ -454,19 +470,25 @@ abstract class LifecycleModule extends SimpleModule
     _willUnloadController.add(this);
 
     final unloadChildren = _childModules.map((c) => c.unload());
-    Future.wait(unloadChildren).then((_) {
-      _childModules.clear();
-      onUnload().then((_) {
-        _disposableProxy.dispose().then((_) {
-          _state = LifecycleState.unloaded;
-          _didUnloadController
-            ..add(this)
-            ..close();
-          _transitionFuture = null;
-          completer.complete();
-        });
-      });
+
+    Future
+        .wait(unloadChildren)
+        .then(
+            (_) => onUnload().then((_) => _disposableProxy.dispose().then((_) {
+                  _state = LifecycleState.unloaded;
+                  _didUnloadController
+                    ..add(this)
+                    ..close();
+                  _transitionFuture = null;
+                  completer.complete();
+                })))
+        .catchError((Error error) {
+      _didUnloadController
+        ..addError(error)
+        ..close();
+      completer.completeError(error);
     });
+
     return completer.future;
   }
 
@@ -555,6 +577,41 @@ abstract class LifecycleModule extends SimpleModule
         'unnecessary calls to .$methodName().');
 
     return _transitionFuture ?? new Future.value(null);
+  }
+
+  /// Handles a child [LifecycleModule]'s [didUnload] event.
+  Future<Null> _onChildModuleDidUnload(LifecycleModule module) async {
+    try {
+      await onDidUnloadChildModule(module);
+      _didUnloadChildModuleController.add(module);
+      _didUnloadChildModuleSubscriptions.remove(module).cancel();
+    } catch (error) {
+      _onChildModuleDidUnloadError(error);
+    }
+  }
+
+  /// Handles any error related to a child [LifecycleModule]'s [didUnload]
+  /// event.
+  void _onChildModuleDidUnloadError(Error error) {
+    _didUnloadChildModuleController.addError(error);
+  }
+
+  /// Handles a child [LifecycleModule]'s [willUnload] event.
+  Future<Null> _onChildModuleWillUnload(LifecycleModule module) async {
+    try {
+      await onWillUnloadChildModule(module);
+      _willUnloadChildModuleController.add(module);
+      _childModules.remove(module);
+      _willUnloadChildModuleSubscriptions.remove(module).cancel();
+    } catch (error) {
+      _onChildModuleWillUnloadError(error);
+    }
+  }
+
+  /// Handles any [Error] raised during a child [LifecycleModule]'s [willUnload]
+  /// event.
+  void _onChildModuleWillUnloadError(Error error) {
+    _willUnloadChildModuleController.addError(error);
   }
 
   /// Obtains the value of a [LifecycleState] enumeration.
