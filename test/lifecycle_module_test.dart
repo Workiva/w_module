@@ -28,6 +28,7 @@ const String shouldUnloadError = 'Mock shouldUnload false message';
 class MockStreamSubscription extends Mock implements StreamSubscription<Null> {}
 
 class TestLifecycleModule extends LifecycleModule {
+  Iterable<StreamSubscription<LifecycleModule>> _eventListStreamSubscriptions;
   bool _managedDisposerWasCalled = false;
 
   final Disposable managedDisposable;
@@ -70,26 +71,31 @@ class TestLifecycleModule extends LifecycleModule {
         (String label) => (LifecycleModule _) => eventList.add(label);
     var onErrorHandler = (Error error) {};
 
-    // Parent module events:
-    willLoad.listen(getEventListAdder('willLoad'), onError: onErrorHandler);
-    didLoad.listen(getEventListAdder('didLoad'), onError: onErrorHandler);
-    willUnload.listen(getEventListAdder('willUnload'), onError: onErrorHandler);
-    didUnload.listen(getEventListAdder('didUnload'), onError: onErrorHandler);
-    willSuspend.listen(getEventListAdder('willSuspend'),
-        onError: onErrorHandler);
-    didSuspend.listen(getEventListAdder('didSuspend'), onError: onErrorHandler);
-    willResume.listen(getEventListAdder('willResume'), onError: onErrorHandler);
-    didResume.listen(getEventListAdder('didResume'), onError: onErrorHandler);
+    _eventListStreamSubscriptions = [
+      // Parent module events:
+      willLoad.listen(getEventListAdder('willLoad'), onError: onErrorHandler),
+      didLoad.listen(getEventListAdder('didLoad'), onError: onErrorHandler),
+      willUnload.listen(getEventListAdder('willUnload'),
+          onError: onErrorHandler),
+      didUnload.listen(getEventListAdder('didUnload'), onError: onErrorHandler),
+      willSuspend.listen(getEventListAdder('willSuspend'),
+          onError: onErrorHandler),
+      didSuspend.listen(getEventListAdder('didSuspend'),
+          onError: onErrorHandler),
+      willResume.listen(getEventListAdder('willResume'),
+          onError: onErrorHandler),
+      didResume.listen(getEventListAdder('didResume'), onError: onErrorHandler),
 
-    // Child module events:
-    willLoadChildModule.listen(getEventListAdder('willLoadChildModule'),
-        onError: onErrorHandler);
-    didLoadChildModule.listen(getEventListAdder('didLoadChildModule'),
-        onError: onErrorHandler);
-    willUnloadChildModule.listen(getEventListAdder('willUnloadChildModule'),
-        onError: onErrorHandler);
-    didUnloadChildModule.listen(getEventListAdder('didUnloadChildModule'),
-        onError: onErrorHandler);
+      // Child module events:
+      willLoadChildModule.listen(getEventListAdder('willLoadChildModule'),
+          onError: onErrorHandler),
+      didLoadChildModule.listen(getEventListAdder('didLoadChildModule'),
+          onError: onErrorHandler),
+      willUnloadChildModule.listen(getEventListAdder('willUnloadChildModule'),
+          onError: onErrorHandler),
+      didUnloadChildModule.listen(getEventListAdder('didUnloadChildModule'),
+          onError: onErrorHandler),
+    ];
   }
 
   bool get managedDisposerWasCalled => _managedDisposerWasCalled;
@@ -185,6 +191,12 @@ class TestLifecycleModule extends LifecycleModule {
       throw onResumeError;
     }
     eventList.add('onResume');
+  }
+
+  /// Cancels subscriptions to the [TestLifecycleModule] lifecycle events.
+  Future<Null> tearDown() async {
+    await Future.wait(_eventListStreamSubscriptions
+        .map((StreamSubscription sub) => sub.cancel()));
   }
 }
 
@@ -286,6 +298,10 @@ void main() {
       lastLogMessage = null;
     });
 
+    tearDown(() async {
+      await module.tearDown();
+    });
+
     void testInvalidTransitions(
         LifecycleState state, List<LifecycleState> invalidStates) {
       invalidStates.forEach((fromState) {
@@ -323,8 +339,10 @@ void main() {
 
         test('should add that error to didLoad stream', () {
           module.didLoad.listen((LifecycleModule _) {},
-              onError: expectAsync1(
-                  (Error error) => expect(error, same(module.onLoadError))));
+              onError: expectAsync2((Error error, StackTrace stackTrace) {
+            expect(error, same(module.onLoadError));
+            expect(stackTrace, isNotNull);
+          }));
           expect(module.load(), throwsA(same(module.onLoadError)));
         });
       });
@@ -421,10 +439,12 @@ void main() {
         test('should return that error',
             () => expect(module.unload(), throwsA(same(testError))));
 
-        test('should add that error to didLoad stream', () {
+        test('should add that error to didUnload stream', () {
           module.didUnload.listen((LifecycleModule _) {},
-              onError: expectAsync1(
-                  (Error error) => expect(error, same(module.onUnloadError))));
+              onError: expectAsync2((Error error, StackTrace stackTrace) {
+            expect(error, same(module.onUnloadError));
+            expect(stackTrace, isNotNull);
+          }));
           expect(module.unload(), throwsA(same(module.onUnloadError)));
         });
       });
@@ -570,8 +590,10 @@ void main() {
 
         test('should add that error to didSuspend stream', () {
           module.didSuspend.listen((LifecycleModule _) {},
-              onError: expectAsync1(
-                  (Error error) => expect(error, same(module.onSuspendError))));
+              onError: expectAsync2((Error error, StackTrace stackTrace) {
+            expect(error, same(module.onSuspendError));
+            expect(stackTrace, isNotNull);
+          }));
           expect(module.suspend(), throwsA(same(module.onSuspendError)));
         });
       });
@@ -674,10 +696,12 @@ void main() {
         test('should return that error',
             () => expect(module.resume(), throwsA(same(module.onResumeError))));
 
-        test('should add that error to didLoad stream', () {
+        test('should add that error to didResume stream', () {
           module.didResume.listen((LifecycleModule _) {},
-              onError: expectAsync1(
-                  (Error error) => expect(error, same(module.onResumeError))));
+              onError: expectAsync2((Error error, StackTrace stackTrace) {
+            expect(error, same(module.onResumeError));
+            expect(stackTrace, isNotNull);
+          }));
           expect(module.resume(), throwsA(same(module.onResumeError)));
         });
       });
@@ -762,6 +786,22 @@ void main() {
         LifecycleState.unloaded
       ]);
     });
+
+    test('getManagedTimer should return a timer', () {
+      module.getManagedTimer(
+          new Duration(milliseconds: 10), expectAsync0(() {}));
+    });
+
+    test('getManagedPeriodicTimer should return a timer', () {
+      var callCount = 0;
+      module.getManagedPeriodicTimer(
+          new Duration(milliseconds: 10),
+          expectAsync1((Timer timer) {
+            if (callCount++ >= 1) {
+              timer.cancel();
+            }
+          }, count: 2));
+    });
   }, timeout: new Timeout(new Duration(seconds: 2)));
 
   group('LifecycleModule with children', () {
@@ -772,6 +812,11 @@ void main() {
       parentModule = new TestLifecycleModule();
       childModule = new TestLifecycleModule();
       await parentModule.load();
+    });
+
+    tearDown(() async {
+      await parentModule.tearDown();
+      await childModule.tearDown();
     });
 
     group('loadChildModule', () {
@@ -790,7 +835,7 @@ void main() {
             childModule.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
       });
 
-      group('with an child with an onLoad that throws', () {
+      group('with a child with an onLoad that throws', () {
         setUp(() {
           childModule.onLoadError = testError;
         });
@@ -802,8 +847,10 @@ void main() {
 
         test('should add that error to didLoadChildModule stream', () {
           parentModule.didLoadChildModule.listen((LifecycleModule _) {},
-              onError: expectAsync1((Error error) =>
-                  expect(error, same(childModule.onLoadError))));
+              onError: expectAsync2((Error error, StackTrace stackTrace) {
+            expect(error, same(childModule.onLoadError));
+            expect(stackTrace, isNotNull);
+          }));
           expect(parentModule.loadChildModule(childModule),
               throwsA(same(childModule.onLoadError)));
         });
@@ -821,8 +868,10 @@ void main() {
 
         test('should add that error to didLoadChildModule stream', () {
           parentModule.didLoadChildModule.listen((LifecycleModule _) {},
-              onError: expectAsync1((Error error) =>
-                  expect(error, same(parentModule.onDidLoadChildModuleError))));
+              onError: expectAsync2((Error error, StackTrace stackTrace) {
+            expect(error, same(parentModule.onDidLoadChildModuleError));
+            expect(stackTrace, isNotNull);
+          }));
           expect(parentModule.loadChildModule(childModule),
               throwsA(same(parentModule.onDidLoadChildModuleError)));
         });
@@ -840,8 +889,10 @@ void main() {
 
         test('should add that error to willLoadChildModule stream', () {
           parentModule.willLoadChildModule.listen((LifecycleModule _) {},
-              onError: expectAsync1((Error error) => expect(
-                  error, same(parentModule.onWillLoadChildModuleError))));
+              onError: expectAsync2((Error error, StackTrace stackTrace) {
+            expect(error, same(parentModule.onWillLoadChildModuleError));
+            expect(stackTrace, isNotNull);
+          }));
           expect(parentModule.loadChildModule(childModule),
               throwsA(same(parentModule.onWillLoadChildModuleError)));
         });
@@ -869,6 +920,8 @@ void main() {
           new isInstanceOf<Iterable<LifecycleModule>>());
       expect(parentModule.childModules.toList(),
           equals([childModule, childModuleB]));
+
+      await childModuleB.tearDown();
     });
 
     group('suspend', () {
@@ -886,7 +939,7 @@ void main() {
             equals(['willSuspend', 'onSuspend', 'didSuspend']));
       });
 
-      group('with an child with an onSuspend that throws', () {
+      group('with a child with an onSuspend that throws', () {
         setUp(() {
           childModule.onSuspendError = testError;
         });
@@ -920,7 +973,7 @@ void main() {
             equals(['willResume', 'onResume', 'didResume']));
       });
 
-      group('with an child with an onResume that throws', () {
+      group('with a child with an onResume that throws', () {
         setUp(() {
           childModule.onResumeError = testError;
         });
@@ -967,7 +1020,7 @@ void main() {
             ]));
       });
 
-      group('with an child with an onUnload that throws', () {
+      group('with a child with an onUnload that throws', () {
         setUp(() async {
           await parentModule.loadChildModule(childModule);
           childModule.onUnloadError = testError;
@@ -980,8 +1033,10 @@ void main() {
 
         test('should add that error to didUnload stream', () {
           parentModule.didUnload.listen((LifecycleModule _) {},
-              onError: expectAsync1((Error error) =>
-                  expect(error, same(childModule.onUnloadError))));
+              onError: expectAsync2((Error error, StackTrace stackTrace) {
+            expect(error, same(childModule.onUnloadError));
+            expect(stackTrace, isNotNull);
+          }));
           expect(
               parentModule.unload(), throwsA(same(childModule.onUnloadError)));
         });
@@ -993,10 +1048,12 @@ void main() {
           parentModule.onWillUnloadChildModuleError = testError;
         });
 
-        test('should add that error to onWillUnloadChildModule stream', () {
+        test('should add that error to willUnloadChildModule stream', () {
           parentModule.willUnloadChildModule.listen((LifecycleModule _) {},
-              onError: expectAsync1((Error error) => expect(
-                  error, same(parentModule.onWillUnloadChildModuleError))));
+              onError: expectAsync2((Error error, StackTrace stackTrace) {
+            expect(error, same(parentModule.onWillUnloadChildModuleError));
+            expect(stackTrace, isNotNull);
+          }));
           parentModule.unload();
         });
       });
@@ -1007,10 +1064,12 @@ void main() {
           parentModule.onDidUnloadChildModuleError = testError;
         });
 
-        test('should add that error to onWillUnloadChildModule stream', () {
+        test('should add that error to didUnloadChildModule stream', () {
           parentModule.didUnloadChildModule.listen((LifecycleModule _) {},
-              onError: expectAsync1((Error error) => expect(
-                  error, same(parentModule.onDidUnloadChildModuleError))));
+              onError: expectAsync2((Error error, StackTrace stackTrace) {
+            expect(error, same(parentModule.onDidUnloadChildModuleError));
+            expect(stackTrace, isNotNull);
+          }));
           parentModule.unload();
         });
       });

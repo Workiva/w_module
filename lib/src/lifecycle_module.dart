@@ -237,9 +237,9 @@ abstract class LifecycleModule extends SimpleModule
       _didLoadController.add(this);
       _transitionFuture = null;
       completer.complete();
-    }).catchError((Error error) {
-      _didLoadController.addError(error);
-      completer.completeError(error);
+    }).catchError((Object error, StackTrace stackTrace) {
+      _didLoadController.addError(error, stackTrace);
+      completer.completeError(error, stackTrace);
     });
 
     return completer.future;
@@ -268,11 +268,11 @@ abstract class LifecycleModule extends SimpleModule
 
       _didUnloadChildModuleSubscriptions[childModule] = childModule.didUnload
           .listen(_onChildModuleDidUnload,
-              onError: _onChildModuleDidUnloadError);
+              onError: _didUnloadChildModuleController.addError);
 
       _willUnloadChildModuleSubscriptions[childModule] = childModule.willUnload
           .listen(_onChildModuleWillUnload,
-              onError: _onChildModuleWillUnloadError);
+              onError: _willUnloadChildModuleController.addError);
 
       try {
         await childModule.load();
@@ -280,15 +280,15 @@ abstract class LifecycleModule extends SimpleModule
         _childModules.add(childModule);
         _didLoadChildModuleController.add(childModule);
         completer.complete();
-      } catch (error) {
-        _didUnloadChildModuleSubscriptions[childModule]?.cancel();
-        _willUnloadChildModuleSubscriptions[childModule]?.cancel();
-        _didLoadChildModuleController.addError(error);
-        completer.completeError(error);
+      } catch (error, stackTrace) {
+        await _didUnloadChildModuleSubscriptions[childModule]?.cancel();
+        await _willUnloadChildModuleSubscriptions[childModule]?.cancel();
+        _didLoadChildModuleController.addError(error, stackTrace);
+        completer.completeError(error, stackTrace);
       }
-    }).catchError((Error error) {
-      _willLoadChildModuleController.addError(error);
-      completer.completeError(error);
+    }).catchError((Object error, StackTrace stackTrace) {
+      _willLoadChildModuleController.addError(error, stackTrace);
+      completer.completeError(error, stackTrace);
     });
 
     return completer.future;
@@ -347,17 +347,16 @@ abstract class LifecycleModule extends SimpleModule
     _transitionFuture = completer.future;
     _willSuspendController.add(this);
 
-    Future
-        .wait(_childModules.map((c) => c.suspend()))
-        .then((_) => onSuspend().then((_) {
-              _state = LifecycleState.suspended;
-              _didSuspendController.add(this);
-              _transitionFuture = null;
-              completer.complete();
-            }))
-        .catchError((Error error) {
-      _didSuspendController.addError(error);
-      completer.completeError(error);
+    final suspendingChildren = _childModules.map((c) => c.suspend());
+    Future.wait(suspendingChildren).then((_) async {
+      await onSuspend();
+      _state = LifecycleState.suspended;
+      _didSuspendController.add(this);
+      _transitionFuture = null;
+      completer.complete();
+    }).catchError((Object error, StackTrace stackTrace) {
+      _didSuspendController.addError(error, stackTrace);
+      completer.completeError(error, stackTrace);
     });
 
     return completer.future;
@@ -393,17 +392,16 @@ abstract class LifecycleModule extends SimpleModule
     _transitionFuture = completer.future;
     _willResumeController.add(this);
 
-    Future
-        .wait(_childModules.map((c) => c.resume()))
-        .then((_) => onResume().then((_) {
-              _state = LifecycleState.loaded;
-              _didResumeController.add(this);
-              _transitionFuture = null;
-              completer.complete();
-            }))
-        .catchError((Error error) {
-      _didResumeController.addError(error);
-      completer.completeError(error);
+    final resumingChildren = _childModules.map((c) => c.resume());
+    Future.wait(resumingChildren).then((_) async {
+      await onResume();
+      _state = LifecycleState.loaded;
+      _didResumeController.add(this);
+      _transitionFuture = null;
+      completer.complete();
+    }).catchError((Object error, StackTrace stackTrace) {
+      _didResumeController.addError(error, stackTrace);
+      completer.completeError(error, stackTrace);
     });
 
     return completer.future;
@@ -469,24 +467,21 @@ abstract class LifecycleModule extends SimpleModule
     _transitionFuture = completer.future;
     _willUnloadController.add(this);
 
-    final unloadChildren = _childModules.map((c) => c.unload());
-
-    Future
-        .wait(unloadChildren)
-        .then(
-            (_) => onUnload().then((_) => _disposableProxy.dispose().then((_) {
-                  _state = LifecycleState.unloaded;
-                  _didUnloadController
-                    ..add(this)
-                    ..close();
-                  _transitionFuture = null;
-                  completer.complete();
-                })))
-        .catchError((Error error) {
+    final unloadingChildren = _childModules.map((c) => c.unload());
+    Future.wait(unloadingChildren).then((_) async {
+      await onUnload();
+      await _disposableProxy.dispose();
+      _state = LifecycleState.unloaded;
       _didUnloadController
-        ..addError(error)
+        ..add(this)
         ..close();
-      completer.completeError(error);
+      _transitionFuture = null;
+      completer.complete();
+    }).catchError((Object error, StackTrace stackTrace) {
+      _didUnloadController
+        ..addError(error, stackTrace)
+        ..close();
+      completer.completeError(error, stackTrace);
     });
 
     return completer.future;
@@ -584,16 +579,10 @@ abstract class LifecycleModule extends SimpleModule
     try {
       await onDidUnloadChildModule(module);
       _didUnloadChildModuleController.add(module);
-      _didUnloadChildModuleSubscriptions.remove(module).cancel();
-    } catch (error) {
-      _onChildModuleDidUnloadError(error);
+      await _didUnloadChildModuleSubscriptions.remove(module).cancel();
+    } catch (error, stackTrace) {
+      _didUnloadChildModuleController.addError(error, stackTrace);
     }
-  }
-
-  /// Handles any error related to a child [LifecycleModule]'s [didUnload]
-  /// event.
-  void _onChildModuleDidUnloadError(Error error) {
-    _didUnloadChildModuleController.addError(error);
   }
 
   /// Handles a child [LifecycleModule]'s [willUnload] event.
@@ -602,16 +591,10 @@ abstract class LifecycleModule extends SimpleModule
       await onWillUnloadChildModule(module);
       _willUnloadChildModuleController.add(module);
       _childModules.remove(module);
-      _willUnloadChildModuleSubscriptions.remove(module).cancel();
-    } catch (error) {
-      _onChildModuleWillUnloadError(error);
+      await _willUnloadChildModuleSubscriptions.remove(module).cancel();
+    } catch (error, stackTrace) {
+      _willUnloadChildModuleController.addError(error, stackTrace);
     }
-  }
-
-  /// Handles any [Error] raised during a child [LifecycleModule]'s [willUnload]
-  /// event.
-  void _onChildModuleWillUnloadError(Error error) {
-    _willUnloadChildModuleController.addError(error);
   }
 
   /// Obtains the value of a [LifecycleState] enumeration.
