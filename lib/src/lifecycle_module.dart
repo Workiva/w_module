@@ -53,11 +53,28 @@ enum LifecycleState {
 /// unified lifecycle API.
 abstract class LifecycleModule extends SimpleModule
     implements DisposableManagerV2 {
+  List<LifecycleModule> _childModules = [];
+  StreamController<LifecycleModule> _didLoadChildModuleController;
+  StreamController<LifecycleModule> _didLoadController;
+  StreamController<LifecycleModule> _didResumeController;
+  StreamController<LifecycleModule> _didSuspendController;
+  StreamController<LifecycleModule> _didUnloadChildModuleController;
+  final Map<LifecycleModule, StreamSubscription<LifecycleModule>>
+      _didUnloadChildModuleSubscriptions = {};
+  StreamController<LifecycleModule> _didUnloadController;
   final Disposable _disposableProxy = new Disposable();
   Logger _logger;
   String _name = 'Module';
   LifecycleState _state = LifecycleState.instantiated;
   Future<Null> _transitionFuture;
+  StreamController<LifecycleModule> _willLoadChildModuleController;
+  StreamController<LifecycleModule> _willLoadController;
+  StreamController<LifecycleModule> _willResumeController;
+  StreamController<LifecycleModule> _willSuspendController;
+  StreamController<LifecycleModule> _willUnloadChildModuleController;
+  final Map<LifecycleModule, StreamSubscription<LifecycleModule>>
+      _willUnloadChildModuleSubscriptions = {};
+  StreamController<LifecycleModule> _willUnloadController;
 
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
@@ -101,67 +118,86 @@ abstract class LifecycleModule extends SimpleModule
   }
 
   /// List of child components so that lifecycle can iterate over them as needed
-  List<LifecycleModule> _childModules = [];
   Iterable<LifecycleModule> get childModules => _childModules;
 
-  // Broadcast streams for the module's lifecycle events.
-
-  /// Event dispatched at beginning of module.load() logic
-  StreamController<LifecycleModule> _willLoadController;
-  Stream<LifecycleModule> get willLoad => _willLoadController.stream;
-
-  /// Event dispatched at end of module.load() logic
-  StreamController<LifecycleModule> _didLoadController;
+  /// The [LifecycleModule] was loaded.
+  ///
+  /// Any error or exception thrown during the [LifecycleModule]'s
+  /// [onLoad] call will be emitted.
   Stream<LifecycleModule> get didLoad => _didLoadController.stream;
 
-  /// Event dispatched at the beginning of module.loadChildModule() logic
-  StreamController<LifecycleModule> _willLoadChildModuleController;
-  Stream<LifecycleModule> get willLoadChildModule =>
-      _willLoadChildModuleController.stream;
-
-  /// Event dispatched at end of module.loadChildModule() logic
-  StreamController<LifecycleModule> _didLoadChildModuleController;
+  /// A child [LifecycleModule] was loaded.
+  ///
+  /// Any error or exception thrown during the child [LifecycleModule]'s
+  /// [onLoad] call will be emitted.
+  ///
+  /// Any error or exception thrown during the parent [LifecycleModule]'safe
+  /// [onDidLoadChildModule] call will be emitted.
   Stream<LifecycleModule> get didLoadChildModule =>
       _didLoadChildModuleController.stream;
 
-  /// Event dispatched before a child module is unloaded
-  StreamController<LifecycleModule> _willUnloadChildModuleController;
-  Stream<LifecycleModule> get willUnloadChildModule =>
-      _willUnloadChildModuleController.stream;
+  /// The [LifecycleModule] was resumed.
+  ///
+  /// Any error or exception thrown during the child [LifecycleModule]'s
+  /// [resume] call will be emitted.
+  ///
+  /// Any error or exception thrown during the [LifecycleModule]'s
+  /// [onResume] call will be emitted.
+  Stream<LifecycleModule> get didResume => _didResumeController.stream;
 
-  /// Event dispatched after a child module is unloaded
-  StreamController<LifecycleModule> _didUnloadChildModuleController;
+  /// The [LifecycleModule] was suspended.
+  ///
+  /// Any error or exception thrown during the child [LifecycleModule]'s
+  /// [suspend] call will be emitted.
+  ///
+  /// Any error or exception thrown during the [LifecycleModule]'s
+  /// [onSuspend] call will be emitted.
+  Stream<LifecycleModule> get didSuspend => _didSuspendController.stream;
+
+  /// The [LifecycleModule] was unloaded.
+  ///
+  /// Any error or exception thrown during the child [LifecycleModule]'s
+  /// [unload] call will be emitted.
+  ///
+  /// Any error or exception thrown during the [LifecycleModule]'s
+  /// [onUnload] call will be emitted.
+  Stream<LifecycleModule> get didUnload => _didUnloadController.stream;
+
+  /// A child [LifecycleModule] was unloaded.
+  ///
+  /// Any error or exception thrown during the child [LifecycleModule]'s
+  /// [onUnload] call will be emitted.
+  ///
+  /// Any error or exception thrown during the parent [LifecycleModule]'safe
+  /// [onDidUnloadChildModule] call will be emitted.
   Stream<LifecycleModule> get didUnloadChildModule =>
       _didUnloadChildModuleController.stream;
 
-  /// Event dispatched at the beginning of the module.suspend() logic
-  StreamController<LifecycleModule> _willSuspendController;
-  Stream<LifecycleModule> get willSuspend => _willSuspendController.stream;
+  /// A child [LifecycleModule] is about to be loaded.
+  ///
+  /// Any error or exception thrown during the parent [LifecycleModule]'safe
+  /// [onDidLoadChildModule] call will be emitted.
+  Stream<LifecycleModule> get willLoadChildModule =>
+      _willLoadChildModuleController.stream;
 
-  /// Event dispatched at the end of the module.suspend() logic
-  StreamController<LifecycleModule> _didSuspendController;
-  Stream<LifecycleModule> get didSuspend => _didSuspendController.stream;
+  /// A child [LifecycleModule] is about to be unloaded.
+  ///
+  /// Any error or exception thrown during the parent [LifecycleModule]'safe
+  /// [onDidUnloadChildModule] call will be emitted.
+  Stream<LifecycleModule> get willUnloadChildModule =>
+      _willUnloadChildModuleController.stream;
 
-  /// Event dispatched at the beginning of the module.resume() logic
-  StreamController<LifecycleModule> _willResumeController;
+  /// The [LifecycleModule] is about to be resumed.
   Stream<LifecycleModule> get willResume => _willResumeController.stream;
 
-  /// Event dispatched at the end of the module.resume() logic
-  StreamController<LifecycleModule> _didResumeController;
-  Stream<LifecycleModule> get didResume => _didResumeController.stream;
-
-  /// Event dispatched at beginning of module.unload() logic
-  StreamController<LifecycleModule> _willUnloadController;
+  /// The [LifecycleModule] is about to be unloaded.
   Stream<LifecycleModule> get willUnload => _willUnloadController.stream;
 
-  /// Event dispatched at end of module.unload() logic
-  StreamController<LifecycleModule> _didUnloadController;
-  Stream<LifecycleModule> get didUnload => _didUnloadController.stream;
+  /// The [LifecycleModule] is about to be loaded.
+  Stream<LifecycleModule> get willLoad => _willLoadController.stream;
 
-  final Map<LifecycleModule, StreamSubscription<LifecycleModule>>
-      _willUnloadChildModuleSubscriptions = {};
-  final Map<LifecycleModule, StreamSubscription<LifecycleModule>>
-      _didUnloadChildModuleSubscriptions = {};
+  /// The [LifecycleModule] is about to be suspended.
+  Stream<LifecycleModule> get willSuspend => _willSuspendController.stream;
 
   @override
   Timer getManagedPeriodicTimer(
@@ -211,6 +247,10 @@ abstract class LifecycleModule extends SimpleModule
   /// and the method is a noop. If the module is in any other state, a
   /// StateError is thrown.
   ///
+  /// If an [Exception] is thrown during the call to [onLoad] it will be emitted
+  /// on the [didLoad] lifecycle stream. The exception will also be returned as
+  /// the [Future] error value.
+  ///
   /// Note that [LifecycleModule] only supports one load/unload cycle. If [load]
   /// is called after a module has been unloaded, a [StateError] is thrown.
   Future<Null> load() {
@@ -247,6 +287,15 @@ abstract class LifecycleModule extends SimpleModule
 
   /// Public method to async load a child module and register it
   /// for lifecycle management.
+  ///
+  /// If an [Exception] is thrown during the call to the parent
+  /// [onWillLoadChildModule] it will be emitted on the [willLoadChildModule]
+  /// lifecycle stream. The exception will also be returned as the [Future]
+  /// error value.
+  ///
+  /// If an [Exception] is thrown during the call to the child [onLoad] it will
+  /// be emitted on the [didLoadChildModule] lifecycle stream. The exception
+  /// will also be returned as the [Future] error value.
   ///
   /// Attempting to load a child module after a module has been unloaded will
   /// throw a [StateError].
@@ -326,6 +375,15 @@ abstract class LifecycleModule extends SimpleModule
   /// the module is in the suspended or suspending state a warning is logged and
   /// the method is a noop. If the module is in any other state, a StateError is
   /// thrown.
+  ///
+  /// The [Future] values of all children [suspend] calls will be awaited. The
+  /// first child to return an error value will emit the error on the
+  /// [didSuspend] lifecycle stream. This error will also be returned by
+  /// [suspend].
+  ///
+  /// If an error or exception is thrown during the call to the parent
+  /// [onSuspend] lifecycle method it will be emitted on the [didSuspend]
+  /// lifecycle stream. The error will also be returned by [suspend].
   Future<Null> suspend() {
     if (isSuspended || isSuspending) {
       return _buildNoopResponse(
@@ -371,6 +429,15 @@ abstract class LifecycleModule extends SimpleModule
   /// state. If the module is in the resuming state a warning is logged and the
   /// method is a noop. If the module is in any other state, a StateError is
   /// thrown.
+  ///
+  /// The [Future] values of all children [resume] calls will be awaited. The
+  /// first child to return an error value will emit the error on the
+  /// [didResume] lifecycle stream. This error will also be returned by
+  /// [resume].
+  ///
+  /// If an error or exception is thrown during the call to the parent
+  /// [onResume] lifecycle method it will be emitted on the [didResume]
+  /// lifecycle stream. The error will also be returned by [resume].
   Future<Null> resume() {
     if (isLoaded || isResuming) {
       return _buildNoopResponse(
@@ -434,12 +501,22 @@ abstract class LifecycleModule extends SimpleModule
   ///
   /// Calls shouldUnload(), and, if that completes successfully, continues to
   /// call onUnload() on the module and all registered child modules. If
-  /// unloading is rejected, this method will complete with an error.
+  /// unloading is rejected, this method will complete with an error. The rejection
+  /// error will not be added to the [didUnload] lifecycle event stream.
   ///
   /// Initiates the unload process when the module is in the loaded or suspended
   /// state. If the module is in the unloading or unloaded state a warning is
   /// logged and the method is a noop. If the module is in any other state, a
   /// StateError is thrown.
+  ///
+  /// The [Future] values of all children [unload] calls will be awaited. The
+  /// first child to return an error value will emit the error on the
+  /// [didUnload] lifecycle stream. This error will also be returned by
+  /// [unload].
+  ///
+  /// If an error or exception is thrown during the call to the parent
+  /// [onUnload] lifecycle method it will be emitted on the [didUnload]
+  /// lifecycle stream. The error will also be returned by [unload].
   Future<Null> unload() {
     if (isUnloaded || isUnloading) {
       return _buildNoopResponse(
