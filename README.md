@@ -285,7 +285,9 @@ Many examples of `Module` lifecycle behavior and manipulation can be found in th
 ### Lifecycle Methods
 
 `Module` exposes five lifecycle methods that external consumers should use to trigger loading and unloading
-behavior:
+behavior. These methods can return an error or exception thrown by their respective lifecycle handler methods.
+This allows dependencies on a `Module` to respond to failures that occur within the overridden lifecycle 
+behavior.
 
 Method         | Description
 -------------- | ---------------------------------
@@ -293,7 +295,7 @@ Method         | Description
 `suspend`      | Suspends the module and all child modules. While suspended modules should make themselves lightweight and avoid making network requests.
 `resume`       | Brings the module and all child modules out of suspension. Upon resuming, modules should go back to business as usual.
 `shouldUnload` | Returns the unloadable state of the `Module` and its child modules as a `ShouldUnloadResult`.  Internally, this executes the module's `onShouldUnload` method.
-`unload`       | Triggers unloading of a `Module` and all of its child modules.  Internally, this executes the module's `shouldUnload` method, and, if that completes successfully, executes the module's `onUnload` method. If unloading is rejected, this method will complete with an error.
+`unload`       | Triggers unloading of a `Module` and all of its child modules.  Internally, this executes the module's `shouldUnload` method, and, if that completes successfully, executes the module's `onUnload` method. If unloading is rejected, this method will complete with an error. The rejected error will not be added to the `didUnload` lifecycle event stream.
 
 ![lifecycle module - lifecycle](https://cloud.githubusercontent.com/assets/11619752/21526229/d7a5ae1c-ccdf-11e6-9e95-ff16a83e3a7f.png)
 
@@ -305,7 +307,7 @@ performed on a transitioning state the pending transition future is returned.
 
 ### Lifecycle Events
 
-`Module` also exposes lifecycle event streams that an external consumer can listen to:
+`Module` also exposes lifecycle event streams that an external consumer can listen to. If any corresponding lifecycle handler method throws an exception or error it will be added to the corresponding stream. This allows dependencies on a `Module` to provide an `onError` function to handle recovering from a failure within the module implementation.
 
 Event          | Description
 -------------- | ---------------------------------
@@ -320,7 +322,7 @@ Event          | Description
 
 ### Lifecycle Customization
 
-Internally, `Module` contains methods that can be overridden to customize module lifecycle behavior:
+Internally, `Module` contains methods that can be overridden to customize module lifecycle behavior. Any error or exception thrown by these overloaded lifecycle methods will be added to their corresponding lifecycle event stream. This error will be returned to the caller of the corresponding lifecycle method. 
 
 Method           | Description
 ---------------- | ---------------------------------
