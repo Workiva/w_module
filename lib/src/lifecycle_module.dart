@@ -131,7 +131,7 @@ abstract class LifecycleModule extends SimpleModule
   /// Any error or exception thrown during the child [LifecycleModule]'s
   /// [onLoad] call will be emitted.
   ///
-  /// Any error or exception thrown during the parent [LifecycleModule]'safe
+  /// Any error or exception thrown during the parent [LifecycleModule]'s
   /// [onDidLoadChildModule] call will be emitted.
   Stream<LifecycleModule> get didLoadChildModule =>
       _didLoadChildModuleController.stream;
@@ -168,21 +168,21 @@ abstract class LifecycleModule extends SimpleModule
   /// Any error or exception thrown during the child [LifecycleModule]'s
   /// [onUnload] call will be emitted.
   ///
-  /// Any error or exception thrown during the parent [LifecycleModule]'safe
+  /// Any error or exception thrown during the parent [LifecycleModule]'s
   /// [onDidUnloadChildModule] call will be emitted.
   Stream<LifecycleModule> get didUnloadChildModule =>
       _didUnloadChildModuleController.stream;
 
   /// A child [LifecycleModule] is about to be loaded.
   ///
-  /// Any error or exception thrown during the parent [LifecycleModule]'safe
+  /// Any error or exception thrown during the parent [LifecycleModule]'s
   /// [onDidLoadChildModule] call will be emitted.
   Stream<LifecycleModule> get willLoadChildModule =>
       _willLoadChildModuleController.stream;
 
   /// A child [LifecycleModule] is about to be unloaded.
   ///
-  /// Any error or exception thrown during the parent [LifecycleModule]'safe
+  /// Any error or exception thrown during the parent [LifecycleModule]'s
   /// [onDidUnloadChildModule] call will be emitted.
   Stream<LifecycleModule> get willUnloadChildModule =>
       _willUnloadChildModuleController.stream;
@@ -248,8 +248,8 @@ abstract class LifecycleModule extends SimpleModule
   /// StateError is thrown.
   ///
   /// If an [Exception] is thrown during the call to [onLoad] it will be emitted
-  /// on the [didLoad] lifecycle stream. The exception will also be returned as
-  /// the [Future] error value.
+  /// on the [didLoad] lifecycle stream. The returned [Future] will also resolve
+  /// with this exception.
   ///
   /// Note that [LifecycleModule] only supports one load/unload cycle. If [load]
   /// is called after a module has been unloaded, a [StateError] is thrown.
@@ -290,12 +290,17 @@ abstract class LifecycleModule extends SimpleModule
   ///
   /// If an [Exception] is thrown during the call to the parent
   /// [onWillLoadChildModule] it will be emitted on the [willLoadChildModule]
-  /// lifecycle stream. The exception will also be returned as the [Future]
-  /// error value.
+  /// lifecycle stream. The returned [Future] will also resolve with this
+  /// exception.
   ///
   /// If an [Exception] is thrown during the call to the child [onLoad] it will
-  /// be emitted on the [didLoadChildModule] lifecycle stream. The exception
-  /// will also be returned as the [Future] error value.
+  /// be emitted on the [didLoadChildModule] lifecycle stream. The returned
+  /// [Future] will also resolve with this exception.
+  ///
+  /// If an [Exception] is thrown during the call to the parent
+  /// [onDidLoadChildModule] it will be emitted on the [didLoadChildModule]
+  /// lifecycle stream. The returned [Future] will also resolve with this
+  /// exception.
   ///
   /// Attempting to load a child module after a module has been unloaded will
   /// throw a [StateError].
@@ -378,8 +383,12 @@ abstract class LifecycleModule extends SimpleModule
   ///
   /// The [Future] values of all children [suspend] calls will be awaited. The
   /// first child to return an error value will emit the error on the
-  /// [didSuspend] lifecycle stream. This error will also be returned by
-  /// [suspend].
+  /// [didSuspend] lifecycle stream. The returned [Future] will also resolve
+  /// with this exception.
+  ///
+  /// If an [Exception] is thrown during the call to [onSuspend] it will be
+  /// emitted on the [didSuspend] lifecycle stream. The returned [Future] will
+  /// also resolve with this exception.
   ///
   /// If an error or exception is thrown during the call to the parent
   /// [onSuspend] lifecycle method it will be emitted on the [didSuspend]
@@ -432,8 +441,12 @@ abstract class LifecycleModule extends SimpleModule
   ///
   /// The [Future] values of all children [resume] calls will be awaited. The
   /// first child to return an error value will emit the error on the
-  /// [didResume] lifecycle stream. This error will also be returned by
-  /// [resume].
+  /// [didResume] lifecycle stream. The returned [Future] will also resolve with
+  /// this exception.
+  ///
+  /// If an [Exception] is thrown during the call to [onResume] it will be
+  /// emitted on the [didResume] lifecycle stream. The returned [Future] will
+  /// also resolve with this exception.
   ///
   /// If an error or exception is thrown during the call to the parent
   /// [onResume] lifecycle method it will be emitted on the [didResume]
@@ -511,8 +524,12 @@ abstract class LifecycleModule extends SimpleModule
   ///
   /// The [Future] values of all children [unload] calls will be awaited. The
   /// first child to return an error value will emit the error on the
-  /// [didUnload] lifecycle stream. This error will also be returned by
-  /// [unload].
+  /// [didUnload] lifecycle stream. The returned [Future] will also resolve with
+  /// this exception.
+  ///
+  /// If an [Exception] is thrown during the call to [onUnload] it will be
+  /// emitted on the [didUnload] lifecycle stream. The returned [Future] will
+  /// also resolve with this exception.
   ///
   /// If an error or exception is thrown during the call to the parent
   /// [onUnload] lifecycle method it will be emitted on the [didUnload]
