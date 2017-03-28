@@ -41,12 +41,6 @@ class Event<T> extends Stream<T> {
   /// be dispatched when this is `true`.
   bool get isClosed => _streamController.isClosed;
 
-  /// Sink where new items to this event stream are added.
-  Sink<T> get _sink => _streamController.sink;
-
-  /// Underlying stream that listeners subscribe to.
-  Stream<T> get _stream => _streamController.stream;
-
   /// Closes the Event stream, telling it that no further events will be
   /// dispatched.
   ///
@@ -64,7 +58,7 @@ class Event<T> extends Stream<T> {
   @override
   StreamSubscription<T> listen(void onData(T event),
       {Function onError, void onDone(), bool cancelOnError}) {
-    return _stream.listen(onData,
+    return _streamController.stream.listen(onData,
         onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 
@@ -76,7 +70,7 @@ class Event<T> extends Stream<T> {
           'Event dispatch expected the "${_key.name}" key but received the '
           '"${key.name}" key.');
     }
-    _sink.add(payload);
+    _streamController.add(payload);
   }
 }
 

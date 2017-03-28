@@ -96,7 +96,7 @@ void main() {
       expect(event.close(incorrectKey), throwsArgumentError);
     });
 
-    test('should now allow events to be dispatched after being closed',
+    test('should not allow events to be dispatched after being closed',
         () async {
       await event.close(key);
       expect(() {
