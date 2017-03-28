@@ -1,4 +1,4 @@
-// Copyright 2015 Workiva Inc.
+// Copyright 2017 Workiva Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ enum LifecycleState {
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
 abstract class LifecycleModule extends SimpleModule
-    implements DisposableManagerV2 {
+    implements DisposableManagerV3 {
   List<LifecycleModule> _childModules = [];
   StreamController<LifecycleModule> _didLoadChildModuleController;
   StreamController<LifecycleModule> _didLoadController;
@@ -198,6 +198,14 @@ abstract class LifecycleModule extends SimpleModule
 
   /// The [LifecycleModule] is about to be suspended.
   Stream<LifecycleModule> get willSuspend => _willSuspendController.stream;
+
+  @override
+  Future<T> awaitBeforeDispose<T>(Future<T> future) => _disposableProxy
+      .awaitBeforeDispose(future);
+
+  @override
+  Future<T> getManagedDelayedFuture<T>(Duration duration, T callback()) =>
+      _disposableProxy.getManagedDelayedFuture(duration, callback);
 
   @override
   Timer getManagedPeriodicTimer(
@@ -348,8 +356,12 @@ abstract class LifecycleModule extends SimpleModule
     return completer.future;
   }
 
-  /// Ensures a given [Disposable] is disposed when the [LifecycleModule] is
-  /// unloaded.
+  /// Ensures a given [Completer] is completed when the module is unloaded.
+  @override
+  Completer<T> manageCompleter<T>(Completer<T> completer) => _disposableProxy
+      .manageCompleter(completer);
+
+  /// Ensures a given [Disposable] is disposed when the module is unloaded.
   @override
   void manageDisposable(Disposable disposable) =>
       _disposableProxy.manageDisposable(disposable);

@@ -1,4 +1,4 @@
-// Copyright 2015 Workiva Inc.
+// Copyright 2017 Workiva Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
 library w_module;
 
 export 'package:w_module/src/event.dart';
+export 'package:w_module/src/events_collection.dart';
 export 'package:w_module/src/lifecycle_module.dart' hide LifecycleState;
 export 'package:w_module/src/module.dart';
 export 'package:w_module/src/simple_module.dart';

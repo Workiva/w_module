@@ -226,6 +226,34 @@ class SampleStore extends Store {
 }
 ```
 
+To assist in properly disposing of `Event` instances, `w_module` provides an
+`EventsCollection` base class that extends
+[`Disposable` from the `w_common` package](https://github.com/Workiva/w_common)
+with an additional `manageEvent()` method. Colocating related events in an
+`EventsCollection` makes it trivial to close all `Event` instances by disposing
+the `EventsCollection` instance.
+
+```dart
+final key = new DispatchKey('example');
+
+class ExampleEvents extends EventsCollection {
+  final Event<String> eventA = new Event<String>(key);
+  final Event<String> eventB = new Event<String>(key);
+
+  ExampleEvents() : super(key) {
+    [
+      eventA,
+      eventB,
+    ].forEach(manageEvent);
+  }
+}
+
+main() async {
+  final eventsCollection = new EventsCollection();
+  await eventsCollection.dispose();
+  // All Events on the collection should now be closed.
+}
+```
 
 ### Components
 
