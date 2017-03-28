@@ -1,4 +1,4 @@
-// Copyright 2015 Workiva Inc.
+// Copyright 2017 Workiva Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -81,6 +81,27 @@ void main() {
       event('good', key);
 
       await completer.future;
+    });
+
+    test('should be closable', () async {
+      expect(event.isClosed, isFalse);
+      await event.close(key);
+      expect(event.isClosed, isTrue);
+    });
+
+    test('should only allow closing with correct key', () async {
+      // Create a new dispatch key that should not work for this event.
+      DispatchKey incorrectKey = new DispatchKey('incorrect');
+
+      expect(event.close(incorrectKey), throwsArgumentError);
+    });
+
+    test('should now allow events to be dispatched after being closed',
+        () async {
+      await event.close(key);
+      expect(() {
+        event('too late', key);
+      }, throwsStateError);
     });
   });
 }

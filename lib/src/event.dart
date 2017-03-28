@@ -1,4 +1,4 @@
-// Copyright 2015 Workiva Inc.
+// Copyright 2017 Workiva Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,17 +27,38 @@ class Event<T> extends Stream<T> {
   /// effectively read-only.
   DispatchKey _key;
 
-  /// Sink where new items to this event stream are added.
-  Sink<T> _sink;
-
-  /// Underlying stream that listeners subscribe to.
-  Stream<T> _stream;
+  /// The underlying StreamController that drives the dispatching of and
+  /// listening for events.
+  final StreamController<T> _streamController =
+      new StreamController<T>.broadcast();
 
   /// Create an Event and associate it with [key].
-  Event(DispatchKey key) : _key = key {
-    var c = new StreamController<T>.broadcast();
-    _sink = c.sink;
-    _stream = c.stream;
+  Event(DispatchKey key) : _key = key;
+
+  /// Whether the Event stream is closed.
+  ///
+  /// The Event becomes closed by calling the [close] method. New events cannot
+  /// be dispatched when this is `true`.
+  bool get isClosed => _streamController.isClosed;
+
+  /// Sink where new items to this event stream are added.
+  Sink<T> get _sink => _streamController.sink;
+
+  /// Underlying stream that listeners subscribe to.
+  Stream<T> get _stream => _streamController.stream;
+
+  /// Closes the Event stream, telling it that no further events will be
+  /// dispatched.
+  ///
+  /// Returns a `Future` which resolves when the underlying `StreamController`
+  /// has finished closing.
+  Future<Null> close(DispatchKey key) async {
+    if (key != _key) {
+      throw new ArgumentError(
+          'Event.close() expected the "${_key.name}" key but received the '
+          '"${key.name}" key.');
+    }
+    await _streamController.close();
   }
 
   @override
@@ -50,9 +71,11 @@ class Event<T> extends Stream<T> {
   /// Dispatch a payload to this event stream. This only works if
   /// [key] is the correct key with which this Event was constructed.
   void call(T payload, DispatchKey key) {
-    if (key != _key)
+    if (key != _key) {
       throw new ArgumentError(
-          'Event dispatch expected the "${_key.name}" key but received the "${key.name}" key.');
+          'Event dispatch expected the "${_key.name}" key but received the '
+          '"${key.name}" key.');
+    }
     _sink.add(payload);
   }
 }
