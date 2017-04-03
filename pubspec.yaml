@@ -13,7 +13,7 @@ homepage: https://github.com/Workiva/w_module
 dependencies:
   logging: ^0.11.0
   meta: ^1.0.0
-  w_common: ^1.3.0
+  w_common: ^1.4.0
 
 dev_dependencies:
   browser: ^0.10.0+2
