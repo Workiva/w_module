@@ -66,7 +66,7 @@ abstract class LifecycleModule extends SimpleModule
   Logger _logger;
   String _name = 'Module';
   LifecycleState _state = LifecycleState.instantiated;
-  Future<Null> _transitionFuture;
+  Completer<Null> _transition;
   StreamController<LifecycleModule> _willLoadChildModuleController;
   StreamController<LifecycleModule> _willLoadController;
   StreamController<LifecycleModule> _willResumeController;
@@ -276,21 +276,21 @@ abstract class LifecycleModule extends SimpleModule
     }
 
     _state = LifecycleState.loading;
-    final completer = new Completer<Null>();
-    _transitionFuture = completer.future;
+    _transition = new Completer<Null>();
     _willLoadController.add(this);
 
     onLoad().then((_) {
       _state = LifecycleState.loaded;
       _didLoadController.add(this);
-      _transitionFuture = null;
-      completer.complete();
+      _transition.complete();
+      _transition = null;
     }).catchError((Object error, StackTrace stackTrace) {
       _didLoadController.addError(error, stackTrace);
-      completer.completeError(error, stackTrace);
+      _transition.completeError(error, stackTrace);
+      _transition = null;
     });
 
-    return completer.future;
+    return _transition.future;
   }
 
   /// Public method to async load a child module and register it
@@ -422,8 +422,7 @@ abstract class LifecycleModule extends SimpleModule
     }
 
     _state = LifecycleState.suspending;
-    final completer = new Completer<Null>();
-    _transitionFuture = completer.future;
+    _transition = new Completer<Null>();
     _willSuspendController.add(this);
 
     final suspendingChildren = _childModules.map((c) => c.suspend());
@@ -431,14 +430,15 @@ abstract class LifecycleModule extends SimpleModule
       await onSuspend();
       _state = LifecycleState.suspended;
       _didSuspendController.add(this);
-      _transitionFuture = null;
-      completer.complete();
+      _transition.complete();
+      _transition = null;
     }).catchError((Object error, StackTrace stackTrace) {
       _didSuspendController.addError(error, stackTrace);
-      completer.completeError(error, stackTrace);
+      _transition.completeError(error, stackTrace);
+      _transition = null;
     });
 
-    return completer.future;
+    return _transition.future;
   }
 
   /// Public method to resume the module.
@@ -480,8 +480,7 @@ abstract class LifecycleModule extends SimpleModule
     }
 
     _state = LifecycleState.resuming;
-    final completer = new Completer<Null>();
-    _transitionFuture = completer.future;
+    _transition = new Completer<Null>();
     _willResumeController.add(this);
 
     final resumingChildren = _childModules.map((c) => c.resume());
@@ -489,14 +488,15 @@ abstract class LifecycleModule extends SimpleModule
       await onResume();
       _state = LifecycleState.loaded;
       _didResumeController.add(this);
-      _transitionFuture = null;
-      completer.complete();
+      _transition.complete();
+      _transition = null;
     }).catchError((Object error, StackTrace stackTrace) {
       _didResumeController.addError(error, stackTrace);
-      completer.completeError(error, stackTrace);
+      _transition.completeError(error, stackTrace);
+      _transition = null;
     });
 
-    return completer.future;
+    return _transition.future;
   }
 
   /// Public method to query the unloadable state of the Module.
@@ -569,8 +569,7 @@ abstract class LifecycleModule extends SimpleModule
     }
 
     _state = LifecycleState.unloading;
-    final completer = new Completer<Null>();
-    _transitionFuture = completer.future;
+    _transition = new Completer<Null>();
     _willUnloadController.add(this);
 
     final unloadingChildren = _childModules.map((c) => c.unload());
@@ -581,16 +580,17 @@ abstract class LifecycleModule extends SimpleModule
       _didUnloadController
         ..add(this)
         ..close();
-      _transitionFuture = null;
-      completer.complete();
+      _transition.complete();
+      _transition = null;
     }).catchError((Object error, StackTrace stackTrace) {
       _didUnloadController
         ..addError(error, stackTrace)
         ..close();
-      completer.completeError(error, stackTrace);
+      _transition.completeError(error, stackTrace);
+      _transition = null;
     });
 
-    return completer.future;
+    return _transition.future;
   }
 
   //--------------------------------------------------------
@@ -677,7 +677,7 @@ abstract class LifecycleModule extends SimpleModule
         '${_readableStateName(currentState)}; this is a no-op. Check for any '
         'unnecessary calls to .$methodName().');
 
-    return _transitionFuture ?? new Future.value(null);
+    return _transition?.future ?? new Future.value(null);
   }
 
   /// Handles a child [LifecycleModule]'s [didUnload] event.
