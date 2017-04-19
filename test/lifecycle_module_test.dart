@@ -69,7 +69,7 @@ class TestLifecycleModule extends LifecycleModule {
 
     var getEventListAdder =
         (String label) => (LifecycleModule _) => eventList.add(label);
-    var onErrorHandler = (Error error) {};
+    var onErrorHandler = (Object error) {};
 
     _eventListStreamSubscriptions = [
       // Parent module events:
@@ -428,6 +428,34 @@ void main() {
         expect(module.eventList, equals(expectedUnloadEvents));
       });
 
+      test('should unload after loading completes', () async {
+        await gotoState(module, LifecycleState.loading);
+        module.eventList.clear();
+        await module.unload();
+        expect(module.eventList,
+            ['willLoad', 'onLoad', 'didLoad']..addAll(expectedUnloadEvents));
+      });
+
+      test('should unload after suspending completes', () async {
+        await gotoState(module, LifecycleState.suspending);
+        module.eventList.clear();
+        await module.unload();
+        expect(
+            module.eventList,
+            ['willSuspend', 'onSuspend', 'didSuspend']
+              ..addAll(expectedUnloadEvents));
+      });
+
+      test('should unload after resuming completes', () async {
+        await gotoState(module, LifecycleState.resuming);
+        module.eventList.clear();
+        await module.unload();
+        expect(
+            module.eventList,
+            ['willResume', 'onResume', 'didResume']
+              ..addAll(expectedUnloadEvents));
+      });
+
       group('with an onUnload that throws', () {
         setUp(() async {
           await gotoState(module, LifecycleState.loaded);
@@ -561,12 +589,8 @@ void main() {
         verify(module.managedStreamSubscription.cancel());
       });
 
-      testInvalidTransitions(LifecycleState.unloading, [
-        LifecycleState.instantiated,
-        LifecycleState.loading,
-        LifecycleState.suspending,
-        LifecycleState.resuming
-      ]);
+      testInvalidTransitions(
+          LifecycleState.unloading, [LifecycleState.instantiated]);
     });
 
     group('suspend', () {
@@ -577,6 +601,24 @@ void main() {
         module.eventList.clear();
         await module.suspend();
         expect(module.eventList, equals(expectedSuspendEvents));
+      });
+
+      test('should suspend after loading completes', () async {
+        await gotoState(module, LifecycleState.loading);
+        module.eventList.clear();
+        await module.suspend();
+        expect(module.eventList,
+            ['willLoad', 'onLoad', 'didLoad']..addAll(expectedSuspendEvents));
+      });
+
+      test('should suspend after resuming completes', () async {
+        await gotoState(module, LifecycleState.resuming);
+        module.eventList.clear();
+        await module.suspend();
+        expect(
+            module.eventList,
+            ['willResume', 'onResume', 'didResume']
+              ..addAll(expectedSuspendEvents));
       });
 
       group('with an onSuspend that throws', () {
@@ -670,8 +712,6 @@ void main() {
 
       testInvalidTransitions(LifecycleState.suspending, [
         LifecycleState.instantiated,
-        LifecycleState.loading,
-        LifecycleState.resuming,
         LifecycleState.unloading,
         LifecycleState.unloaded
       ]);
@@ -685,6 +725,16 @@ void main() {
         module.eventList.clear();
         await module.resume();
         expect(module.eventList, equals(expectedResumeEvents));
+      });
+
+      test('should resume after suspending completes', () async {
+        await gotoState(module, LifecycleState.suspending);
+        module.eventList.clear();
+        await module.resume();
+        expect(
+            module.eventList,
+            ['willSuspend', 'onSuspend', 'didSuspend']
+              ..addAll(expectedResumeEvents));
       });
 
       group('with an onResume that throws', () {
@@ -781,7 +831,6 @@ void main() {
       testInvalidTransitions(LifecycleState.resuming, [
         LifecycleState.instantiated,
         LifecycleState.loading,
-        LifecycleState.suspending,
         LifecycleState.unloading,
         LifecycleState.unloaded
       ]);
