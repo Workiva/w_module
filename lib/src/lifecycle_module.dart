@@ -405,10 +405,14 @@ abstract class LifecycleModule extends SimpleModule
               : LifecycleState.suspended);
     }
 
-    if (!(isLoaded || isLoading || isResuming || isSuspended)) {
+    if (!(isLoaded || isLoading || isResuming)) {
       return _buildIllegalTransitionResponse(
           targetState: LifecycleState.suspended,
-          allowedStates: [LifecycleState.loaded, LifecycleState.resuming]);
+          allowedStates: [
+            LifecycleState.loaded,
+            LifecycleState.loading,
+            LifecycleState.resuming
+          ]);
     }
     var previousTransition = _transition?.future;
     _transition = new Completer<Null>();
