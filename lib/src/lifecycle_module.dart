@@ -66,7 +66,7 @@ abstract class LifecycleModule extends SimpleModule
   Logger _logger;
   String _name = 'Module';
   LifecycleState _state = LifecycleState.instantiated;
-  Future<Null> _transitionFuture;
+  Completer<Null> _transition;
   StreamController<LifecycleModule> _willLoadChildModuleController;
   StreamController<LifecycleModule> _willLoadController;
   StreamController<LifecycleModule> _willResumeController;
@@ -276,21 +276,11 @@ abstract class LifecycleModule extends SimpleModule
     }
 
     _state = LifecycleState.loading;
-    final completer = new Completer<Null>();
-    _transitionFuture = completer.future;
-    _willLoadController.add(this);
+    _transition = new Completer<Null>();
 
-    onLoad().then((_) {
-      _state = LifecycleState.loaded;
-      _didLoadController.add(this);
-      _transitionFuture = null;
-      completer.complete();
-    }).catchError((Object error, StackTrace stackTrace) {
-      _didLoadController.addError(error, stackTrace);
-      completer.completeError(error, stackTrace);
-    });
+    _load().then(_transition.complete).catchError(_transition.completeError);
 
-    return completer.future;
+    return _transition.future;
   }
 
   /// Public method to async load a child module and register it
@@ -415,30 +405,23 @@ abstract class LifecycleModule extends SimpleModule
               : LifecycleState.suspended);
     }
 
-    if (!isLoaded) {
+    if (!(isLoaded || isLoading || isResuming)) {
       return _buildIllegalTransitionResponse(
           targetState: LifecycleState.suspended,
-          allowedStates: [LifecycleState.loaded]);
+          allowedStates: [
+            LifecycleState.loaded,
+            LifecycleState.loading,
+            LifecycleState.resuming
+          ]);
     }
-
+    var previousTransition = _transition?.future;
+    _transition = new Completer<Null>();
     _state = LifecycleState.suspending;
-    final completer = new Completer<Null>();
-    _transitionFuture = completer.future;
-    _willSuspendController.add(this);
 
-    final suspendingChildren = _childModules.map((c) => c.suspend());
-    Future.wait(suspendingChildren).then((_) async {
-      await onSuspend();
-      _state = LifecycleState.suspended;
-      _didSuspendController.add(this);
-      _transitionFuture = null;
-      completer.complete();
-    }).catchError((Object error, StackTrace stackTrace) {
-      _didSuspendController.addError(error, stackTrace);
-      completer.completeError(error, stackTrace);
-    });
-
-    return completer.future;
+    _suspend(previousTransition)
+        .then(_transition.complete)
+        .catchError(_transition.completeError);
+    return _transition.future;
   }
 
   /// Public method to resume the module.
@@ -472,31 +455,21 @@ abstract class LifecycleModule extends SimpleModule
               isResuming ? LifecycleState.resuming : LifecycleState.loaded);
     }
 
-    if (!isSuspended) {
+    if (!(isSuspended || isSuspending)) {
       return _buildIllegalTransitionResponse(
-          reason:
-              'Only a module in the ${LifecycleState.suspended} state can be '
-              'resumed.');
+          targetState: LifecycleState.loaded,
+          allowedStates: [LifecycleState.suspended, LifecycleState.suspending]);
     }
 
+    var pendingTransition = _transition?.future;
     _state = LifecycleState.resuming;
-    final completer = new Completer<Null>();
-    _transitionFuture = completer.future;
-    _willResumeController.add(this);
+    _transition = new Completer<Null>();
 
-    final resumingChildren = _childModules.map((c) => c.resume());
-    Future.wait(resumingChildren).then((_) async {
-      await onResume();
-      _state = LifecycleState.loaded;
-      _didResumeController.add(this);
-      _transitionFuture = null;
-      completer.complete();
-    }).catchError((Object error, StackTrace stackTrace) {
-      _didResumeController.addError(error, stackTrace);
-      completer.completeError(error, stackTrace);
-    });
+    _resume(pendingTransition)
+        .then(_transition.complete)
+        .catchError(_transition.completeError);
 
-    return completer.future;
+    return _transition.future;
   }
 
   /// Public method to query the unloadable state of the Module.
@@ -555,42 +528,27 @@ abstract class LifecycleModule extends SimpleModule
               isUnloading ? LifecycleState.unloading : LifecycleState.unloaded);
     }
 
-    if (!(isLoaded || isSuspended)) {
+    if (!(isLoaded || isLoading || isResuming || isSuspended || isSuspending)) {
       return _buildIllegalTransitionResponse(
           targetState: LifecycleState.unloaded,
-          allowedStates: [LifecycleState.loaded, LifecycleState.suspended]);
+          allowedStates: [
+            LifecycleState.loaded,
+            LifecycleState.loading,
+            LifecycleState.resuming,
+            LifecycleState.suspended,
+            LifecycleState.suspending
+          ]);
     }
 
-    ShouldUnloadResult shouldUnloadResult = shouldUnload();
-    if (!shouldUnloadResult.shouldUnload) {
-      // reject with shouldUnload messages
-      return new Future.error(new ModuleUnloadCanceledException(
-          shouldUnloadResult.messagesAsString()));
-    }
-
+    var pendingTransition = _transition?.future;
     _state = LifecycleState.unloading;
-    final completer = new Completer<Null>();
-    _transitionFuture = completer.future;
-    _willUnloadController.add(this);
+    _transition = new Completer<Null>();
 
-    final unloadingChildren = _childModules.map((c) => c.unload());
-    Future.wait(unloadingChildren).then((_) async {
-      await onUnload();
-      await _disposableProxy.dispose();
-      _state = LifecycleState.unloaded;
-      _didUnloadController
-        ..add(this)
-        ..close();
-      _transitionFuture = null;
-      completer.complete();
-    }).catchError((Object error, StackTrace stackTrace) {
-      _didUnloadController
-        ..addError(error, stackTrace)
-        ..close();
-      completer.completeError(error, stackTrace);
-    });
+    _unload(pendingTransition)
+        .then(_transition.complete)
+        .catchError(_transition.completeError);
 
-    return completer.future;
+    return _transition.future;
   }
 
   //--------------------------------------------------------
@@ -677,7 +635,22 @@ abstract class LifecycleModule extends SimpleModule
         '${_readableStateName(currentState)}; this is a no-op. Check for any '
         'unnecessary calls to .$methodName().');
 
-    return _transitionFuture ?? new Future.value(null);
+    return _transition?.future ?? new Future.value(null);
+  }
+
+  Future<Null> _load() async {
+    try {
+      _willLoadController.add(this);
+      await onLoad();
+      if (_state == LifecycleState.loading) {
+        _state = LifecycleState.loaded;
+        _transition = null;
+      }
+      _didLoadController.add(this);
+    } catch (error, stackTrace) {
+      _didLoadController.addError(error, stackTrace);
+      rethrow;
+    }
   }
 
   /// Handles a child [LifecycleModule]'s [didUnload] event.
@@ -705,6 +678,74 @@ abstract class LifecycleModule extends SimpleModule
 
   /// Obtains the value of a [LifecycleState] enumeration.
   String _readableStateName(LifecycleState state) => '$state'.split('.')[1];
+
+  Future<Null> _resume(Future<Null> pendingTransition) async {
+    try {
+      if (pendingTransition != null) {
+        await pendingTransition;
+      }
+      _willResumeController.add(this);
+      await Future.wait(_childModules.map((child) => child.resume()));
+      await onResume();
+      if (_state == LifecycleState.resuming) {
+        _state = LifecycleState.loaded;
+        _transition = null;
+      }
+      _didResumeController.add(this);
+    } catch (error, stackTrace) {
+      _didResumeController.addError(error, stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<Null> _suspend(Future<Null> pendingTransition) async {
+    try {
+      if (pendingTransition != null) {
+        await pendingTransition;
+      }
+      _willSuspendController.add(this);
+      await Future.wait(_childModules.map((child) => child.suspend()));
+      await onSuspend();
+      if (_state == LifecycleState.suspending) {
+        _state = LifecycleState.suspended;
+        _transition = null;
+      }
+      _didSuspendController.add(this);
+    } catch (error, stackTrace) {
+      _didSuspendController.addError(error, stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<Null> _unload(Future<Null> pendingTransition) async {
+    try {
+      if (pendingTransition != null) {
+        await pendingTransition;
+      }
+
+      ShouldUnloadResult shouldUnloadResult = shouldUnload();
+      if (!shouldUnloadResult.shouldUnload) {
+        // reject with shouldUnload messages
+        throw new ModuleUnloadCanceledException(
+            shouldUnloadResult.messagesAsString());
+      }
+
+      _willUnloadController.add(this);
+      await Future.wait(_childModules.map((child) => child.unload()));
+      await onUnload();
+      await _disposableProxy.dispose();
+      if (_state == LifecycleState.unloading) {
+        _state = LifecycleState.unloaded;
+        _transition = null;
+      }
+      _didUnloadController.add(this);
+    } catch (error, stackTrace) {
+      _didUnloadController.addError(error, stackTrace);
+      rethrow;
+    } finally {
+      await _didUnloadController.close();
+    }
+  }
 }
 
 /// Exception thrown when unload fails.
