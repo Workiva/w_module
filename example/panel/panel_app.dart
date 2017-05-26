@@ -18,7 +18,7 @@ import 'dart:async';
 import 'dart:html';
 import 'dart:js' as js;
 
-import 'package:browser_detect/browser_detect.dart';
+import 'package:platform_detect/platform_detect.dart';
 import 'package:react/react.dart' as react;
 import 'package:react/react_client.dart' as react_client;
 import 'package:w_module/w_module.dart' hide Event;
@@ -43,7 +43,7 @@ Future<Null> main() async {
     if (!res.shouldUnload) {
       // return the supplied error message to block close
       beforeUnloadEvent.returnValue = res.messagesAsString();
-    } else if (browser.isIe) {
+    } else if (browser.isInternetExplorer) {
       // IE interprets a null string as a response and displays an alert to
       // the user. Use the `undefined` value of the JS context instead.
       // https://github.com/dart-lang/sdk/issues/22589
