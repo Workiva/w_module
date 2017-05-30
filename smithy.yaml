@@ -1,11 +1,14 @@
 project: dart
 language: dart
 
-# dart 1.19.1
-runner_image: drydock-prod.workiva.org/workiva/smithy-runner-generator:92530
+# dart 1.22.1
+runner_image: drydock-prod.workiva.net/workiva/smithy-runner-dart:131017
 
 script:
   - pub get
+
+after_script:
+  - ./tool/semver-audit.sh
 
 artifacts:
   build:
