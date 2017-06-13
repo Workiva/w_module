@@ -65,6 +65,7 @@ abstract class LifecycleModule extends SimpleModule
   final Disposable _disposableProxy = new Disposable();
   Logger _logger;
   String _name = 'Module';
+  LifecycleState _previousState;
   LifecycleState _state = LifecycleState.instantiated;
   Completer<Null> _transition;
   StreamController<LifecycleModule> _willLoadChildModuleController;
@@ -541,6 +542,7 @@ abstract class LifecycleModule extends SimpleModule
     }
 
     var pendingTransition = _transition?.future;
+    _previousState = _state;
     _state = LifecycleState.unloading;
     _transition = new Completer<Null>();
 
@@ -725,6 +727,8 @@ abstract class LifecycleModule extends SimpleModule
 
       ShouldUnloadResult shouldUnloadResult = shouldUnload();
       if (!shouldUnloadResult.shouldUnload) {
+        _state = _previousState;
+        _previousState = null;
         // reject with shouldUnload messages
         throw new ModuleUnloadCanceledException(
             shouldUnloadResult.messagesAsString());

@@ -573,6 +573,8 @@ void main() {
         expect(error, isNotNull);
         expect(error.message, equals(shouldUnloadError));
         expect(module.eventList, equals(['onShouldUnload']));
+        expect(module.isUnloading, isFalse);
+        expect(module.isLoaded, isTrue);
       });
 
       test('should dispose managed disposables', () async {
