@@ -573,8 +573,26 @@ void main() {
         expect(error, isNotNull);
         expect(error.message, equals(shouldUnloadError));
         expect(module.eventList, equals(['onShouldUnload']));
-        expect(module.isUnloading, isFalse);
         expect(module.isLoaded, isTrue);
+      });
+
+      test('should succeed on second attempt if shouldUnload completes true',
+          () async {
+        await module.load();
+        module.eventList.clear();
+        module.mockShouldUnload = false;
+        var error;
+        try {
+          await module.unload();
+        } on ModuleUnloadCanceledException catch (e) {
+          error = e;
+        }
+        expect(error, isNotNull);
+        expect(module.isLoaded, isTrue);
+
+        module.mockShouldUnload = true;
+        await module.unload();
+        expect(module.isUnloaded, isTrue);
       });
 
       test('should dispose managed disposables', () async {

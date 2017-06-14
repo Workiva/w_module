@@ -480,19 +480,19 @@ abstract class LifecycleModule extends SimpleModule
   ShouldUnloadResult shouldUnload() {
     // collect results from all child modules and self
     List<ShouldUnloadResult> shouldUnloads = [];
-    _childModules.forEach((child) {
+    for (var child in _childModules) {
       shouldUnloads.add(child.shouldUnload());
-    });
+    }
     shouldUnloads.add(onShouldUnload());
 
     // aggregate into 1 combined result
     ShouldUnloadResult finalResult = new ShouldUnloadResult();
-    shouldUnloads.forEach((res) {
-      if (!res.shouldUnload) {
+    for (var result in shouldUnloads) {
+      if (!result.shouldUnload) {
         finalResult.shouldUnload = false;
-        finalResult.messages.addAll(res.messages);
+        finalResult.messages.addAll(result.messages);
       }
-    });
+    }
     return finalResult;
   }
 
@@ -687,7 +687,9 @@ abstract class LifecycleModule extends SimpleModule
         await pendingTransition;
       }
       _willResumeController.add(this);
-      await Future.wait(_childModules.map((child) => child.resume()));
+      for (var child in _childModules.toList()) {
+        await child.resume();
+      }
       await onResume();
       if (_state == LifecycleState.resuming) {
         _state = LifecycleState.loaded;
@@ -706,7 +708,9 @@ abstract class LifecycleModule extends SimpleModule
         await pendingTransition;
       }
       _willSuspendController.add(this);
-      await Future.wait(_childModules.map((child) => child.suspend()));
+      for (var child in _childModules.toList()) {
+        await child.suspend();
+      }
       await onSuspend();
       if (_state == LifecycleState.suspending) {
         _state = LifecycleState.suspended;
@@ -729,25 +733,28 @@ abstract class LifecycleModule extends SimpleModule
       if (!shouldUnloadResult.shouldUnload) {
         _state = _previousState;
         _previousState = null;
+        _transition = null;
         // reject with shouldUnload messages
         throw new ModuleUnloadCanceledException(
             shouldUnloadResult.messagesAsString());
       }
-
       _willUnloadController.add(this);
-      await Future.wait(_childModules.map((child) => child.unload()));
+      for (var child in _childModules.toList()) {
+        await child.unload();
+      }
+      _childModules.clear();
       await onUnload();
       await _disposableProxy.dispose();
       if (_state == LifecycleState.unloading) {
         _state = LifecycleState.unloaded;
+        _previousState = null;
         _transition = null;
       }
       _didUnloadController.add(this);
+      await _didUnloadController.close();
     } catch (error, stackTrace) {
       _didUnloadController.addError(error, stackTrace);
       rethrow;
-    } finally {
-      await _didUnloadController.close();
     }
   }
 }
