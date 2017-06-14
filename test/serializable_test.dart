@@ -332,5 +332,13 @@ void main() {
 
       expect(api.removeCalled, isFalse);
     });
+
+    tearDown(() async {
+      await willLoadController.close();
+      await didLoadController.close();
+      await willUnloadController.close();
+      await didUnloadController.close();
+      await bridgeEventController.close();
+    });
   });
 }
