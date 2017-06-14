@@ -5,6 +5,8 @@ linter:
   rules:
     # Error Rules
     - avoid_empty_else
+    - cancel_subscriptions
+    - close_sinks
     - comment_references
     - control_flow_in_finally
     - empty_statements
@@ -17,10 +19,6 @@ linter:
     - throw_in_finally
     - unrelated_type_equality_checks
     - valid_regexps
-
-    # TODO: enable these when addressing memory audit/disposables
-    #- cancel_subscriptions
-    #- close_sinks
 
     # Style Rules
     - always_declare_return_types
