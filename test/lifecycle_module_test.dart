@@ -1023,6 +1023,15 @@ void main() {
           expect(parentModule.suspend(),
               throwsA(same(childModule.onSuspendError)));
         });
+
+        test('should still suspend other children', () async {
+          var secondChildModule = new TestLifecycleModule();
+          await parentModule.loadChildModule(secondChildModule);
+          try {
+            await parentModule.suspend();
+          } catch (_) {}
+          expect(secondChildModule.isSuspended, isTrue);
+        });
       });
     });
 
@@ -1056,6 +1065,15 @@ void main() {
                   expect(error, same(childModule.onResumeError))));
           expect(
               parentModule.resume(), throwsA(same(childModule.onResumeError)));
+        });
+
+        test('should still resume other children', () async {
+          var secondChildModule = new TestLifecycleModule();
+          await parentModule.loadChildModule(secondChildModule);
+          try {
+            await parentModule.resume();
+          } catch (_) {}
+          expect(secondChildModule.isSuspended, isFalse);
         });
       });
     });
@@ -1108,6 +1126,20 @@ void main() {
           }));
           expect(
               parentModule.unload(), throwsA(same(childModule.onUnloadError)));
+        });
+
+        test('should still unload other children', () async {
+          var secondChildModule = new TestLifecycleModule();
+          await parentModule.loadChildModule(secondChildModule);
+          parentModule.didUnload.listen((LifecycleModule _) {},
+              onError: expectAsync2((Error error, StackTrace stackTrace) {
+            expect(error, same(childModule.onUnloadError));
+            expect(stackTrace, isNotNull);
+          }));
+          try {
+            await parentModule.unload();
+          } catch (_) {}
+          expect(secondChildModule.isUnloaded, isTrue);
         });
       });
 
