@@ -334,8 +334,14 @@ abstract class LifecycleModule extends SimpleModule
         _didLoadChildModuleController.add(childModule);
         completer.complete();
       } catch (error, stackTrace) {
-        await _didUnloadChildModuleSubscriptions[childModule]?.cancel();
-        await _willUnloadChildModuleSubscriptions[childModule]?.cancel();
+        StreamSubscription<LifecycleModule> didUnloadSub =
+            _didUnloadChildModuleSubscriptions.remove(childModule);
+        await didUnloadSub?.cancel();
+
+        StreamSubscription<LifecycleModule> willUnloadSub =
+            _willUnloadChildModuleSubscriptions.remove(childModule);
+        await willUnloadSub?.cancel();
+
         _didLoadChildModuleController.addError(error, stackTrace);
         completer.completeError(error, stackTrace);
       }
