@@ -595,6 +595,20 @@ void main() {
         expect(module.isUnloaded, isTrue);
       });
 
+      test(
+          'should not dispatch willUnload or didUnload if shouldUnload completes false',
+          () async {
+        module.willUnload.listen(expectAsync1((_) {}, count: 0));
+        module.didUnload.listen(expectAsync1((_) {}, count: 0));
+        await module.load();
+        module.eventList.clear();
+        module.mockShouldUnload = false;
+        try {
+          await module.unload();
+        } on ModuleUnloadCanceledException catch (_) {}
+        expect(module.isLoaded, isTrue);
+      });
+
       test('should dispose managed disposables', () async {
         await module.load();
         expect(module.managedDisposable.isDisposed, isFalse);

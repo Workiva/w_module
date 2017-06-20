@@ -758,8 +758,7 @@ abstract class LifecycleModule extends SimpleModule
       }
       _didUnloadController.add(this);
       await _didUnloadController.close();
-    } on ModuleUnloadCanceledException catch (error, stackTrace) {
-      _didUnloadController.addError(error, stackTrace);
+    } on ModuleUnloadCanceledException catch (error, _) {
       rethrow;
     } catch (error, stackTrace) {
       _didUnloadController.addError(error, stackTrace);
