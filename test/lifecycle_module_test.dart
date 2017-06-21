@@ -573,6 +573,40 @@ void main() {
         expect(error, isNotNull);
         expect(error.message, equals(shouldUnloadError));
         expect(module.eventList, equals(['onShouldUnload']));
+        expect(module.isLoaded, isTrue);
+      });
+
+      test('should succeed on second attempt if shouldUnload completes true',
+          () async {
+        await module.load();
+        module.eventList.clear();
+        module.mockShouldUnload = false;
+        var error;
+        try {
+          await module.unload();
+        } on ModuleUnloadCanceledException catch (e) {
+          error = e;
+        }
+        expect(error, isNotNull);
+        expect(module.isLoaded, isTrue);
+
+        module.mockShouldUnload = true;
+        await module.unload();
+        expect(module.isUnloaded, isTrue);
+      });
+
+      test(
+          'should not dispatch willUnload or didUnload if shouldUnload completes false',
+          () async {
+        module.willUnload.listen(expectAsync1((_) {}, count: 0));
+        module.didUnload.listen(expectAsync1((_) {}, count: 0));
+        await module.load();
+        module.eventList.clear();
+        module.mockShouldUnload = false;
+        try {
+          await module.unload();
+        } on ModuleUnloadCanceledException catch (_) {}
+        expect(module.isLoaded, isTrue);
       });
 
       test('should dispose managed disposables', () async {
@@ -1003,6 +1037,15 @@ void main() {
           expect(parentModule.suspend(),
               throwsA(same(childModule.onSuspendError)));
         });
+
+        test('should still suspend other children', () async {
+          var secondChildModule = new TestLifecycleModule();
+          await parentModule.loadChildModule(secondChildModule);
+          try {
+            await parentModule.suspend();
+          } catch (_) {}
+          expect(secondChildModule.isSuspended, isTrue);
+        });
       });
     });
 
@@ -1036,6 +1079,15 @@ void main() {
                   expect(error, same(childModule.onResumeError))));
           expect(
               parentModule.resume(), throwsA(same(childModule.onResumeError)));
+        });
+
+        test('should still resume other children', () async {
+          var secondChildModule = new TestLifecycleModule();
+          await parentModule.loadChildModule(secondChildModule);
+          try {
+            await parentModule.resume();
+          } catch (_) {}
+          expect(secondChildModule.isSuspended, isFalse);
         });
       });
     });
@@ -1088,6 +1140,20 @@ void main() {
           }));
           expect(
               parentModule.unload(), throwsA(same(childModule.onUnloadError)));
+        });
+
+        test('should still unload other children', () async {
+          var secondChildModule = new TestLifecycleModule();
+          await parentModule.loadChildModule(secondChildModule);
+          parentModule.didUnload.listen((LifecycleModule _) {},
+              onError: expectAsync2((Error error, StackTrace stackTrace) {
+            expect(error, same(childModule.onUnloadError));
+            expect(stackTrace, isNotNull);
+          }));
+          try {
+            await parentModule.unload();
+          } catch (_) {}
+          expect(secondChildModule.isUnloaded, isTrue);
         });
       });
 

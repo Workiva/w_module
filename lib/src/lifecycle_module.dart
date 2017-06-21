@@ -65,6 +65,7 @@ abstract class LifecycleModule extends SimpleModule
   final Disposable _disposableProxy = new Disposable();
   Logger _logger;
   String _name = 'Module';
+  LifecycleState _previousState;
   LifecycleState _state = LifecycleState.instantiated;
   Completer<Null> _transition;
   StreamController<LifecycleModule> _willLoadChildModuleController;
@@ -479,19 +480,19 @@ abstract class LifecycleModule extends SimpleModule
   ShouldUnloadResult shouldUnload() {
     // collect results from all child modules and self
     List<ShouldUnloadResult> shouldUnloads = [];
-    _childModules.forEach((child) {
+    for (var child in _childModules) {
       shouldUnloads.add(child.shouldUnload());
-    });
+    }
     shouldUnloads.add(onShouldUnload());
 
     // aggregate into 1 combined result
     ShouldUnloadResult finalResult = new ShouldUnloadResult();
-    shouldUnloads.forEach((res) {
-      if (!res.shouldUnload) {
+    for (var result in shouldUnloads) {
+      if (!result.shouldUnload) {
         finalResult.shouldUnload = false;
-        finalResult.messages.addAll(res.messages);
+        finalResult.messages.addAll(result.messages);
       }
-    });
+    }
     return finalResult;
   }
 
@@ -541,6 +542,7 @@ abstract class LifecycleModule extends SimpleModule
     }
 
     var pendingTransition = _transition?.future;
+    _previousState = _state;
     _state = LifecycleState.unloading;
     _transition = new Completer<Null>();
 
@@ -685,7 +687,11 @@ abstract class LifecycleModule extends SimpleModule
         await pendingTransition;
       }
       _willResumeController.add(this);
-      await Future.wait(_childModules.map((child) => child.resume()));
+      List<Future<Null>> childResumeFutures = <Future<Null>>[];
+      for (var child in _childModules.toList()) {
+        childResumeFutures.add(child.resume());
+      }
+      await Future.wait(childResumeFutures);
       await onResume();
       if (_state == LifecycleState.resuming) {
         _state = LifecycleState.loaded;
@@ -704,7 +710,11 @@ abstract class LifecycleModule extends SimpleModule
         await pendingTransition;
       }
       _willSuspendController.add(this);
-      await Future.wait(_childModules.map((child) => child.suspend()));
+      List<Future<Null>> childSuspendFutures = <Future<Null>>[];
+      for (var child in _childModules.toList()) {
+        childSuspendFutures.add(child.suspend());
+      }
+      await Future.wait(childSuspendFutures);
       await onSuspend();
       if (_state == LifecycleState.suspending) {
         _state = LifecycleState.suspended;
@@ -725,25 +735,35 @@ abstract class LifecycleModule extends SimpleModule
 
       ShouldUnloadResult shouldUnloadResult = shouldUnload();
       if (!shouldUnloadResult.shouldUnload) {
+        _state = _previousState;
+        _previousState = null;
+        _transition = null;
         // reject with shouldUnload messages
         throw new ModuleUnloadCanceledException(
             shouldUnloadResult.messagesAsString());
       }
-
       _willUnloadController.add(this);
-      await Future.wait(_childModules.map((child) => child.unload()));
+      List<Future<Null>> childUnloadFutures = <Future<Null>>[];
+      for (var child in _childModules.toList()) {
+        childUnloadFutures.add(child.unload());
+      }
+      _childModules.clear();
+      await Future.wait(childUnloadFutures);
       await onUnload();
       await _disposableProxy.dispose();
       if (_state == LifecycleState.unloading) {
         _state = LifecycleState.unloaded;
+        _previousState = null;
         _transition = null;
       }
       _didUnloadController.add(this);
+      await _didUnloadController.close();
+    } on ModuleUnloadCanceledException catch (error, _) {
+      rethrow;
     } catch (error, stackTrace) {
       _didUnloadController.addError(error, stackTrace);
-      rethrow;
-    } finally {
       await _didUnloadController.close();
+      rethrow;
     }
   }
 }
