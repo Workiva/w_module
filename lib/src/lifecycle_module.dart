@@ -334,8 +334,14 @@ abstract class LifecycleModule extends SimpleModule
         _didLoadChildModuleController.add(childModule);
         completer.complete();
       } catch (error, stackTrace) {
-        await _didUnloadChildModuleSubscriptions[childModule]?.cancel();
-        await _willUnloadChildModuleSubscriptions[childModule]?.cancel();
+        StreamSubscription<LifecycleModule> didUnloadSub =
+            _didUnloadChildModuleSubscriptions.remove(childModule);
+        await didUnloadSub?.cancel();
+
+        StreamSubscription<LifecycleModule> willUnloadSub =
+            _willUnloadChildModuleSubscriptions.remove(childModule);
+        await willUnloadSub?.cancel();
+
         _didLoadChildModuleController.addError(error, stackTrace);
         completer.completeError(error, stackTrace);
       }
@@ -660,7 +666,10 @@ abstract class LifecycleModule extends SimpleModule
     try {
       await onDidUnloadChildModule(module);
       _didUnloadChildModuleController.add(module);
-      await _didUnloadChildModuleSubscriptions.remove(module).cancel();
+
+      StreamSubscription<LifecycleModule> didUnloadSub =
+          _didUnloadChildModuleSubscriptions.remove(module);
+      await didUnloadSub?.cancel();
     } catch (error, stackTrace) {
       _didUnloadChildModuleController.addError(error, stackTrace);
     }
@@ -672,7 +681,10 @@ abstract class LifecycleModule extends SimpleModule
       await onWillUnloadChildModule(module);
       _willUnloadChildModuleController.add(module);
       _childModules.remove(module);
-      await _willUnloadChildModuleSubscriptions.remove(module).cancel();
+
+      StreamSubscription<LifecycleModule> willUnloadSub =
+          _willUnloadChildModuleSubscriptions.remove(module);
+      await willUnloadSub?.cancel();
     } catch (error, stackTrace) {
       _willUnloadChildModuleController.addError(error, stackTrace);
     }
