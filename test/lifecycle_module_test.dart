@@ -283,9 +283,12 @@ Future<Null> executeStateTransition(
 
 void main() {
   Logger.root.level = Level.ALL;
+  var messagePattern = new RegExp(r'^did|^will');
 
   LogRecord lastLogMessage;
-  Logger.root.onRecord.listen((LogRecord message) {
+  Logger.root.onRecord
+      .where((LogRecord r) => !messagePattern.hasMatch(r.message))
+      .listen((LogRecord message) {
     lastLogMessage = message;
   });
 

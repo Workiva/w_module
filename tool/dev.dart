@@ -30,7 +30,7 @@ Future<Null> main(List<String> args) async {
     'tool/'
   ];
   config.copyLicense.directories = directories;
-  config.format.directories = directories;
+  config.format.paths = directories;
 
   await dev(args);
 }

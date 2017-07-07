@@ -64,7 +64,7 @@ abstract class LifecycleModule extends SimpleModule
   StreamController<LifecycleModule> _didUnloadController;
   final Disposable _disposableProxy = new Disposable();
   Logger _logger;
-  String _name = 'Module';
+  String _name;
   LifecycleState _previousState;
   LifecycleState _state = LifecycleState.instantiated;
   Completer<Null> _transition;
@@ -103,12 +103,28 @@ abstract class LifecycleModule extends SimpleModule
       _didResumeController = new StreamController<LifecycleModule>.broadcast()
     ].forEach(manageStreamController);
 
-    _logger = new Logger('w_module');
+    _logger = new Logger('$name');
+    <
+        String,
+        Stream>{
+      'didLoad': didLoad,
+      'didLoadChildModule': didLoadChildModule,
+      'didResume': didResume,
+      'didSuspend': didSuspend,
+      'didUnload': didUnload,
+      'didUnloadChildModule': didUnloadChildModule,
+      'willLoad': willLoad,
+      'willLoadChildModule': willLoadChildModule,
+      'willResume': willResume,
+      'willSuspend': willSuspend,
+      'willUnload': willUnload,
+      'willUnloadChildModule': willUnloadChildModule,
+    }.forEach(_logLifecycleEvents);
   }
 
   /// Name of the module for identification in exceptions and debug messages.
   // ignore: unnecessary_getters_setters
-  String get name => _name;
+  String get name => _name ?? '$runtimeType';
 
   /// Deprecated: the module name should be defined by overriding the getter in
   /// a subclass and it should not be mutable.
@@ -659,6 +675,14 @@ abstract class LifecycleModule extends SimpleModule
       _didLoadController.addError(error, stackTrace);
       rethrow;
     }
+  }
+
+  /// A utility to logging LifecycleModule lifecycle events
+  void _logLifecycleEvents(
+      String logLabel, Stream<dynamic> lifecycleEventStream) {
+    manageStreamSubscription(lifecycleEventStream.listen(
+        (_) => _logger.fine(logLabel),
+        onError: (error) => _logger.warning('$logLabel error: $error')));
   }
 
   /// Handles a child [LifecycleModule]'s [didUnload] event.
