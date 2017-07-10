@@ -32,6 +32,7 @@ class MockStreamSubscription extends Mock implements StreamSubscription<Null> {}
 class TestLifecycleModule extends LifecycleModule {
   Iterable<StreamSubscription<LifecycleModule>> _eventListStreamSubscriptions;
   bool _managedDisposerWasCalled = false;
+  String _name;
 
   final Disposable managedDisposable;
   final StreamController<Null> managedStreamController;
@@ -45,18 +46,22 @@ class TestLifecycleModule extends LifecycleModule {
   Error onWillLoadChildModuleError;
   Error onWillUnloadChildModuleError;
 
-  @override
-  final String name;
-
   // mock data to be used for test validation
   List<String> eventList;
   bool mockShouldUnload;
 
-  TestLifecycleModule({String name})
+  factory TestLifecycleModule() {
+    return new TestLifecycleModule.withModuleName('TestLifecycleMethod');
+  }
+
+  factory TestLifecycleModule.withModuleName(String name) {
+    return new TestLifecycleModule._(name);
+  }
+
+  TestLifecycleModule._(this._name)
       : managedDisposable = new Disposable(),
         managedStreamController = new StreamController<Null>(),
-        managedStreamSubscription = new MockStreamSubscription(),
-        this.name = name {
+        managedStreamSubscription = new MockStreamSubscription() {
     // init test validation data
     eventList = [];
     mockShouldUnload = true;
@@ -101,6 +106,9 @@ class TestLifecycleModule extends LifecycleModule {
   }
 
   bool get managedDisposerWasCalled => _managedDisposerWasCalled;
+
+  @override
+  String get name => _name;
 
   // Overriding without re-applying the @protected annotation allows us to call
   // loadChildModule in our tests below.
@@ -949,8 +957,10 @@ void main() {
     TestLifecycleModule parentModule;
 
     setUp(() async {
-      parentModule = new TestLifecycleModule(name: 'parent');
-      childModule = new TestLifecycleModule(name: 'child');
+      parentModule =
+          new TestLifecycleModule.withModuleName('Parent-TestLifecycleModule');
+      childModule =
+          new TestLifecycleModule.withModuleName('Child-TestLifecycleModule');
       await parentModule.load();
     });
 
@@ -982,22 +992,22 @@ void main() {
               logRecord(
                 level: Level.FINE,
                 message: equals('willLoadChildModule'),
-                loggerName: equals('parent'),
+                loggerName: equals(parentModule.name),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('willLoad'),
-                loggerName: equals('child'),
+                loggerName: equals(childModule.name),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('didLoad'),
-                loggerName: equals('child'),
+                loggerName: equals(childModule.name),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('didLoadChildModule'),
-                loggerName: equals('parent'),
+                loggerName: equals(parentModule.name),
               ),
             ]));
 
@@ -1215,27 +1225,27 @@ void main() {
               logRecord(
                 level: Level.FINE,
                 message: equals('willUnload'),
-                loggerName: equals('parent'),
+                loggerName: equals(parentModule.name),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('willUnload'),
-                loggerName: equals('child'),
+                loggerName: equals(childModule.name),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('willUnloadChildModule'),
-                loggerName: equals('parent'),
+                loggerName: equals(parentModule.name),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('didUnload'),
-                loggerName: equals('child'),
+                loggerName: equals(childModule.name),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('didUnloadChildModule'),
-                loggerName: equals('parent'),
+                loggerName: equals(parentModule.name),
               ),
             ]));
 
