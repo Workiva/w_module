@@ -32,7 +32,6 @@ class MockStreamSubscription extends Mock implements StreamSubscription<Null> {}
 class TestLifecycleModule extends LifecycleModule {
   Iterable<StreamSubscription<LifecycleModule>> _eventListStreamSubscriptions;
   bool _managedDisposerWasCalled = false;
-  String _name;
 
   final Disposable managedDisposable;
   final StreamController<Null> managedStreamController;
@@ -46,22 +45,18 @@ class TestLifecycleModule extends LifecycleModule {
   Error onWillLoadChildModuleError;
   Error onWillUnloadChildModuleError;
 
+  @override
+  final String name;
+
   // mock data to be used for test validation
   List<String> eventList;
   bool mockShouldUnload;
 
-  factory TestLifecycleModule() {
-    return new TestLifecycleModule.withModuleName('TestLifecycleMethod');
-  }
-
-  factory TestLifecycleModule.withModuleName(String name) {
-    return new TestLifecycleModule._(name);
-  }
-
-  TestLifecycleModule._(this._name)
+  TestLifecycleModule({String name})
       : managedDisposable = new Disposable(),
         managedStreamController = new StreamController<Null>(),
-        managedStreamSubscription = new MockStreamSubscription() {
+        managedStreamSubscription = new MockStreamSubscription(),
+        name = name ?? 'TestLifecycleModule' {
     // init test validation data
     eventList = [];
     mockShouldUnload = true;
@@ -106,9 +101,6 @@ class TestLifecycleModule extends LifecycleModule {
   }
 
   bool get managedDisposerWasCalled => _managedDisposerWasCalled;
-
-  @override
-  String get name => _name;
 
   // Overriding without re-applying the @protected annotation allows us to call
   // loadChildModule in our tests below.
@@ -957,10 +949,8 @@ void main() {
     TestLifecycleModule parentModule;
 
     setUp(() async {
-      parentModule =
-          new TestLifecycleModule.withModuleName('Parent-TestLifecycleModule');
-      childModule =
-          new TestLifecycleModule.withModuleName('Child-TestLifecycleModule');
+      parentModule = new TestLifecycleModule(name: 'parent');
+      childModule = new TestLifecycleModule(name: 'child');
       await parentModule.load();
     });
 
