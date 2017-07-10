@@ -63,6 +63,7 @@ abstract class LifecycleModule extends SimpleModule
       _didUnloadChildModuleSubscriptions = {};
   StreamController<LifecycleModule> _didUnloadController;
   final Disposable _disposableProxy = new Disposable();
+  final Disposable _postUnloadDisposable = new Disposable();
   Logger _logger;
   String _name;
   LifecycleState _previousState;
@@ -79,10 +80,7 @@ abstract class LifecycleModule extends SimpleModule
 
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
-    // The didUnload event must be emitted after disposal which requires that
-    // the stream controller must be disposed of manually at the end of the
-    // unload transition.
-    _didUnloadController = new StreamController<LifecycleModule>.broadcast();
+    _logger = new Logger('$name');
 
     [
       _willLoadController = new StreamController<LifecycleModule>.broadcast(),
@@ -103,7 +101,12 @@ abstract class LifecycleModule extends SimpleModule
       _didResumeController = new StreamController<LifecycleModule>.broadcast()
     ].forEach(manageStreamController);
 
-    _logger = new Logger('$name');
+    // The didUnload event must be emitted after disposal which requires that
+    // the stream controller must be disposed of manually at the end of the
+    // unload transition.
+    _didUnloadController = new StreamController<LifecycleModule>.broadcast();
+    _postUnloadDisposable.manageStreamController(_didUnloadController);
+
     <
         String,
         Stream>{
@@ -124,7 +127,7 @@ abstract class LifecycleModule extends SimpleModule
 
   /// Name of the module for identification in exceptions and debug messages.
   // ignore: unnecessary_getters_setters
-  String get name => _name ?? '$runtimeType';
+  String get name => _name ?? 'LifecycleModule($runtimeType)';
 
   /// Deprecated: the module name should be defined by overriding the getter in
   /// a subclass and it should not be mutable.
@@ -680,7 +683,7 @@ abstract class LifecycleModule extends SimpleModule
   /// A utility to logging LifecycleModule lifecycle events
   void _logLifecycleEvents(
       String logLabel, Stream<dynamic> lifecycleEventStream) {
-    manageStreamSubscription(lifecycleEventStream.listen(
+    _postUnloadDisposable.manageStreamSubscription(lifecycleEventStream.listen(
         (_) => _logger.fine(logLabel),
         onError: (error) => _logger.warning('$logLabel error: $error')));
   }
@@ -793,12 +796,12 @@ abstract class LifecycleModule extends SimpleModule
         _transition = null;
       }
       _didUnloadController.add(this);
-      await _didUnloadController.close();
+      await _postUnloadDisposable.dispose();
     } on ModuleUnloadCanceledException catch (error, _) {
       rethrow;
     } catch (error, stackTrace) {
       _didUnloadController.addError(error, stackTrace);
-      await _didUnloadController.close();
+      await _postUnloadDisposable.dispose();
       rethrow;
     }
   }
