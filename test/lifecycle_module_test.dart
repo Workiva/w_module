@@ -23,6 +23,8 @@ import 'package:w_common/disposable.dart';
 
 import 'package:w_module/src/lifecycle_module.dart';
 
+import 'utils.dart';
+
 const String shouldUnloadError = 'Mock shouldUnload false message';
 
 class MockStreamSubscription extends Mock implements StreamSubscription<Null> {}
@@ -50,11 +52,11 @@ class TestLifecycleModule extends LifecycleModule {
   List<String> eventList;
   bool mockShouldUnload;
 
-  TestLifecycleModule()
+  TestLifecycleModule({String name})
       : managedDisposable = new Disposable(),
         managedStreamController = new StreamController<Null>(),
         managedStreamSubscription = new MockStreamSubscription(),
-        name = 'TestLifecycleModule' {
+        name = name ?? 'TestLifecycleModule' {
     // init test validation data
     eventList = [];
     mockShouldUnload = true;
@@ -283,19 +285,13 @@ Future<Null> executeStateTransition(
 
 void main() {
   Logger.root.level = Level.ALL;
-
-  LogRecord lastLogMessage;
-  Logger.root.onRecord.listen((LogRecord message) {
-    lastLogMessage = message;
-  });
-
   final StateError testError = new StateError('You should have expected this');
 
   group('LifecycleModule', () {
     TestLifecycleModule module;
-    setUp(() {
+
+    setUp(() async {
       module = new TestLifecycleModule();
-      lastLogMessage = null;
     });
 
     tearDown(() async {
@@ -327,6 +323,17 @@ void main() {
         expect(module.isLoading, isTrue);
         await future;
         expect(module.isLoading, isFalse);
+      });
+
+      test('should emit lifecycle log events', () async {
+        expect(
+            Logger.root.onRecord,
+            emitsInOrder([
+              logRecord(level: Level.FINE, message: equals('willLoad')),
+              logRecord(level: Level.FINE, message: equals('didLoad')),
+            ]));
+
+        await module.load();
       });
 
       group('with an onLoad that throws', () {
@@ -388,18 +395,22 @@ void main() {
 
       test('should warn if it is already loading', () async {
         await gotoState(module, LifecycleState.loading);
-        expect(lastLogMessage, isNull);
+        expect(
+            Logger.root.onRecord,
+            emits(
+                logRecord(level: Level.WARNING, message: contains('loading'))));
+
         await module.load();
-        expect(lastLogMessage.message, contains('loading'));
-        expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
       test('should warn if it was already loaded', () async {
         await module.load();
-        expect(lastLogMessage, isNull);
+        expect(
+            Logger.root.onRecord,
+            emits(
+                logRecord(level: Level.WARNING, message: contains('loaded'))));
+
         await module.load();
-        expect(lastLogMessage.message, contains('loaded'));
-        expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
       testInvalidTransitions(LifecycleState.loading, [
@@ -454,6 +465,18 @@ void main() {
             module.eventList,
             ['willResume', 'onResume', 'didResume']
               ..addAll(expectedUnloadEvents));
+      });
+
+      test('should emit lifecycle log events', () async {
+        await gotoState(module, LifecycleState.loaded);
+        expect(
+            Logger.root.onRecord,
+            emitsInOrder([
+              logRecord(level: Level.FINE, message: equals('willUnload')),
+              logRecord(level: Level.FINE, message: equals('didUnload')),
+            ]));
+
+        await module.unload();
       });
 
       group('with an onUnload that throws', () {
@@ -545,18 +568,20 @@ void main() {
 
       test('should warn if it is already unloading', () async {
         await gotoState(module, LifecycleState.unloading);
-        expect(lastLogMessage, isNull);
+        expect(
+            Logger.root.onRecord,
+            emits(logRecord(
+                level: Level.WARNING, message: contains('unloading'))));
         await module.unload();
-        expect(lastLogMessage.message, contains('unloading'));
-        expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
       test('should warn if it was already unloaded', () async {
         await gotoState(module, LifecycleState.unloaded);
-        expect(lastLogMessage, isNull);
+        expect(
+            Logger.root.onRecord,
+            emits(logRecord(
+                level: Level.WARNING, message: contains('unloaded'))));
         await module.unload();
-        expect(lastLogMessage.message, contains('unloaded'));
-        expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
       test('should throw an exception if shouldUnload completes false',
@@ -654,6 +679,17 @@ void main() {
             ['willResume', 'onResume', 'didResume']
               ..addAll(expectedSuspendEvents));
       });
+      test('should emit lifecycle log events', () async {
+        await gotoState(module, LifecycleState.loaded);
+        expect(
+            Logger.root.onRecord,
+            emitsInOrder([
+              logRecord(level: Level.FINE, message: equals('willSuspend')),
+              logRecord(level: Level.FINE, message: equals('didSuspend')),
+            ]));
+
+        await module.suspend();
+      });
 
       group('with an onSuspend that throws', () {
         setUp(() async {
@@ -730,18 +766,22 @@ void main() {
 
       test('should warn if it is already suspending', () async {
         await gotoState(module, LifecycleState.suspending);
-        expect(lastLogMessage, isNull);
+        expect(
+            Logger.root.onRecord,
+            emits(logRecord(
+                level: Level.WARNING, message: contains('suspending'))));
+
         await module.suspend();
-        expect(lastLogMessage.message, contains('suspending'));
-        expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
       test('should warn if it is already suspended', () async {
         await gotoState(module, LifecycleState.suspended);
-        expect(lastLogMessage, isNull);
+        expect(
+            Logger.root.onRecord,
+            emits(logRecord(
+                level: Level.WARNING, message: contains('suspended'))));
+
         await module.suspend();
-        expect(lastLogMessage.message, contains('suspended'));
-        expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
       testInvalidTransitions(LifecycleState.suspending, [
@@ -769,6 +809,18 @@ void main() {
             module.eventList,
             ['willSuspend', 'onSuspend', 'didSuspend']
               ..addAll(expectedResumeEvents));
+      });
+
+      test('should emit lifecycle log events', () async {
+        await gotoState(module, LifecycleState.suspended);
+        expect(
+            Logger.root.onRecord,
+            emitsInOrder([
+              logRecord(level: Level.FINE, message: equals('willResume')),
+              logRecord(level: Level.FINE, message: equals('didResume')),
+            ]));
+
+        await module.resume();
       });
 
       group('with an onResume that throws', () {
@@ -848,18 +900,23 @@ void main() {
         await gotoState(module, LifecycleState.suspended);
         // ignore: unawaited_futures
         module.resume();
-        expect(lastLogMessage, isNull);
+
+        expect(
+            Logger.root.onRecord,
+            emits(logRecord(
+                level: Level.WARNING, message: contains('resuming'))));
+
         await module.resume();
-        expect(lastLogMessage.message, contains('resuming'));
-        expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
       test('should warn if it is already loaded', () async {
         await gotoState(module, LifecycleState.loaded);
-        expect(lastLogMessage, isNull);
+        expect(
+            Logger.root.onRecord,
+            emits(
+                logRecord(level: Level.WARNING, message: contains('loaded'))));
+
         await module.resume();
-        expect(lastLogMessage.message, contains('loaded'));
-        expect(lastLogMessage.level, equals(Level.WARNING));
       });
 
       testInvalidTransitions(LifecycleState.resuming, [
@@ -888,12 +945,12 @@ void main() {
   }, timeout: new Timeout(new Duration(seconds: 2)));
 
   group('LifecycleModule with children', () {
-    TestLifecycleModule parentModule;
     TestLifecycleModule childModule;
+    TestLifecycleModule parentModule;
 
     setUp(() async {
-      parentModule = new TestLifecycleModule();
-      childModule = new TestLifecycleModule();
+      parentModule = new TestLifecycleModule(name: 'parent');
+      childModule = new TestLifecycleModule(name: 'child');
       await parentModule.load();
     });
 
@@ -916,6 +973,35 @@ void main() {
             ]));
         expect(
             childModule.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
+      });
+
+      test('should emit lifecycle log events', () async {
+        expect(
+            Logger.root.onRecord,
+            emitsInOrder([
+              logRecord(
+                level: Level.FINE,
+                message: equals('willLoadChildModule'),
+                loggerName: equals(parentModule.name),
+              ),
+              logRecord(
+                level: Level.FINE,
+                message: equals('willLoad'),
+                loggerName: equals(childModule.name),
+              ),
+              logRecord(
+                level: Level.FINE,
+                message: equals('didLoad'),
+                loggerName: equals(childModule.name),
+              ),
+              logRecord(
+                level: Level.FINE,
+                message: equals('didLoadChildModule'),
+                loggerName: equals(parentModule.name),
+              ),
+            ]));
+
+        await parentModule.loadChildModule(childModule);
       });
 
       group('with a child with an onLoad that throws', () {
@@ -1119,6 +1205,41 @@ void main() {
               'onUnload',
               'didUnload'
             ]));
+      });
+
+      test('should emit lifecycle log events', () async {
+        await parentModule.loadChildModule(childModule);
+        expect(
+            Logger.root.onRecord,
+            emitsInOrder([
+              logRecord(
+                level: Level.FINE,
+                message: equals('willUnload'),
+                loggerName: equals(parentModule.name),
+              ),
+              logRecord(
+                level: Level.FINE,
+                message: equals('willUnload'),
+                loggerName: equals(childModule.name),
+              ),
+              logRecord(
+                level: Level.FINE,
+                message: equals('willUnloadChildModule'),
+                loggerName: equals(parentModule.name),
+              ),
+              logRecord(
+                level: Level.FINE,
+                message: equals('didUnload'),
+                loggerName: equals(childModule.name),
+              ),
+              logRecord(
+                level: Level.FINE,
+                message: equals('didUnloadChildModule'),
+                loggerName: equals(parentModule.name),
+              ),
+            ]));
+
+        await parentModule.unload();
       });
 
       group('with a child with an onUnload that throws', () {
