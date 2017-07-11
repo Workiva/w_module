@@ -801,6 +801,7 @@ abstract class LifecycleModule extends SimpleModule
       rethrow;
     } catch (error, stackTrace) {
       _didUnloadController.addError(error, stackTrace);
+      await _disposableProxy.dispose();
       await _postUnloadDisposable.dispose();
       rethrow;
     }
