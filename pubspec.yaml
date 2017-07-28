@@ -1,5 +1,5 @@
 name: w_module
-version: 1.2.5
+version: 1.2.6
 description: Base module classes with a well defined lifecycle for modular Dart applications.
 authors:
   - Workiva Client Platform Team <team-clientplatform@workiva.com>
