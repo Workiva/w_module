@@ -32,8 +32,10 @@ class MockStreamSubscription extends Mock implements StreamSubscription<Null> {}
 class TestLifecycleModule extends LifecycleModule {
   Iterable<StreamSubscription<LifecycleModule>> _eventListStreamSubscriptions;
   bool _managedDisposerWasCalled = false;
+  bool _getManagedDisposerWasCalled = false;
 
   final Disposable managedDisposable;
+  ManagedDisposer managedDisposer;
   final StreamController<Null> managedStreamController;
   final MockStreamSubscription managedStreamSubscription;
   Error onDidLoadChildModuleError;
@@ -62,11 +64,15 @@ class TestLifecycleModule extends LifecycleModule {
     mockShouldUnload = true;
 
     // Manage disposables
+    managedDisposer = getManagedDisposer(() {
+      _getManagedDisposerWasCalled = true;
+    });
     manageDisposable(managedDisposable);
     manageDisposer(() {
       _managedDisposerWasCalled = true;
     });
     manageStreamController(managedStreamController);
+    // ignore: deprecated_member_use
     manageStreamSubscription(managedStreamSubscription);
 
     var getEventListAdder =
@@ -99,6 +105,8 @@ class TestLifecycleModule extends LifecycleModule {
           onError: onErrorHandler),
     ];
   }
+
+  bool get getManagedDisposerWasCalled => _getManagedDisposerWasCalled;
 
   bool get managedDisposerWasCalled => _managedDisposerWasCalled;
 
@@ -638,14 +646,23 @@ void main() {
         await module.load();
         expect(module.managedDisposable.isDisposed, isFalse);
         expect(module.managedDisposerWasCalled, isFalse);
+        expect(module.getManagedDisposerWasCalled, isFalse);
         expect(module.managedStreamController.isClosed, isFalse);
         verifyNever(module.managedStreamSubscription.cancel());
+
+        var controller = new StreamController();
+        controller.onCancel = expectAsync1(([_]) {}, count: 1);
+        module.listenToStream(
+            controller.stream, expectAsync1((_) {}, count: 0));
 
         await module.unload();
         expect(module.managedDisposable.isDisposed, isTrue);
         expect(module.managedDisposerWasCalled, isTrue);
+        expect(module.getManagedDisposerWasCalled, isTrue);
         expect(module.managedStreamController.isClosed, isTrue);
         verify(module.managedStreamSubscription.cancel());
+        controller.add(null);
+        await controller.close();
       });
 
       testInvalidTransitions(

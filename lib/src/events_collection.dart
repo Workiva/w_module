@@ -50,6 +50,6 @@ class EventsCollection extends Disposable {
   @mustCallSuper
   @protected
   void manageEvent(Event event) {
-    manageDisposer(() => event.close(_key));
+    getManagedDisposer(() => event.close(_key));
   }
 }
