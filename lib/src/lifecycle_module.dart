@@ -52,7 +52,7 @@ enum LifecycleState {
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
 abstract class LifecycleModule extends SimpleModule
-    implements DisposableManagerV3 {
+    implements DisposableManagerV5 {
   List<LifecycleModule> _childModules = [];
   StreamController<LifecycleModule> _didLoadChildModuleController;
   StreamController<LifecycleModule> _didLoadController;
@@ -228,6 +228,10 @@ abstract class LifecycleModule extends SimpleModule
       _disposableProxy.getManagedDelayedFuture(duration, callback);
 
   @override
+  ManagedDisposer getManagedDisposer(Disposer disposer) =>
+      _disposableProxy.getManagedDisposer(disposer);
+
+  @override
   Timer getManagedPeriodicTimer(
           Duration duration, void callback(Timer timer)) =>
       _disposableProxy.getManagedPeriodicTimer(duration, callback);
@@ -259,6 +263,13 @@ abstract class LifecycleModule extends SimpleModule
 
   /// Whether the module is currently unloading.
   bool get isUnloading => _state == LifecycleState.unloading;
+
+  @override
+  StreamSubscription<T> listenToStream<T>(
+          Stream<T> stream, void onData(T event),
+          {Function onError, void onDone(), bool cancelOnError}) =>
+      _disposableProxy.listenToStream(stream, onData,
+          onError: onError, onDone: onDone, cancelOnError: cancelOnError);
 
   //--------------------------------------------------------
   // Public methods that can be used directly to trigger
@@ -383,8 +394,14 @@ abstract class LifecycleModule extends SimpleModule
       _disposableProxy.manageDisposable(disposable);
 
   /// Ensures a given [Disposer] callback is called when the module is unloaded.
+  ///
+  /// Deprecated: 1.3.0
+  /// To be removed: 2.0.0
+  ///
+  /// Use `getManagedDisposer` instead.
   @override
   void manageDisposer(Disposer disposer) =>
+      // ignore: deprecated_member_use
       _disposableProxy.manageDisposer(disposer);
 
   /// Ensures a given [StreamController] is closed when the module is unloaded.
@@ -394,8 +411,15 @@ abstract class LifecycleModule extends SimpleModule
 
   /// Ensures a given [StreamSubscription] is cancelled when the module is
   /// unloaded.
+  ///
+  /// Deprecated: 1.3.0
+  /// To be removed: 2.0.0
+  ///
+  /// Use `listenToStream` instead.
+  @deprecated
   @override
   void manageStreamSubscription(StreamSubscription subscription) =>
+      // ignore: deprecated_member_use
       _disposableProxy.manageStreamSubscription(subscription);
 
   /// Public method to suspend the module.
@@ -683,9 +707,9 @@ abstract class LifecycleModule extends SimpleModule
   /// A utility to logging LifecycleModule lifecycle events
   void _logLifecycleEvents(
       String logLabel, Stream<dynamic> lifecycleEventStream) {
-    _postUnloadDisposable.manageStreamSubscription(lifecycleEventStream.listen(
-        (_) => _logger.fine(logLabel),
-        onError: (error) => _logger.warning('$logLabel error: $error')));
+    _postUnloadDisposable.listenToStream(
+        lifecycleEventStream, (_) => _logger.fine(logLabel),
+        onError: (error) => _logger.warning('$logLabel error: $error'));
   }
 
   /// Handles a child [LifecycleModule]'s [didUnload] event.
