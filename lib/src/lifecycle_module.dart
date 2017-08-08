@@ -578,6 +578,13 @@ abstract class LifecycleModule extends SimpleModule
               isUnloading ? LifecycleState.unloading : LifecycleState.unloaded);
     }
 
+    if (isInstantiated) {
+      _state = LifecycleState.unloaded;
+      _previousState = null;
+      _transition = null;
+      return _dispose();
+    }
+
     if (!(isLoaded || isLoading || isResuming || isSuspended || isSuspending)) {
       return _buildIllegalTransitionResponse(
           targetState: LifecycleState.unloaded,
@@ -689,6 +696,14 @@ abstract class LifecycleModule extends SimpleModule
     return _transition?.future ?? new Future.value(null);
   }
 
+  Future<Null> _dispose() async {
+    try {
+      await _disposableProxy.dispose();
+    } finally {
+      await _postUnloadDisposable.dispose();
+    }
+  }
+
   Future<Null> _load() async {
     try {
       _willLoadController.add(this);
@@ -791,6 +806,7 @@ abstract class LifecycleModule extends SimpleModule
   }
 
   Future<Null> _unload(Future<Null> pendingTransition) async {
+    var unloadWasCanceled = false;
     try {
       if (pendingTransition != null) {
         await pendingTransition;
@@ -813,23 +829,23 @@ abstract class LifecycleModule extends SimpleModule
       _childModules.clear();
       await Future.wait(childUnloadFutures);
       await onUnload();
-      await _disposableProxy.dispose();
       if (_state == LifecycleState.unloading) {
         _state = LifecycleState.unloaded;
         _previousState = null;
         _transition = null;
       }
       _didUnloadController.add(this);
-      await _postUnloadDisposable.dispose();
     } on ModuleUnloadCanceledException catch (error, _) {
+      unloadWasCanceled = true;
       rethrow;
     } catch (error, stackTrace) {
       _didUnloadController.addError(error, stackTrace);
-      try {
-        await _disposableProxy.dispose();
-      } finally {
-        await _postUnloadDisposable.dispose();
-        rethrow;
+      rethrow;
+    } finally {
+      // Unless the unload was canceled (via shouldUnload), force the disposal
+      // to ensure that as much as possible is cleaned up.
+      if (!unloadWasCanceled) {
+        await _dispose();
       }
     }
   }
