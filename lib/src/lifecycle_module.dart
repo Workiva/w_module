@@ -52,7 +52,7 @@ enum LifecycleState {
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
 abstract class LifecycleModule extends SimpleModule
-    implements DisposableManagerV5 {
+    implements DisposableManagerV6 {
   List<LifecycleModule> _childModules = [];
   StreamController<LifecycleModule> _didLoadChildModuleController;
   StreamController<LifecycleModule> _didLoadController;
@@ -382,6 +382,11 @@ abstract class LifecycleModule extends SimpleModule
 
     return completer.future;
   }
+
+  /// Automatically dispose another object when this object is disposed.
+  @override
+  Disposable manageAndReturnDisposable(Disposable disposable) =>
+      _disposableProxy.manageAndReturnDisposable(disposable);
 
   /// Ensures a given [Completer] is completed when the module is unloaded.
   @override
