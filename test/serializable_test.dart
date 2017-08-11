@@ -69,7 +69,32 @@ class MockSerializableEvent extends Mock implements SerializableEvent {}
 
 class MockTestEvents extends Mock implements TestEvents {}
 
-class MockBridge extends Mock implements Bridge {}
+class MockBridge<T> extends Bridge<T> with Mock {
+  // ignore: close_sink
+  final StreamController _broadcastSerializedEventStreamController =
+      new StreamController.broadcast();
+  // ignore: close_sink
+  final StreamController _handleSerializedApiCallStreamController =
+      new StreamController.broadcast();
+
+  MockBridge(Stream<Map> apiCallReceived) : super(apiCallReceived);
+
+  @override
+  void broadcastSerializedEvent(Map event) {
+    _broadcastSerializedEventStreamController.add(event);
+  }
+
+  @override
+  void handleSerializedApiCall(T apiCall) {
+    _handleSerializedApiCallStreamController.add(apiCall);
+  }
+
+  Stream get broadcastSerializedEventStream =>
+      _broadcastSerializedEventStreamController.stream;
+
+  Stream get handleSerializedApiCallStream =>
+      _handleSerializedApiCallStreamController.stream;
+}
 
 void main() {
   group('SerializableModule', () {
@@ -124,13 +149,13 @@ void main() {
     SerializableBus bus;
     SerializableEvent event;
 
-    var module;
-    var events;
-    var api;
-    var bridge;
+    MockSerializableModule module;
+    MockTestEvents events;
+    TestApi api;
+    MockBridge bridge;
 
-    String serializableKey = 'serializableKey';
-    String testEventKey = 'testEvent';
+    final String serializableKey = 'serializableKey';
+    final String testEventKey = 'testEvent';
 
     setUp(() {
       lifecycleCompleter = new Completer();
@@ -139,7 +164,6 @@ void main() {
       event = new SerializableEvent(testEventKey, dispatchKey);
       events = new MockTestEvents();
       api = new TestApi();
-      bridge = new MockBridge();
 
       willLoadController = new StreamController.broadcast();
       didLoadController = new StreamController.broadcast();
@@ -162,7 +186,7 @@ void main() {
       when(module.willUnload).thenReturn(willUnloadController.stream);
       when(module.didUnload).thenReturn(didUnloadController.stream);
 
-      when(bridge.apiCallReceived).thenReturn(bridgeEventController.stream);
+      bridge = new MockBridge(bridgeEventController.stream);
 
       bus.registerModule(module);
       bus.bridge = bridge;
@@ -210,10 +234,13 @@ void main() {
         eventCompleter.complete();
       });
 
+      bridge.broadcastSerializedEventStream
+          .listen(expectAsync1((Map actualEvent) {
+        expect(actualEvent, equals(expectedEvent));
+      }));
+
       event.call(null, dispatchKey);
       await eventCompleter.future;
-
-      verify(bridge.broadcastSerializedEvent(expectedEvent));
     });
 
     test('should fire the module willLoad event', () async {
@@ -223,10 +250,13 @@ void main() {
         'data': null
       };
 
+      bridge.broadcastSerializedEventStream
+          .listen(expectAsync1((Map actualEvent) {
+        expect(actualEvent, equals(expectedEvent));
+      }));
+
       willLoadController.add(null);
       await lifecycleCompleter.future;
-
-      verify(bridge.broadcastSerializedEvent(expectedEvent));
     });
 
     test('should fire the module didLoad event', () async {
@@ -236,10 +266,13 @@ void main() {
         'data': null
       };
 
+      bridge.broadcastSerializedEventStream
+          .listen(expectAsync1((Map actualEvent) {
+        expect(actualEvent, equals(expectedEvent));
+      }));
+
       didLoadController.add(null);
       await lifecycleCompleter.future;
-
-      verify(bridge.broadcastSerializedEvent(expectedEvent));
     });
 
     test('should fire the module willUnload event', () async {
@@ -249,10 +282,13 @@ void main() {
         'data': null
       };
 
+      bridge.broadcastSerializedEventStream
+          .listen(expectAsync1((Map actualEvent) {
+        expect(actualEvent, equals(expectedEvent));
+      }));
+
       willUnloadController.add(null);
       await lifecycleCompleter.future;
-
-      verify(bridge.broadcastSerializedEvent(expectedEvent));
     });
 
     test('should fire the module didUnload event', () async {
@@ -262,11 +298,13 @@ void main() {
         'data': null
       };
 
-      clearInteractions(bridge);
+      bridge.broadcastSerializedEventStream
+          .listen(expectAsync1((Map actualEvent) {
+        expect(actualEvent, equals(expectedEvent));
+      }));
+
       didUnloadController.add(null);
       await lifecycleCompleter.future;
-
-      verify(bridge.broadcastSerializedEvent(expectedEvent));
     });
 
     test('should not broadcast an event if the bridge is not set', () async {
