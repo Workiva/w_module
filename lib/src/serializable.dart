@@ -70,14 +70,6 @@ class _ModuleRegistration extends Object with Disposable {
   final SerializableModule module;
 
   _ModuleRegistration(this.module);
-
-  @override
-  StreamSubscription<T> listenToStream<T>(
-      Stream<T> stream, void onData(T event),
-      {Function onError, void onDone(), bool cancelOnError}) {
-    return super.listenToStream(stream, onData,
-        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
-  }
 }
 
 class SerializableBus {
