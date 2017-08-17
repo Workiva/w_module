@@ -469,13 +469,20 @@ abstract class LifecycleModule extends SimpleModule
             LifecycleState.resuming
           ]);
     }
-    var previousTransition = _transition?.future;
+    Future<Null> previousTransition;
+    if (_transition != null && !_transition.isCompleted) {
+      previousTransition = _transition.future;
+    }
     _transition = new Completer<Null>();
+    var backupState = _state;
     _state = LifecycleState.suspending;
 
     _suspend(previousTransition)
         .then(_transition.complete)
-        .catchError(_transition.completeError);
+        .catchError((e, trace) {
+      _transition.completeError(e, trace);
+      _state = backupState;
+    });
     return _transition.future;
   }
 
@@ -516,13 +523,21 @@ abstract class LifecycleModule extends SimpleModule
           allowedStates: [LifecycleState.suspended, LifecycleState.suspending]);
     }
 
-    var pendingTransition = _transition?.future;
+    Future<Null> previousTransition;
+    if (_transition != null && !_transition.isCompleted) {
+      previousTransition = _transition.future;
+    }
+
+    var backupState = _state;
     _state = LifecycleState.resuming;
     _transition = new Completer<Null>();
 
-    _resume(pendingTransition)
+    _resume(previousTransition)
         .then(_transition.complete)
-        .catchError(_transition.completeError);
+        .catchError((e, trace) {
+      _transition.completeError(e, trace);
+      _state = backupState;
+    });
 
     return _transition.future;
   }
@@ -583,6 +598,13 @@ abstract class LifecycleModule extends SimpleModule
               isUnloading ? LifecycleState.unloading : LifecycleState.unloaded);
     }
 
+    if (isInstantiated) {
+      _state = LifecycleState.unloaded;
+      _previousState = null;
+      _transition = null;
+      return _dispose();
+    }
+
     if (!(isLoaded || isLoading || isResuming || isSuspended || isSuspending)) {
       return _buildIllegalTransitionResponse(
           targetState: LifecycleState.unloaded,
@@ -595,12 +617,16 @@ abstract class LifecycleModule extends SimpleModule
           ]);
     }
 
-    var pendingTransition = _transition?.future;
+    Future<Null> previousTransition;
+    if (_transition != null && !_transition.isCompleted) {
+      previousTransition = _transition.future;
+    }
+
     _previousState = _state;
     _state = LifecycleState.unloading;
     _transition = new Completer<Null>();
 
-    _unload(pendingTransition)
+    _unload(previousTransition)
         .then(_transition.complete)
         .catchError(_transition.completeError);
 
@@ -692,6 +718,14 @@ abstract class LifecycleModule extends SimpleModule
         'unnecessary calls to .$methodName().');
 
     return _transition?.future ?? new Future.value(null);
+  }
+
+  Future<Null> _dispose() async {
+    try {
+      await _disposableProxy.dispose();
+    } finally {
+      await _postUnloadDisposable.dispose();
+    }
   }
 
   Future<Null> _load() async {
@@ -796,6 +830,7 @@ abstract class LifecycleModule extends SimpleModule
   }
 
   Future<Null> _unload(Future<Null> pendingTransition) async {
+    var unloadWasCanceled = false;
     try {
       if (pendingTransition != null) {
         await pendingTransition;
@@ -818,23 +853,23 @@ abstract class LifecycleModule extends SimpleModule
       _childModules.clear();
       await Future.wait(childUnloadFutures);
       await onUnload();
-      await _disposableProxy.dispose();
       if (_state == LifecycleState.unloading) {
         _state = LifecycleState.unloaded;
         _previousState = null;
         _transition = null;
       }
       _didUnloadController.add(this);
-      await _postUnloadDisposable.dispose();
     } on ModuleUnloadCanceledException catch (error, _) {
+      unloadWasCanceled = true;
       rethrow;
     } catch (error, stackTrace) {
       _didUnloadController.addError(error, stackTrace);
-      try {
-        await _disposableProxy.dispose();
-      } finally {
-        await _postUnloadDisposable.dispose();
-        rethrow;
+      rethrow;
+    } finally {
+      // Unless the unload was canceled (via shouldUnload), force the disposal
+      // to ensure that as much as possible is cleaned up.
+      if (!unloadWasCanceled) {
+        await _dispose();
       }
     }
   }

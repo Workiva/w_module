@@ -668,9 +668,6 @@ void main() {
         controller.add(null);
         await controller.close();
       });
-
-      testInvalidTransitions(
-          LifecycleState.unloading, [LifecycleState.instantiated]);
     });
 
     group('suspend', () {
