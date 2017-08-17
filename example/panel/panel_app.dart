@@ -19,7 +19,7 @@ import 'dart:html';
 import 'dart:js' as js;
 
 import 'package:platform_detect/platform_detect.dart';
-import 'package:react/react.dart' as react;
+import 'package:react/react_dom.dart' as react_dom;
 import 'package:react/react_client.dart' as react_client;
 import 'package:w_module/w_module.dart' hide Event;
 
@@ -52,5 +52,5 @@ Future<Null> main() async {
   });
 
   // render the app into the browser
-  react.render(panelModule.components.content(), container);
+  react_dom.render(panelModule.components.content(), container);
 }
