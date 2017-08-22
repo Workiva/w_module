@@ -469,13 +469,21 @@ abstract class LifecycleModule extends SimpleModule
             LifecycleState.resuming
           ]);
     }
-    var previousTransition = _transition?.future;
+
+    Future<Null> previousTransition;
+    if (_transition != null && !_transition.isCompleted) {
+      previousTransition = _transition.future;
+    }
+    var backupState = _state;
     _transition = new Completer<Null>();
     _state = LifecycleState.suspending;
 
     _suspend(previousTransition)
         .then(_transition.complete)
-        .catchError(_transition.completeError);
+        .catchError((e, trace) {
+      _transition.completeError(e, trace);
+      _state = backupState;
+    });
     return _transition.future;
   }
 
@@ -516,13 +524,18 @@ abstract class LifecycleModule extends SimpleModule
           allowedStates: [LifecycleState.suspended, LifecycleState.suspending]);
     }
 
-    var pendingTransition = _transition?.future;
+    Future<Null> previousTransition;
+    if (_transition != null && !_transition.isCompleted) {
+      previousTransition = _transition.future;
+    }
     _state = LifecycleState.resuming;
     _transition = new Completer<Null>();
 
-    _resume(pendingTransition)
+    _resume(previousTransition)
         .then(_transition.complete)
-        .catchError(_transition.completeError);
+        .catchError((e, trace) {
+      _transition.completeError(e, trace);
+    });
 
     return _transition.future;
   }
@@ -595,12 +608,15 @@ abstract class LifecycleModule extends SimpleModule
           ]);
     }
 
-    var pendingTransition = _transition?.future;
+    Future<Null> previousTransition;
+    if (_transition != null && !_transition.isCompleted) {
+      previousTransition = _transition.future;
+    }
     _previousState = _state;
     _state = LifecycleState.unloading;
     _transition = new Completer<Null>();
 
-    _unload(pendingTransition)
+    _unload(previousTransition)
         .then(_transition.complete)
         .catchError(_transition.completeError);
 
