@@ -17,7 +17,7 @@ library w_module.src.lifecycle_module;
 import 'dart:async';
 
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart' show protected, required;
+import 'package:meta/meta.dart' show mustCallSuper, protected, required;
 import 'package:w_common/disposable.dart';
 
 import 'package:w_module/src/simple_module.dart';
@@ -51,77 +51,79 @@ enum LifecycleState {
 
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
-abstract class LifecycleModule extends SimpleModule
-    implements DisposableManagerV6 {
+abstract class LifecycleModule extends SimpleModule with Disposable {
   List<LifecycleModule> _childModules = [];
-  StreamController<LifecycleModule> _didLoadChildModuleController;
-  StreamController<LifecycleModule> _didLoadController;
-  StreamController<LifecycleModule> _didResumeController;
-  StreamController<LifecycleModule> _didSuspendController;
-  StreamController<LifecycleModule> _didUnloadChildModuleController;
-  final Map<LifecycleModule, StreamSubscription<LifecycleModule>>
-      _didUnloadChildModuleSubscriptions = {};
-  StreamController<LifecycleModule> _didUnloadController;
-  final Disposable _disposableProxy = new Disposable();
-  final Disposable _postUnloadDisposable = new Disposable();
   Logger _logger;
   String _name;
   LifecycleState _previousState;
   LifecycleState _state = LifecycleState.instantiated;
   Completer<Null> _transition;
-  StreamController<LifecycleModule> _willLoadChildModuleController;
-  StreamController<LifecycleModule> _willLoadController;
-  StreamController<LifecycleModule> _willResumeController;
-  StreamController<LifecycleModule> _willSuspendController;
-  StreamController<LifecycleModule> _willUnloadChildModuleController;
-  final Map<LifecycleModule, StreamSubscription<LifecycleModule>>
-      _willUnloadChildModuleSubscriptions = {};
-  StreamController<LifecycleModule> _willUnloadController;
+
+  // Lifecycle event StreamControllers
+  StreamController<LifecycleModule> _willLoadChildModuleController =
+      new StreamController<LifecycleModule>.broadcast();
+  StreamController<LifecycleModule> _didLoadChildModuleController =
+      new StreamController<LifecycleModule>.broadcast();
+
+  StreamController<LifecycleModule> _willLoadController =
+      new StreamController<LifecycleModule>.broadcast();
+  StreamController<LifecycleModule> _didLoadController =
+      new StreamController<LifecycleModule>.broadcast();
+
+  StreamController<LifecycleModule> _willSuspendController =
+      new StreamController<LifecycleModule>.broadcast();
+  StreamController<LifecycleModule> _didSuspendController =
+      new StreamController<LifecycleModule>.broadcast();
+
+  StreamController<LifecycleModule> _willResumeController =
+      new StreamController<LifecycleModule>.broadcast();
+  StreamController<LifecycleModule> _didResumeController =
+      new StreamController<LifecycleModule>.broadcast();
+
+  StreamController<LifecycleModule> _willUnloadChildModuleController =
+      new StreamController<LifecycleModule>.broadcast();
+  StreamController<LifecycleModule> _didUnloadChildModuleController =
+      new StreamController<LifecycleModule>.broadcast();
+
+  StreamController<LifecycleModule> _willUnloadController =
+      new StreamController<LifecycleModule>.broadcast();
+  StreamController<LifecycleModule> _didUnloadController =
+      new StreamController<LifecycleModule>.broadcast();
 
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
     _logger = new Logger('$name');
 
     [
-      _willLoadController = new StreamController<LifecycleModule>.broadcast(),
-      _didLoadController = new StreamController<LifecycleModule>.broadcast(),
-      _willUnloadController = new StreamController<LifecycleModule>.broadcast(),
-      _willLoadChildModuleController =
-          new StreamController<LifecycleModule>.broadcast(),
-      _didLoadChildModuleController =
-          new StreamController<LifecycleModule>.broadcast(),
-      _willUnloadChildModuleController =
-          new StreamController<LifecycleModule>.broadcast(),
-      _didUnloadChildModuleController =
-          new StreamController<LifecycleModule>.broadcast(),
-      _willSuspendController =
-          new StreamController<LifecycleModule>.broadcast(),
-      _didSuspendController = new StreamController<LifecycleModule>.broadcast(),
-      _willResumeController = new StreamController<LifecycleModule>.broadcast(),
-      _didResumeController = new StreamController<LifecycleModule>.broadcast()
+      _willLoadController,
+      _didLoadController,
+      _willLoadChildModuleController,
+      _didLoadChildModuleController,
+      _willSuspendController,
+      _didSuspendController,
+      _willResumeController,
+      _didResumeController,
+      _willUnloadChildModuleController,
+      _didUnloadChildModuleController,
+      _willUnloadController,
+      _didUnloadController,
     ].forEach(manageStreamController);
-
-    // The didUnload event must be emitted after disposal which requires that
-    // the stream controller must be disposed of manually at the end of the
-    // unload transition.
-    _didUnloadController = new StreamController<LifecycleModule>.broadcast();
-    _postUnloadDisposable.manageStreamController(_didUnloadController);
 
     <
         String,
         Stream>{
-      'didLoad': didLoad,
-      'didLoadChildModule': didLoadChildModule,
-      'didResume': didResume,
-      'didSuspend': didSuspend,
-      'didUnload': didUnload,
-      'didUnloadChildModule': didUnloadChildModule,
       'willLoad': willLoad,
+      'didLoad': didLoad,
       'willLoadChildModule': willLoadChildModule,
-      'willResume': willResume,
+      'didLoadChildModule': didLoadChildModule,
       'willSuspend': willSuspend,
-      'willUnload': willUnload,
+      'didSuspend': didSuspend,
+      'willResume': willResume,
+      'didResume': didResume,
       'willUnloadChildModule': willUnloadChildModule,
+      'didUnloadChildModule': didUnloadChildModule,
+      'willUnload': willUnload,
+      'didUnload': didUnload,
     }.forEach(_logLifecycleEvents);
   }
 
@@ -138,7 +140,7 @@ abstract class LifecycleModule extends SimpleModule
   }
 
   /// List of child components so that lifecycle can iterate over them as needed
-  Iterable<LifecycleModule> get childModules => _childModules;
+  Iterable<LifecycleModule> get childModules => _childModules.toList();
 
   /// The [LifecycleModule] was loaded.
   ///
@@ -219,27 +221,6 @@ abstract class LifecycleModule extends SimpleModule
   /// The [LifecycleModule] is about to be suspended.
   Stream<LifecycleModule> get willSuspend => _willSuspendController.stream;
 
-  @override
-  Future<T> awaitBeforeDispose<T>(Future<T> future) => _disposableProxy
-      .awaitBeforeDispose(future);
-
-  @override
-  Future<T> getManagedDelayedFuture<T>(Duration duration, T callback()) =>
-      _disposableProxy.getManagedDelayedFuture(duration, callback);
-
-  @override
-  ManagedDisposer getManagedDisposer(Disposer disposer) =>
-      _disposableProxy.getManagedDisposer(disposer);
-
-  @override
-  Timer getManagedPeriodicTimer(
-          Duration duration, void callback(Timer timer)) =>
-      _disposableProxy.getManagedPeriodicTimer(duration, callback);
-
-  @override
-  Timer getManagedTimer(Duration duration, void callback()) =>
-      _disposableProxy.getManagedTimer(duration, callback);
-
   /// Whether the module is currently instantiated.
   bool get isInstantiated => _state == LifecycleState.instantiated;
 
@@ -264,17 +245,46 @@ abstract class LifecycleModule extends SimpleModule
   /// Whether the module is currently unloading.
   bool get isUnloading => _state == LifecycleState.unloading;
 
-  @override
-  StreamSubscription<T> listenToStream<T>(
-          Stream<T> stream, void onData(T event),
-          {Function onError, void onDone(), bool cancelOnError}) =>
-      _disposableProxy.listenToStream(stream, onData,
-          onError: onError, onDone: onDone, cancelOnError: cancelOnError);
-
   //--------------------------------------------------------
   // Public methods that can be used directly to trigger
   // module lifecycle / check current lifecycle state
   //--------------------------------------------------------
+
+  /// Public method to dispose of this module.
+  ///
+  /// If the module has only been instantiated and has not yet started loading
+  /// or been loaded, then this will immediately dispose of the module.
+  ///
+  /// If the module has already started loading, has loaded, or is in any other
+  /// "loaded" state (suspending, suspended, resuming), then this will attempt
+  /// to unload the module before disposing.
+  ///
+  /// If the module has already started unloading, this will wait for that
+  /// transition before disposing.
+  ///
+  /// If the module has already started disposing or has disposed, then this
+  /// will return the [Future] from [didDispose]. (An unloaded module will have
+  /// already started or finished disposal).
+  ///
+  /// In any of these cases where an unload is attemped prior to disposal, a
+  /// failure during unload will be caught and logged, but will not stop
+  /// disposal. A module who cancels unload via [onShouldUnload] or who throws
+  /// during [onUnload] will still be disposed.
+  ///
+  /// In short, calling [dispose] forces the disposal of this module regardless
+  /// of its current state and regardless of its ability to unload successfully.
+  ///
+  /// If the modules unload is canceled or if an error is thrown during a
+  /// lifecycle handler like onUnload as a part of this disposal process, they
+  /// will still be available via their corresponding lifecycle event streams
+  /// (e.g. [didUnload]).
+  ///
+  /// The [Future] returned from this method will resolve when disposal has
+  /// completed and will only resolve with an error if one is thrown during
+  /// [onDispose].
+  @mustCallSuper
+  @override
+  Future<Null> dispose() => super.dispose();
 
   /// Public method to trigger the loading of a Module.
   ///
@@ -293,6 +303,10 @@ abstract class LifecycleModule extends SimpleModule
   /// Note that [LifecycleModule] only supports one load/unload cycle. If [load]
   /// is called after a module has been unloaded, a [StateError] is thrown.
   Future<Null> load() {
+    if (isOrWillBeDisposed) {
+      return _buildDisposedOrDisposingResponse(methodName: 'load');
+    }
+
     if (isLoading || isLoaded) {
       return _buildNoopResponse(
           isTransitioning: isLoading,
@@ -335,6 +349,10 @@ abstract class LifecycleModule extends SimpleModule
   /// throw a [StateError].
   @protected
   Future<Null> loadChildModule(LifecycleModule childModule) {
+    if (isOrWillBeDisposed) {
+      return _buildDisposedOrDisposingResponse(methodName: 'loadChildModule');
+    }
+
     if (_childModules.contains(childModule)) {
       return new Future.value(null);
     }
@@ -349,28 +367,35 @@ abstract class LifecycleModule extends SimpleModule
     onWillLoadChildModule(childModule).then((LifecycleModule _) async {
       _willLoadChildModuleController.add(childModule);
 
-      _didUnloadChildModuleSubscriptions[childModule] = childModule.didUnload
-          .listen(_onChildModuleDidUnload,
-              onError: _didUnloadChildModuleController.addError);
+      final childModuleWillUnloadSub = listenToStream(
+          childModule.willUnload, _onChildModuleWillUnload,
+          onError: _willUnloadChildModuleController.addError);
+      final childModuleDidUnloadSub = listenToStream(
+          childModule.didUnload, _onChildModuleDidUnload,
+          onError: (error, stackTrace) =>
+              _didUnloadChildModuleController.addError);
 
-      _willUnloadChildModuleSubscriptions[childModule] = childModule.willUnload
-          .listen(_onChildModuleWillUnload,
-              onError: _willUnloadChildModuleController.addError);
+      // The child module may not reach an unloaded state successfully, but
+      // should always eventually be disposed. For this reason, we listen for
+      // its disposal before removing it from the list of child modules.
+      // ignore: unawaited_futures
+      childModule.didDispose.then((_) {
+        _childModules.remove(childModule);
+      });
 
       try {
+        _childModules.add(childModule);
         await childModule.load();
         await onDidLoadChildModule(childModule);
-        _childModules.add(childModule);
         _didLoadChildModuleController.add(childModule);
         completer.complete();
       } catch (error, stackTrace) {
-        StreamSubscription<LifecycleModule> didUnloadSub =
-            _didUnloadChildModuleSubscriptions.remove(childModule);
-        await didUnloadSub?.cancel();
-
-        StreamSubscription<LifecycleModule> willUnloadSub =
-            _willUnloadChildModuleSubscriptions.remove(childModule);
-        await willUnloadSub?.cancel();
+        // If the child module failed to load, we can dispose of it and cleanup
+        // any state/subscriptions related to it.
+        _childModules.remove(childModule);
+        await childModule.dispose();
+        await childModuleWillUnloadSub.cancel();
+        await childModuleDidUnloadSub.cancel();
 
         _didLoadChildModuleController.addError(error, stackTrace);
         completer.completeError(error, stackTrace);
@@ -382,50 +407,6 @@ abstract class LifecycleModule extends SimpleModule
 
     return completer.future;
   }
-
-  /// Automatically dispose another object when this object is disposed.
-  @override
-  Disposable manageAndReturnDisposable(Disposable disposable) =>
-      _disposableProxy.manageAndReturnDisposable(disposable);
-
-  /// Ensures a given [Completer] is completed when the module is unloaded.
-  @override
-  Completer<T> manageCompleter<T>(Completer<T> completer) => _disposableProxy
-      .manageCompleter(completer);
-
-  /// Ensures a given [Disposable] is disposed when the module is unloaded.
-  @override
-  void manageDisposable(Disposable disposable) =>
-      _disposableProxy.manageDisposable(disposable);
-
-  /// Ensures a given [Disposer] callback is called when the module is unloaded.
-  ///
-  /// Deprecated: 1.3.0
-  /// To be removed: 2.0.0
-  ///
-  /// Use `getManagedDisposer` instead.
-  @override
-  void manageDisposer(Disposer disposer) =>
-      // ignore: deprecated_member_use
-      _disposableProxy.manageDisposer(disposer);
-
-  /// Ensures a given [StreamController] is closed when the module is unloaded.
-  @override
-  void manageStreamController(StreamController controller) =>
-      _disposableProxy.manageStreamController(controller);
-
-  /// Ensures a given [StreamSubscription] is cancelled when the module is
-  /// unloaded.
-  ///
-  /// Deprecated: 1.3.0
-  /// To be removed: 2.0.0
-  ///
-  /// Use `listenToStream` instead.
-  @deprecated
-  @override
-  void manageStreamSubscription(StreamSubscription subscription) =>
-      // ignore: deprecated_member_use
-      _disposableProxy.manageStreamSubscription(subscription);
 
   /// Public method to suspend the module.
   ///
@@ -451,6 +432,10 @@ abstract class LifecycleModule extends SimpleModule
   /// [onSuspend] lifecycle method it will be emitted on the [didSuspend]
   /// lifecycle stream. The error will also be returned by [suspend].
   Future<Null> suspend() {
+    if (isOrWillBeDisposed) {
+      return _buildDisposedOrDisposingResponse(methodName: 'suspend');
+    }
+
     if (isSuspended || isSuspending) {
       return _buildNoopResponse(
           isTransitioning: isSuspending,
@@ -502,6 +487,10 @@ abstract class LifecycleModule extends SimpleModule
   /// [onResume] lifecycle method it will be emitted on the [didResume]
   /// lifecycle stream. The error will also be returned by [resume].
   Future<Null> resume() {
+    if (isOrWillBeDisposed) {
+      return _buildDisposedOrDisposingResponse(methodName: 'resume');
+    }
+
     if (isLoaded || isResuming) {
       return _buildNoopResponse(
           isTransitioning: isResuming,
@@ -535,6 +524,9 @@ abstract class LifecycleModule extends SimpleModule
     // collect results from all child modules and self
     List<ShouldUnloadResult> shouldUnloads = [];
     for (var child in _childModules) {
+      if (child.isUnloading || child.isUnloaded || child.isOrWillBeDisposed) {
+        continue;
+      }
       shouldUnloads.add(child.shouldUnload());
     }
     shouldUnloads.add(onShouldUnload());
@@ -574,6 +566,11 @@ abstract class LifecycleModule extends SimpleModule
   /// If an error or exception is thrown during the call to the parent
   /// [onUnload] lifecycle method it will be emitted on the [didUnload]
   /// lifecycle stream. The error will also be returned by [unload].
+  ///
+  /// If the unload succeeds (i.e. is not canceled via [onShouldUnload] and is
+  /// not prevented by an uncaught exception in [onUnload]), then this module
+  /// will also be disposed. The [Future] returned by this method will resolve
+  /// once unload _and_ disposal has completed.
   Future<Null> unload() {
     if (isUnloaded || isUnloading) {
       return _buildNoopResponse(
@@ -581,6 +578,10 @@ abstract class LifecycleModule extends SimpleModule
           methodName: 'unload',
           currentState:
               isUnloading ? LifecycleState.unloading : LifecycleState.unloaded);
+    }
+
+    if (isOrWillBeDisposed) {
+      return _buildDisposedOrDisposingResponse(methodName: 'unload');
     }
 
     if (!(isLoaded || isLoading || isResuming || isSuspended || isSuspending)) {
@@ -600,11 +601,10 @@ abstract class LifecycleModule extends SimpleModule
     _state = LifecycleState.unloading;
     _transition = new Completer<Null>();
 
-    _unload(pendingTransition)
-        .then(_transition.complete)
-        .catchError(_transition.completeError);
-
-    return _transition.future;
+    var unloadAndDispose = new Completer<Null>();
+    unloadAndDispose.complete(_transition.future.then((_) => dispose()));
+    _transition.complete(_unload(pendingTransition));
+    return unloadAndDispose.future;
   }
 
   //--------------------------------------------------------
@@ -670,6 +670,56 @@ abstract class LifecycleModule extends SimpleModule
   @protected
   Future<Null> onUnload() async {}
 
+  @mustCallSuper
+  @override
+  @protected
+  Future<Null> onWillDispose() async {
+    if (isInstantiated || isUnloaded) {
+      return;
+    }
+
+    try {
+      Future<Null> unloadingTransitionFuture;
+      if (isUnloading) {
+        unloadingTransitionFuture = _transition.future;
+      } else {
+        var pendingTransition = _transition?.future;
+        _previousState = _state;
+        _state = LifecycleState.unloading;
+        unloadingTransitionFuture =
+            _unload(pendingTransition); //, forceDisposal: true);
+      }
+      await unloadingTransitionFuture;
+    } on ModuleUnloadCanceledException {
+      // The unload was canceled, but disposal cannot be canceled. Log a warning
+      // indicating this and continue with disposal.
+      _logger.warning('.dispose() was called but Module "$name" canceled its '
+          'unload. The module will still be disposed.');
+    } catch (error, stackTrace) {
+      // An unexpected exception was thrown during unload. It will be emitted
+      // as an error on the didUnload stream, but we will also log a warning
+      // here explaining that disposal will still continue.
+      _logger.warning(
+          '.dispose() was called but Module "$name" threw an exception on '
+          'unload. The module will still be disposed.',
+          error,
+          stackTrace);
+    }
+
+    if (_childModules.isNotEmpty) {
+      await Future.wait(_childModules.map((child) => child.dispose()));
+    }
+  }
+
+  Future<Null> _buildDisposedOrDisposingResponse(
+      {@required String methodName}) {
+    _logger.warning('.$methodName() was called after Module "$name" had '
+        // ignore: deprecated_member_use
+        'already ${isDisposing ? 'started disposing' : 'disposed'}.');
+    return new Future.error(new StateError(
+        'Calling .$methodName() after disposal has started is not allowed.'));
+  }
+
   /// Returns a new [Future] error with a constructed reason.
   Future<Null> _buildIllegalTransitionResponse(
       {LifecycleState targetState,
@@ -712,8 +762,7 @@ abstract class LifecycleModule extends SimpleModule
   /// A utility to logging LifecycleModule lifecycle events
   void _logLifecycleEvents(
       String logLabel, Stream<dynamic> lifecycleEventStream) {
-    _postUnloadDisposable.listenToStream(
-        lifecycleEventStream, (_) => _logger.fine(logLabel),
+    listenToStream(lifecycleEventStream, (_) => _logger.fine(logLabel),
         onError: (error) => _logger.warning('$logLabel error: $error'));
   }
 
@@ -722,10 +771,6 @@ abstract class LifecycleModule extends SimpleModule
     try {
       await onDidUnloadChildModule(module);
       _didUnloadChildModuleController.add(module);
-
-      StreamSubscription<LifecycleModule> didUnloadSub =
-          _didUnloadChildModuleSubscriptions.remove(module);
-      await didUnloadSub?.cancel();
     } catch (error, stackTrace) {
       _didUnloadChildModuleController.addError(error, stackTrace);
     }
@@ -736,11 +781,6 @@ abstract class LifecycleModule extends SimpleModule
     try {
       await onWillUnloadChildModule(module);
       _willUnloadChildModuleController.add(module);
-      _childModules.remove(module);
-
-      StreamSubscription<LifecycleModule> willUnloadSub =
-          _willUnloadChildModuleSubscriptions.remove(module);
-      await willUnloadSub?.cancel();
     } catch (error, stackTrace) {
       _willUnloadChildModuleController.addError(error, stackTrace);
     }
@@ -801,7 +841,10 @@ abstract class LifecycleModule extends SimpleModule
         await pendingTransition;
       }
 
-      ShouldUnloadResult shouldUnloadResult = shouldUnload();
+      // final shouldUnloadResult = forceDisposal
+      //   ? new ShouldUnloadResult()
+      //   : shouldUnload();
+      final shouldUnloadResult = shouldUnload();
       if (!shouldUnloadResult.shouldUnload) {
         _state = _previousState;
         _previousState = null;
@@ -811,31 +854,28 @@ abstract class LifecycleModule extends SimpleModule
             shouldUnloadResult.messagesAsString());
       }
       _willUnloadController.add(this);
-      List<Future<Null>> childUnloadFutures = <Future<Null>>[];
-      for (var child in _childModules.toList()) {
-        childUnloadFutures.add(child.unload());
-      }
-      _childModules.clear();
-      await Future.wait(childUnloadFutures);
+      await Future.wait(_childModules.toList().map((child) {
+        return child.unload();
+        // return forceDisposal ? child.dispose() : child.unload();
+      }));
       await onUnload();
-      await _disposableProxy.dispose();
       if (_state == LifecycleState.unloading) {
         _state = LifecycleState.unloaded;
         _previousState = null;
         _transition = null;
       }
       _didUnloadController.add(this);
-      await _postUnloadDisposable.dispose();
     } on ModuleUnloadCanceledException catch (error, _) {
+      // In the event of a cancellation, rethrow the exception and allow the
+      // caller (either unload() or onWillDispose()) to handle it.
       rethrow;
     } catch (error, stackTrace) {
+      // In the event of a failed unload (the module threw an exception but did
+      // not explicitly cancel the unload), emit the unload failure event and
+      // then rethrow the exception so that the caller (either unload() or
+      // onWillDispose()) can handle it.
       _didUnloadController.addError(error, stackTrace);
-      try {
-        await _disposableProxy.dispose();
-      } finally {
-        await _postUnloadDisposable.dispose();
-        rethrow;
-      }
+      rethrow;
     }
   }
 }

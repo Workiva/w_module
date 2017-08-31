@@ -19,7 +19,6 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart' show protected;
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
-import 'package:w_common/disposable.dart';
 
 import 'package:w_module/src/lifecycle_module.dart';
 
@@ -31,16 +30,12 @@ class MockStreamSubscription extends Mock implements StreamSubscription<Null> {}
 
 class TestLifecycleModule extends LifecycleModule {
   Iterable<StreamSubscription<LifecycleModule>> _eventListStreamSubscriptions;
-  bool _managedDisposerWasCalled = false;
-  bool _getManagedDisposerWasCalled = false;
 
-  final Disposable managedDisposable;
-  Disposable managedDisposable2;
-  ManagedDisposer managedDisposer;
-  final StreamController<Null> managedStreamController;
-  final MockStreamSubscription managedStreamSubscription;
+  Duration onLoadDelay;
+
   Error onDidLoadChildModuleError;
   Error onDidUnloadChildModuleError;
+  Error onDisposeError;
   Error onLoadError;
   Error onResumeError;
   Error onSuspendError;
@@ -55,27 +50,10 @@ class TestLifecycleModule extends LifecycleModule {
   List<String> eventList;
   bool mockShouldUnload;
 
-  TestLifecycleModule({String name})
-      : managedDisposable = new Disposable(),
-        managedStreamController = new StreamController<Null>(),
-        managedStreamSubscription = new MockStreamSubscription(),
-        name = name ?? 'TestLifecycleModule' {
+  TestLifecycleModule({String name}) : name = name ?? 'TestLifecycleModule' {
     // init test validation data
     eventList = [];
     mockShouldUnload = true;
-
-    // Manage disposables
-    managedDisposer = getManagedDisposer(() {
-      _getManagedDisposerWasCalled = true;
-    });
-    manageDisposable(managedDisposable);
-    managedDisposable2 = manageAndReturnDisposable(new Disposable());
-    manageDisposer(() {
-      _managedDisposerWasCalled = true;
-    });
-    manageStreamController(managedStreamController);
-    // ignore: deprecated_member_use
-    manageStreamSubscription(managedStreamSubscription);
 
     var getEventListAdder =
         (String label) => (LifecycleModule _) => eventList.add(label);
@@ -107,10 +85,6 @@ class TestLifecycleModule extends LifecycleModule {
           onError: onErrorHandler),
     ];
   }
-
-  bool get getManagedDisposerWasCalled => _getManagedDisposerWasCalled;
-
-  bool get managedDisposerWasCalled => _managedDisposerWasCalled;
 
   // Overriding without re-applying the @protected annotation allows us to call
   // loadChildModule in our tests below.
@@ -157,7 +131,7 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   @protected
   Future<Null> onLoad() async {
-    await new Future.delayed(new Duration(milliseconds: 1));
+    await new Future.delayed(onLoadDelay ?? const Duration(milliseconds: 1));
     if (onLoadError != null) {
       throw onLoadError;
     }
@@ -203,6 +177,16 @@ class TestLifecycleModule extends LifecycleModule {
       throw onResumeError;
     }
     eventList.add('onResume');
+  }
+
+  @override
+  @protected
+  Future<Null> onDispose() async {
+    await new Future.delayed(new Duration(milliseconds: 1));
+    if (onDisposeError != null) {
+      throw onDisposeError;
+    }
+    eventList.add('onDispose');
   }
 
   /// Cancels subscriptions to the [TestLifecycleModule] lifecycle events.
@@ -437,7 +421,8 @@ void main() {
         'onShouldUnload',
         'willUnload',
         'onUnload',
-        'didUnload'
+        'didUnload',
+        'onDispose',
       ];
 
       test('should dispatch events and call onShouldUnload and onUnload',
@@ -642,31 +627,6 @@ void main() {
           await module.unload();
         } on ModuleUnloadCanceledException catch (_) {}
         expect(module.isLoaded, isTrue);
-      });
-
-      test('should dispose managed disposables', () async {
-        await module.load();
-        expect(module.managedDisposable.isDisposed, isFalse);
-        expect(module.managedDisposable2.isDisposed, isFalse);
-        expect(module.managedDisposerWasCalled, isFalse);
-        expect(module.getManagedDisposerWasCalled, isFalse);
-        expect(module.managedStreamController.isClosed, isFalse);
-        verifyNever(module.managedStreamSubscription.cancel());
-
-        var controller = new StreamController();
-        controller.onCancel = expectAsync1(([_]) {}, count: 1);
-        module.listenToStream(
-            controller.stream, expectAsync1((_) {}, count: 0));
-
-        await module.unload();
-        expect(module.managedDisposable.isDisposed, isTrue);
-        expect(module.managedDisposable2.isDisposed, isTrue);
-        expect(module.managedDisposerWasCalled, isTrue);
-        expect(module.getManagedDisposerWasCalled, isTrue);
-        expect(module.managedStreamController.isClosed, isTrue);
-        verify(module.managedStreamSubscription.cancel());
-        controller.add(null);
-        await controller.close();
       });
 
       testInvalidTransitions(
@@ -948,20 +908,265 @@ void main() {
       ]);
     });
 
-    test('getManagedTimer should return a timer', () {
-      module.getManagedTimer(
-          new Duration(milliseconds: 10), expectAsync0(() {}));
-    });
+    group('disposal', () {
+      test('should be triggered by unload', () async {
+        await gotoState(module, LifecycleState.loaded);
+        await module.unload();
+        expect(module.isDisposed, isTrue);
+      });
 
-    test('getManagedPeriodicTimer should return a timer', () {
-      var callCount = 0;
-      module.getManagedPeriodicTimer(
-          new Duration(milliseconds: 10),
-          expectAsync1((Timer timer) {
-            if (callCount++ >= 1) {
-              timer.cancel();
-            }
-          }, count: 2));
+      test('should be a no-op if already disposing', () async {
+        var future = module.dispose();
+        await new Future(() {});
+        expect(module.isOrWillBeDisposed, isTrue);
+        expect(module.isDisposed, isFalse);
+        await Future.wait([future, module.dispose()]);
+        expect(module.isDisposed, isTrue);
+      });
+
+      test('should render all API methods unusable as soon as it is requested',
+          () async {
+        final completer = new Completer<Null>();
+        // ignore: unawaited_futures
+        module.awaitBeforeDispose(completer.future);
+
+        // ignore: unawaited_futures
+        module.dispose();
+        await new Future(() {});
+        expect(module.isOrWillBeDisposed, isTrue);
+        expect(module.isDisposed, isFalse);
+
+        final invalidAfterDisposalMatcher = allOf(
+          throwsStateError,
+          throwsA(predicate((e) => e.toString().contains('dispos'))),
+        );
+
+        expect(module.load(), invalidAfterDisposalMatcher);
+        expect(module.loadChildModule(null), invalidAfterDisposalMatcher);
+        expect(module.resume(), invalidAfterDisposalMatcher);
+        expect(module.suspend(), invalidAfterDisposalMatcher);
+        expect(module.unload(), invalidAfterDisposalMatcher);
+      });
+
+      group('from instantiated state', () {
+        setUp(() async {
+          await gotoState(module, LifecycleState.instantiated);
+          module.eventList.clear();
+        });
+
+        test('should go straight to disposal', () async {
+          await module.dispose();
+          expect(module.isDisposed, isTrue);
+          expect(module.eventList, equals(['onDispose']));
+        });
+
+        test('with an onDispose that throws', () async {
+          module.onDisposeError = testError;
+          expect(module.dispose(), throwsA(same(module.onDisposeError)));
+        });
+      });
+
+      void testDisposalFromLoadedState(LifecycleState state,
+          [List<String> expectedPreUnloadStates = const []]) {
+        TestLifecycleModule childModule;
+
+        for (final withChild in [false, true]) {
+          group('(withChild=$withChild)', () {
+            group('from $state state', () {
+              var expectedDisposalStates = ['onDispose'];
+
+              setUp(() async {
+                if (withChild) {
+                  childModule = new TestLifecycleModule(name: 'child');
+                  await module.loadChildModule(childModule);
+                }
+                if (state == LifecycleState.unloading) {
+                  // Because we test what happens when exceptions are thrown during
+                  // unload, we have to handle going to the "unloading" state
+                  // manually so that we can silence any errors that may be thrown.
+                  // They will be listened for and tested separately. Note that we
+                  // start by going to the "loading" state instead of "loaded" -
+                  // this is necessary because we need time between when the module
+                  // enters the "unloading" state and when it calls shouldUnload().
+                  await gotoState(module, LifecycleState.loading);
+
+                  // When unload() is called, it will immediately move to the
+                  // "unloading" state but will still have to wait for the previous
+                  // "loading" transition to complete, giving us the buffer we need.
+                  // ignore: unawaited_futures
+                  module.unload().catchError((_) {});
+
+                  // Clear out the event list again when the load completes so that
+                  // those events don't affect the test expectations.
+                  // ignore: unawaited_futures
+                  module.didLoad.first.then((_) => module.eventList.clear());
+                } else {
+                  await gotoState(module, state);
+                }
+                module.eventList.clear();
+                if (withChild) {
+                  childModule.eventList.clear();
+                }
+              });
+
+              test('should unload and then dispose', () async {
+                expectInLifecycleState(module, state);
+                await module.dispose();
+
+                var expectedParentModuleEvents = []
+                  ..addAll(expectedPreUnloadStates)
+                  ..addAll(['onShouldUnload', 'willUnload']);
+                if (withChild) {
+                  expectedParentModuleEvents.addAll([
+                    'onWillUnloadChildModule',
+                    'willUnloadChildModule',
+                    'onDidUnloadChildModule',
+                    'didUnloadChildModule',
+                  ]);
+                }
+                expectedParentModuleEvents
+                  ..addAll(['onUnload', 'didUnload'])
+                  ..addAll(expectedDisposalStates);
+
+                expect(module.isDisposed, isTrue);
+                expect(module.eventList, equals(expectedParentModuleEvents));
+
+                if (withChild) {
+                  expect(childModule.isDisposed, isTrue);
+                  expect(
+                      childModule.eventList,
+                      containsAllInOrder([]
+                        ..addAll([
+                          'onShouldUnload',
+                          'onShouldUnload',
+                          'willUnload',
+                          'onUnload',
+                          'didUnload',
+                        ])
+                        ..addAll(expectedDisposalStates)));
+                }
+              });
+
+              group('with onShouldUnload=false', () {
+                setUp(() {
+                  withChild
+                      ? childModule.mockShouldUnload = false
+                      : module.mockShouldUnload = false;
+                });
+
+                test('should dispose despite the unload being canceled',
+                    () async {
+                  expectInLifecycleState(module, state);
+                  await module.dispose();
+                  expect(module.isDisposed, isTrue);
+                  expect(
+                      module.eventList,
+                      equals([]
+                        ..addAll(expectedPreUnloadStates)
+                        ..addAll(['onShouldUnload'])
+                        ..addAll(expectedDisposalStates)));
+
+                  if (withChild) {
+                    expect(childModule.isDisposed, isTrue);
+                    expect(
+                        childModule.eventList,
+                        containsAllInOrder([]
+                          ..addAll(['onShouldUnload', 'onShouldUnload'])
+                          ..addAll(expectedDisposalStates)));
+                  }
+                });
+
+                test(
+                    'should warn that the unload was canceled but that disposal will continue',
+                    () async {
+                  expect(
+                      Logger.root.onRecord,
+                      emitsThrough(logRecord(
+                          level: Level.WARNING,
+                          message: contains(
+                              '.dispose() was called but Module "${module.name}" canceled'))));
+                  expectInLifecycleState(module, state);
+                  await module.dispose();
+                });
+              });
+
+              group('with an onUnload that throws', () {
+                setUp(() {
+                  withChild
+                      ? childModule.onUnloadError = testError
+                      : module.onUnloadError = testError;
+                });
+
+                test('should emit the unload failure from didUnload', () async {
+                  expect(module.didUnload.first, throwsA(same(testError)));
+                  if (withChild) {
+                    expect(
+                        childModule.didUnload.first, throwsA(same(testError)));
+                  }
+                  expectInLifecycleState(module, state);
+                  await module.dispose();
+                  print('DISPOSED');
+                });
+
+                test('should dispose despite the unload failing', () async {
+                  expectInLifecycleState(module, state);
+                  await module.dispose();
+                  expect(module.isDisposed, isTrue);
+
+                  var expectedParentModuleEvents = []
+                    ..addAll(expectedPreUnloadStates)
+                    ..addAll(['onShouldUnload', 'willUnload']);
+                  if (withChild) {
+                    expectedParentModuleEvents.addAll([
+                      'onWillUnloadChildModule',
+                      'willUnloadChildModule',
+                    ]);
+                  }
+                  expectedParentModuleEvents.addAll(expectedDisposalStates);
+
+                  expect(module.eventList, equals(expectedParentModuleEvents));
+
+                  if (withChild) {
+                    expect(childModule.isDisposed, isTrue);
+                    expect(
+                        childModule.eventList,
+                        containsAllInOrder([]
+                          ..addAll([
+                            'onShouldUnload',
+                            'onShouldUnload',
+                            'willUnload'
+                          ])
+                          ..addAll(expectedDisposalStates)));
+                  }
+                });
+
+                test(
+                    'should warn that the unload failed but that disposal will continue',
+                    () async {
+                  expect(
+                      Logger.root.onRecord,
+                      emitsThrough(logRecord(
+                          level: Level.WARNING,
+                          message: contains(
+                              '.dispose() was called but Module "${module.name}" threw'))));
+                  expectInLifecycleState(module, state);
+                  await module.dispose();
+                });
+              });
+            });
+          });
+        }
+      }
+
+      testDisposalFromLoadedState(
+          LifecycleState.loading, ['willLoad', 'onLoad', 'didLoad']);
+      testDisposalFromLoadedState(LifecycleState.loaded);
+      testDisposalFromLoadedState(LifecycleState.suspending,
+          ['willSuspend', 'onSuspend', 'didSuspend']);
+      testDisposalFromLoadedState(LifecycleState.suspended);
+      testDisposalFromLoadedState(
+          LifecycleState.resuming, ['willResume', 'onResume', 'didResume']);
+      testDisposalFromLoadedState(LifecycleState.unloading);
     });
   }, timeout: new Timeout(new Duration(seconds: 2)));
 
@@ -1215,7 +1420,8 @@ void main() {
               'onDidUnloadChildModule',
               'didUnloadChildModule',
               'onUnload',
-              'didUnload'
+              'didUnload',
+              'onDispose',
             ]));
         expect(
             childModule.eventList,
@@ -1224,7 +1430,8 @@ void main() {
               'onShouldUnload',
               'willUnload',
               'onUnload',
-              'didUnload'
+              'didUnload',
+              'onDispose',
             ]));
       });
 
@@ -1261,6 +1468,108 @@ void main() {
             ]));
 
         await parentModule.unload();
+      });
+
+      group('should wait for in-progress child module loads', () {
+        test('', () async {
+          parentModule.eventList.clear();
+          childModule.eventList.clear();
+          childModule.onLoadDelay = const Duration(milliseconds: 50);
+          // ignore: unawaited_futures
+          parentModule.loadChildModule(childModule);
+          await childModule.willLoad.first;
+          await parentModule.unload();
+          expect(
+              parentModule.eventList,
+              equals([
+                'onWillLoadChildModule',
+                'willLoadChildModule',
+                'onShouldUnload',
+                'willUnload',
+                'onDidLoadChildModule',
+                'didLoadChildModule',
+                'onWillUnloadChildModule',
+                'willUnloadChildModule',
+                'onDidUnloadChildModule',
+                'didUnloadChildModule',
+                'onUnload',
+                'didUnload',
+                'onDispose',
+              ]));
+          expect(
+              childModule.eventList,
+              equals([
+                'willLoad',
+                'onShouldUnload',
+                'onLoad',
+                'didLoad',
+                'onShouldUnload',
+                'willUnload',
+                'onUnload',
+                'didUnload',
+                'onDispose',
+              ]));
+        });
+
+        test('with a child with an onLoad that throws', () async {
+          parentModule.eventList.clear();
+          childModule.eventList.clear();
+          childModule.onLoadDelay = const Duration(milliseconds: 50);
+          childModule.onLoadError = testError;
+
+          childModule.didLoad.listen((_) {},
+              onError: expectAsync1((error) {
+                expect(error, same(childModule.onLoadError));
+              }, count: 1));
+          parentModule.didLoadChildModule.listen((_) {},
+              onError: expectAsync1((error) {
+                expect(error, same(childModule.onLoadError));
+              }, count: 1));
+
+          // ignore: unawaited_futures
+          parentModule
+              .loadChildModule(childModule)
+              .catchError(expectAsync1((error) {
+            expect(error, same(childModule.onLoadError));
+          }));
+          await childModule.willLoad.first;
+          await parentModule.unload().catchError(expectAsync1((error) {
+            expect(error, same(childModule.onLoadError));
+          }));
+          expect(
+              parentModule.eventList,
+              equals([
+                'onWillLoadChildModule',
+                'willLoadChildModule',
+                'onShouldUnload',
+                'willUnload',
+              ]));
+          expect(childModule.eventList, equals(['willLoad', 'onShouldUnload']));
+        });
+
+        test('with an onWillLoadChildModule that throws', () async {
+          parentModule.eventList.clear();
+          childModule.eventList.clear();
+          parentModule.onWillLoadChildModuleError = testError;
+          childModule.onLoadDelay = const Duration(milliseconds: 50);
+          // ignore: unawaited_futures
+          parentModule
+              .loadChildModule(childModule)
+              .catchError(expectAsync1((error) {
+            expect(error, same(parentModule.onWillLoadChildModuleError));
+          }));
+          await parentModule.unload();
+          expect(
+              parentModule.eventList,
+              equals([
+                'onShouldUnload',
+                'willUnload',
+                'onUnload',
+                'didUnload',
+                'onDispose',
+              ]));
+          expect(childModule.eventList, isEmpty);
+        });
       });
 
       group('with a child with an onUnload that throws', () {
@@ -1340,8 +1649,15 @@ void main() {
       childModule.eventList.clear();
 
       await childModule.unload();
-      expect(childModule.eventList,
-          equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      expect(
+          childModule.eventList,
+          equals([
+            'onShouldUnload',
+            'willUnload',
+            'onUnload',
+            'didUnload',
+            'onDispose',
+          ]));
       await new Future(() {});
       expect(
           parentModule.eventList,
@@ -1355,8 +1671,15 @@ void main() {
       childModule.eventList.clear();
 
       await parentModule.unload();
-      expect(parentModule.eventList,
-          equals(['onShouldUnload', 'willUnload', 'onUnload', 'didUnload']));
+      expect(
+          parentModule.eventList,
+          equals([
+            'onShouldUnload',
+            'willUnload',
+            'onUnload',
+            'didUnload',
+            'onDispose',
+          ]));
       expect(childModule.eventList, equals([]));
     });
 

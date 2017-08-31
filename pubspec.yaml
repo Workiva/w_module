@@ -10,6 +10,12 @@ authors:
   - Trent Grover <trent.grover@workiva.com>
 homepage: https://github.com/Workiva/w_module
 
+dependency_overrides:
+  w_common:
+    git:
+      url: git@github.com:Workiva/w_common.git
+      ref: add_imminent_disposal_step
+
 dependencies:
   logging: ^0.11.0
   meta: ^1.0.0
