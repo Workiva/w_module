@@ -52,7 +52,7 @@ enum LifecycleState {
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
 abstract class LifecycleModule extends SimpleModule
-    implements DisposableManagerV5 {
+    implements DisposableManagerV6 {
   List<LifecycleModule> _childModules = [];
   StreamController<LifecycleModule> _didLoadChildModuleController;
   StreamController<LifecycleModule> _didLoadController;
@@ -383,6 +383,11 @@ abstract class LifecycleModule extends SimpleModule
     return completer.future;
   }
 
+  /// Automatically dispose another object when this object is disposed.
+  @override
+  Disposable manageAndReturnDisposable(Disposable disposable) =>
+      _disposableProxy.manageAndReturnDisposable(disposable);
+
   /// Ensures a given [Completer] is completed when the module is unloaded.
   @override
   Completer<T> manageCompleter<T>(Completer<T> completer) => _disposableProxy
@@ -464,13 +469,21 @@ abstract class LifecycleModule extends SimpleModule
             LifecycleState.resuming
           ]);
     }
-    var previousTransition = _transition?.future;
+
+    Future<Null> previousTransition;
+    if (_transition != null && !_transition.isCompleted) {
+      previousTransition = _transition.future;
+    }
+    var backupState = _state;
     _transition = new Completer<Null>();
     _state = LifecycleState.suspending;
 
     _suspend(previousTransition)
         .then(_transition.complete)
-        .catchError(_transition.completeError);
+        .catchError((e, trace) {
+      _transition.completeError(e, trace);
+      _state = backupState;
+    });
     return _transition.future;
   }
 
@@ -511,13 +524,18 @@ abstract class LifecycleModule extends SimpleModule
           allowedStates: [LifecycleState.suspended, LifecycleState.suspending]);
     }
 
-    var pendingTransition = _transition?.future;
+    Future<Null> previousTransition;
+    if (_transition != null && !_transition.isCompleted) {
+      previousTransition = _transition.future;
+    }
     _state = LifecycleState.resuming;
     _transition = new Completer<Null>();
 
-    _resume(pendingTransition)
+    _resume(previousTransition)
         .then(_transition.complete)
-        .catchError(_transition.completeError);
+        .catchError((e, trace) {
+      _transition.completeError(e, trace);
+    });
 
     return _transition.future;
   }
@@ -597,12 +615,15 @@ abstract class LifecycleModule extends SimpleModule
           ]);
     }
 
-    var pendingTransition = _transition?.future;
+    Future<Null> previousTransition;
+    if (_transition != null && !_transition.isCompleted) {
+      previousTransition = _transition.future;
+    }
     _previousState = _state;
     _state = LifecycleState.unloading;
     _transition = new Completer<Null>();
 
-    _unload(pendingTransition)
+    _unload(previousTransition)
         .then(_transition.complete)
         .catchError(_transition.completeError);
 

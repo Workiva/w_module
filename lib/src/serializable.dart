@@ -36,8 +36,11 @@ abstract class Bridge<T> extends Object with Disposable {
   void broadcastSerializedEvent(Map event);
   void handleSerializedApiCall(T apiCall);
 
-  void _manageStreamSubscription(StreamSubscription subscription) {
-    super.manageStreamSubscription(subscription);
+  StreamSubscription<T> _listenToStream<T>(
+      Stream<T> stream, void onData(T event),
+      {Function onError, void onDone(), bool cancelOnError}) {
+    return super.listenToStream(stream, onData,
+        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 }
 
@@ -67,11 +70,6 @@ class _ModuleRegistration extends Object with Disposable {
   final SerializableModule module;
 
   _ModuleRegistration(this.module);
-
-  @override
-  void manageStreamSubscription(StreamSubscription subscription) {
-    super.manageStreamSubscription(subscription);
-  }
 }
 
 class SerializableBus {
@@ -88,8 +86,7 @@ class SerializableBus {
 
     if (bridge != null) {
       _bridge = bridge;
-      _bridge?._manageStreamSubscription(
-          bridge.apiCallReceived.listen(_handleApiCall));
+      _bridge._listenToStream(bridge.apiCallReceived, _handleApiCall);
     } else {
       _logger.warning('Attempt to set bridge to null');
     }
@@ -138,6 +135,7 @@ class SerializableBus {
   void _deserializeAndCall(
       SerializableModule module, String method, List data) {
     InstanceMirror apiMirror = reflect(module.api);
+    List reflectedData = new List(data.length);
 
     if (apiMirror == null) {
       _logger.warning(
@@ -171,7 +169,7 @@ class SerializableBus {
         try {
           var instance = paramClassMirror
               .newInstance(new Symbol('fromJson'), [data[i]]).reflectee;
-          data[i] = instance;
+          reflectedData[i] = instance;
         } on NoSuchMethodError {
           _logger.warning(
               '${paramClassMirror.simpleName.toString()} does not implement fromJson named constructor');
@@ -181,7 +179,7 @@ class SerializableBus {
     }
 
     try {
-      apiMirror.invoke(new Symbol(method), data);
+      apiMirror.invoke(new Symbol(method), reflectedData);
     } catch (e) {
       _logger.severe(
           'Unable to call $method on ${module.serializableKey} w_module, ${e.toString()}');
@@ -192,8 +190,10 @@ class SerializableBus {
     if (registration.module.events != null) {
       for (var event in registration.module.events.allEvents) {
         if (event is SerializableEvent) {
-          registration.manageStreamSubscription(event.listen((payload) =>
-              _sendEvent(registration.module, event.eventKey, payload)));
+          registration.listenToStream(
+              event,
+              (payload) =>
+                  _sendEvent(registration.module, event.eventKey, payload));
         }
       }
     } else {
@@ -203,20 +203,18 @@ class SerializableBus {
   }
 
   void _registerForLifecycleEvents(_ModuleRegistration registration) {
-    registration
-        .manageStreamSubscription(registration.module.willLoad.listen((_) {
+    registration.listenToStream(registration.module.willLoad, (_) {
       _registerForAllEvents(registration);
       _sendEvent(registration.module, 'willLoad', null);
-    }));
-    registration.manageStreamSubscription(registration.module.didLoad
-        .listen((_) => _sendEvent(registration.module, 'didLoad', null)));
-    registration.manageStreamSubscription(registration.module.willUnload
-        .listen((_) => _sendEvent(registration.module, 'willUnload', null)));
-    registration
-        .manageStreamSubscription(registration.module.didUnload.listen((_) {
+    });
+    registration.listenToStream(registration.module.didLoad,
+        (_) => _sendEvent(registration.module, 'didLoad', null));
+    registration.listenToStream(registration.module.willUnload,
+        (_) => _sendEvent(registration.module, 'willUnload', null));
+    registration.listenToStream(registration.module.didUnload, (_) {
       _sendEvent(registration.module, 'didUnload', null);
       deregisterModule(registration.module);
-    }));
+    });
   }
 
   void _sendEvent(SerializableModule module, String eventKey, Object data) {

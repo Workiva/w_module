@@ -35,6 +35,7 @@ class TestLifecycleModule extends LifecycleModule {
   bool _getManagedDisposerWasCalled = false;
 
   final Disposable managedDisposable;
+  Disposable managedDisposable2;
   ManagedDisposer managedDisposer;
   final StreamController<Null> managedStreamController;
   final MockStreamSubscription managedStreamSubscription;
@@ -68,6 +69,7 @@ class TestLifecycleModule extends LifecycleModule {
       _getManagedDisposerWasCalled = true;
     });
     manageDisposable(managedDisposable);
+    managedDisposable2 = manageAndReturnDisposable(new Disposable());
     manageDisposer(() {
       _managedDisposerWasCalled = true;
     });
@@ -645,6 +647,7 @@ void main() {
       test('should dispose managed disposables', () async {
         await module.load();
         expect(module.managedDisposable.isDisposed, isFalse);
+        expect(module.managedDisposable2.isDisposed, isFalse);
         expect(module.managedDisposerWasCalled, isFalse);
         expect(module.getManagedDisposerWasCalled, isFalse);
         expect(module.managedStreamController.isClosed, isFalse);
@@ -657,6 +660,7 @@ void main() {
 
         await module.unload();
         expect(module.managedDisposable.isDisposed, isTrue);
+        expect(module.managedDisposable2.isDisposed, isTrue);
         expect(module.managedDisposerWasCalled, isTrue);
         expect(module.getManagedDisposerWasCalled, isTrue);
         expect(module.managedStreamController.isClosed, isTrue);
@@ -664,9 +668,6 @@ void main() {
         controller.add(null);
         await controller.close();
       });
-
-      testInvalidTransitions(
-          LifecycleState.unloading, [LifecycleState.instantiated]);
     });
 
     group('suspend', () {
