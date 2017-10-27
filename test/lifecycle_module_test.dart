@@ -1105,7 +1105,6 @@ void main() {
                   }
                   expectInLifecycleState(module, state);
                   await module.dispose();
-                  print('DISPOSED');
                 });
 
                 test('should dispose despite the unload failing', () async {
