@@ -16,6 +16,7 @@
   - [**Lifecycle Events**](#lifecycle-events)
   - [**Lifecycle Customization**](#lifecycle-customization)
   - [**Module Hierarchies**](#module-hierarchies)
+  - [**Disposal**](#disposal)
 - [**Examples**](#examples)
 - [**Development**](#development)
 
@@ -24,7 +25,7 @@
 
 ## Overview
 
-![module-diagram](https://raw.githubusercontent.com/Workiva/w_module/images/images/w_module_diagram.png)
+![w_module Boundaries Diagram](https://raw.githubusercontent.com/Workiva/w_module/images/images/w_module_boundaries_diagram.png)
 
 `w_module` implements a module encapsulation and lifecycle pattern for Dart that interfaces well with the application
 architecture defined in the [w_flux](https://github.com/Workiva/w_flux) library.  `w_module` defines the public interface
@@ -325,7 +326,7 @@ Method         | Description
 `shouldUnload` | Returns the unloadable state of the `Module` and its child modules as a `ShouldUnloadResult`.  Internally, this executes the module's `onShouldUnload` method.
 `unload`       | Triggers unloading of a `Module` and all of its child modules.  Internally, this executes the module's `shouldUnload` method, and, if that completes successfully, executes the module's `onUnload` method. If unloading is rejected, this method will complete with an error. The rejected error will not be added to the `didUnload` lifecycle event stream.
 
-![lifecycle module - lifecycle](https://cloud.githubusercontent.com/assets/11619752/21526229/d7a5ae1c-ccdf-11e6-9e95-ff16a83e3a7f.png)
+![Lifecycle of a LifecycleModule](https://raw.githubusercontent.com/Workiva/w_module/images/images/LifecycleModule_lifecycle_diagram.png)
 
 The graphic above illustrates legal lifecycle state transitions. Any state
 transition that is not defined will throw a `StateError`. No-op transitions are
@@ -378,6 +379,36 @@ Getter               | Description
 `isLoaded`           | A boolean that indicates whether the module is current loaded.
 `isSuspended`        | A boolean that indicates whether the module is currently suspended. This will always be false when the module is not loaded.
 
+### Disposal
+
+`Module` extends [`Disposable` from the `w_common` package](https://github.com/Workiva/w_common)
+which provides some additional facilities for memory management. This means that
+you can leverage any of the disposable management APIs like `listenToStream()`
+or `manageDisposable()` within your `Module`. Additionally, it means that
+`Module`s can be disposed via `dispose()`. While this is similar to `unload()`,
+there is a key difference:
+
+**`unload()`** will attempt to unload a `Module`, but may fail to complete in
+two scenarios:
+- if the unload is canceled via `shouldUnload()`
+- if the unload fails due to an uncaught exception in `onUnload()`
+
+If the unload succeeds, then disposal will happen implicitly.
+
+**`dispose()`** will attempt to unload the `Module` first (unless it has never
+been loaded, in which case it will go straight to disposal), but will force
+disposal regardless of the outcome of the unload step.
+
+In most scenarios, consumers should use `unload()` either directly or indirectly
+via the other lifecycle management APIs like `loadChildModule()`.
+
+Calling `dispose()` should be reserved for scenarios where you know the `Module`
+has not been loaded, but still needs to be disposed, or when you need to force
+the disposal of the `Module` regardless of its state and do not care about the
+`Module`s ability to prevent its unloading. Unit tests are a likely candidate
+for this usage.
+
+![Disposal of a LifecycleModule](https://raw.githubusercontent.com/Workiva/w_module/images/images/LifecycleModule_disposal_diagram.png)
 
 ---
 
