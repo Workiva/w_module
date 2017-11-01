@@ -321,11 +321,19 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     }
 
     _state = LifecycleState.loading;
-    _transition = new Completer<Null>();
 
-    _load().then(_transition.complete).catchError(_transition.completeError);
+    // Keep track of this load's completer
+    final transition = new Completer<Null>();
 
-    return _transition.future;
+    // because this one can get overwritten
+    _transition = transition;
+
+    _load().then(transition.complete).catchError((error, trace) {
+      transition.completeError(error, trace);
+      _state = LifecycleState.loaded;
+    });
+
+    return transition.future;
   }
 
   /// Public method to async load a child module and register it
@@ -454,13 +462,21 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
             LifecycleState.resuming
           ]);
     }
-    var previousTransition = _transition?.future;
+
+    Future pendingTransition;
+    if (_transition != null && !_transition.isCompleted) {
+      pendingTransition = _transition.future;
+    }
+
     _transition = new Completer<Null>();
     _state = LifecycleState.suspending;
 
-    _suspend(previousTransition)
+    _suspend(pendingTransition)
         .then(_transition.complete)
-        .catchError(_transition.completeError);
+        .catchError((error, trace) {
+      _transition.completeError(error, trace);
+      _state = LifecycleState.loaded;
+    });
     return _transition.future;
   }
 
@@ -505,13 +521,20 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           allowedStates: [LifecycleState.suspended, LifecycleState.suspending]);
     }
 
-    var pendingTransition = _transition?.future;
+    Future pendingTransition;
+    if (_transition != null && !_transition.isCompleted) {
+      pendingTransition = _transition.future;
+    }
+
     _state = LifecycleState.resuming;
     _transition = new Completer<Null>();
 
     _resume(pendingTransition)
         .then(_transition.complete)
-        .catchError(_transition.completeError);
+        .catchError((error, trace) {
+      _transition.completeError(error, trace);
+      _state = LifecycleState.suspended;
+    });
 
     return _transition.future;
   }
@@ -596,7 +619,11 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           ]);
     }
 
-    var pendingTransition = _transition?.future;
+    Future pendingTransition;
+    if (_transition != null && !_transition.isCompleted) {
+      pendingTransition = _transition.future;
+    }
+
     _previousState = _state;
     _state = LifecycleState.unloading;
     _transition = new Completer<Null>();
@@ -683,7 +710,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       if (isUnloading) {
         unloadingTransitionFuture = _transition.future;
       } else {
-        var pendingTransition = _transition?.future;
+        Future pendingTransition;
+        if (_transition != null && !_transition.isCompleted) {
+          pendingTransition = _transition?.future;
+        }
         _previousState = _state;
         _state = LifecycleState.unloading;
         unloadingTransitionFuture = _unload(pendingTransition);
