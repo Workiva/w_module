@@ -897,6 +897,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       // not explicitly cancel the unload), emit the unload failure event and
       // then rethrow the exception so that the caller (either unload() or
       // onWillDispose()) can handle it.
+      _state = LifecycleState.unloaded;
       _didUnloadController.addError(error, stackTrace);
       rethrow;
     }

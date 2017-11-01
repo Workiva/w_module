@@ -346,6 +346,13 @@ void main() {
           }));
           expect(module.load(), throwsA(same(module.onLoadError)));
         });
+
+        test('should enter the loaded state regardless', () {
+          module.didLoad.listen((_) {}, onError: expectAsync1((error) {
+            expect(module.isLoaded, isTrue);
+          }));
+          expect(module.load(), throwsA(same(module.onLoadError)));
+        });
       });
 
       test('should set isLoaded', () async {
@@ -490,6 +497,13 @@ void main() {
               onError: expectAsync2((Error error, StackTrace stackTrace) {
             expect(error, same(module.onUnloadError));
             expect(stackTrace, isNotNull);
+          }));
+          expect(module.unload(), throwsA(same(module.onUnloadError)));
+        });
+
+        test('should enter unloaded state regardless', () {
+          module.didUnload.listen((_) {}, onError: expectAsync1((error) {
+            expect(module.isUnloaded, isTrue);
           }));
           expect(module.unload(), throwsA(same(module.onUnloadError)));
         });
@@ -689,6 +703,13 @@ void main() {
           }));
           expect(module.suspend(), throwsA(same(module.onSuspendError)));
         });
+
+        test('should end up in loaded state.', () {
+          module.didSuspend.listen((_) {}, onError: expectAsync1((error) {
+            expect(module.isLoaded, isTrue);
+          }));
+          expect(module.suspend(), throwsA(same(module.onSuspendError)));
+        });
       });
 
       test('should set isSuspending', () async {
@@ -819,6 +840,14 @@ void main() {
             expect(error, same(module.onResumeError));
             expect(stackTrace, isNotNull);
           }));
+          expect(module.resume(), throwsA(same(module.onResumeError)));
+        });
+
+        test('should end up in suspended state', () {
+          module.didResume.listen((_) {}, onError: expectAsync1((error) {
+            expect(module.isSuspended, isTrue);
+          }));
+
           expect(module.resume(), throwsA(same(module.onResumeError)));
         });
       });
