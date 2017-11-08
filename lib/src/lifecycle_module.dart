@@ -330,7 +330,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     _load().then(transition.complete).catchError((error, trace) {
       transition.completeError(error, trace);
-      _state = LifecycleState.loaded;
     });
 
     return transition.future;
@@ -468,16 +467,16 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       pendingTransition = _transition.future;
     }
 
-    _transition = new Completer<Null>();
+    final transition = new Completer<Null>();
+    _transition = transition;
     _state = LifecycleState.suspending;
 
     _suspend(pendingTransition)
-        .then(_transition.complete)
+        .then(transition.complete)
         .catchError((error, trace) {
-      _transition.completeError(error, trace);
-      _state = LifecycleState.loaded;
+      transition.completeError(error, trace);
     });
-    return _transition.future;
+    return transition.future;
   }
 
   /// Public method to resume the module.
@@ -527,13 +526,13 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     }
 
     _state = LifecycleState.resuming;
-    _transition = new Completer<Null>();
+    final transition = new Completer<Null>();
+    _transition = transition;
 
     _resume(pendingTransition)
-        .then(_transition.complete)
+        .then(transition.complete)
         .catchError((error, trace) {
-      _transition.completeError(error, trace);
-      _state = LifecycleState.suspended;
+      transition.completeError(error, trace);
     });
 
     return _transition.future;
@@ -626,11 +625,12 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     _previousState = _state;
     _state = LifecycleState.unloading;
-    _transition = new Completer<Null>();
+    final transition = new Completer<Null>();
+    _transition = transition;
 
     var unloadAndDispose = new Completer<Null>();
-    unloadAndDispose.complete(_transition.future.then((_) => dispose()));
-    _transition.complete(_unload(pendingTransition));
+    unloadAndDispose.complete(transition.future.then((_) => dispose()));
+    transition.complete(_unload(pendingTransition));
     return unloadAndDispose.future;
   }
 
@@ -897,7 +897,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       // not explicitly cancel the unload), emit the unload failure event and
       // then rethrow the exception so that the caller (either unload() or
       // onWillDispose()) can handle it.
-      _state = LifecycleState.unloaded;
       _didUnloadController.addError(error, stackTrace);
       rethrow;
     }

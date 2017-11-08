@@ -347,9 +347,9 @@ void main() {
           expect(module.load(), throwsA(same(module.onLoadError)));
         });
 
-        test('should enter the loaded state regardless', () {
+        test('can still be disposed', () {
           module.didLoad.listen((_) {}, onError: expectAsync1((error) {
-            expect(module.isLoaded, isTrue);
+            module.dispose().then(expectAsync1((_) {}));
           }));
           expect(module.load(), throwsA(same(module.onLoadError)));
         });
@@ -501,9 +501,9 @@ void main() {
           expect(module.unload(), throwsA(same(module.onUnloadError)));
         });
 
-        test('should enter unloaded state regardless', () {
+        test('can still be disposed', () {
           module.didUnload.listen((_) {}, onError: expectAsync1((error) {
-            expect(module.isUnloaded, isTrue);
+            module.dispose().then(expectAsync1((_) {}));
           }));
           expect(module.unload(), throwsA(same(module.onUnloadError)));
         });
@@ -704,9 +704,9 @@ void main() {
           expect(module.suspend(), throwsA(same(module.onSuspendError)));
         });
 
-        test('should end up in loaded state.', () {
+        test('can still be disposed', () {
           module.didSuspend.listen((_) {}, onError: expectAsync1((error) {
-            expect(module.isLoaded, isTrue);
+            module.dispose().then(expectAsync1((_) {}));
           }));
           expect(module.suspend(), throwsA(same(module.onSuspendError)));
         });
@@ -843,9 +843,9 @@ void main() {
           expect(module.resume(), throwsA(same(module.onResumeError)));
         });
 
-        test('should end up in suspended state', () {
+        test('can still be disposed', () {
           module.didResume.listen((_) {}, onError: expectAsync1((error) {
-            expect(module.isSuspended, isTrue);
+            module.dispose().then(expectAsync1((_) {}));
           }));
 
           expect(module.resume(), throwsA(same(module.onResumeError)));
