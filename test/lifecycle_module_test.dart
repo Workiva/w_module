@@ -348,9 +348,13 @@ void main() {
         });
 
         test('can still be disposed', () {
-          module.didLoad.listen((_) {}, onError: expectAsync1((error) {
-            module.dispose().then(expectAsync1((_) {}));
-          }));
+          final completer = new Completer();
+          completer.future.then(expectAsync1((_) {}));
+
+          module.didLoad.listen((_) {}, onError: (_) async {
+            await module.dispose().then(completer.complete);
+          });
+
           expect(module.load(), throwsA(same(module.onLoadError)));
         });
       });
@@ -502,9 +506,13 @@ void main() {
         });
 
         test('can still be disposed', () {
-          module.didUnload.listen((_) {}, onError: expectAsync1((error) {
-            module.dispose().then(expectAsync1((_) {}));
-          }));
+          final completer = new Completer();
+          completer.future.then(expectAsync1((_) {}));
+
+          module.didUnload.listen((_) {}, onError: (_) async {
+            await module.dispose().then(completer.complete);
+          });
+
           expect(module.unload(), throwsA(same(module.onUnloadError)));
         });
       });
@@ -705,9 +713,13 @@ void main() {
         });
 
         test('can still be disposed', () {
-          module.didSuspend.listen((_) {}, onError: expectAsync1((error) {
-            module.dispose().then(expectAsync1((_) {}));
-          }));
+          final completer = new Completer();
+          completer.future.then(expectAsync1((_) {}));
+
+          module.didSuspend.listen((_) {}, onError: (_) async {
+            await module.dispose().then(completer.complete);
+          });
+
           expect(module.suspend(), throwsA(same(module.onSuspendError)));
         });
       });
@@ -844,9 +856,12 @@ void main() {
         });
 
         test('can still be disposed', () {
-          module.didResume.listen((_) {}, onError: expectAsync1((error) {
-            module.dispose().then(expectAsync1((_) {}));
-          }));
+          final completer = new Completer();
+          completer.future.then(expectAsync1((_) {}));
+
+          module.didResume.listen((_) {}, onError: (_) async {
+            await module.dispose().then(completer.complete);
+          });
 
           expect(module.resume(), throwsA(same(module.onResumeError)));
         });
