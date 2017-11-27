@@ -347,6 +347,23 @@ void main() {
           expect(module.load(), throwsA(same(module.onLoadError)));
         });
 
+        test('should not repeatedly emit that error for subsequent transitions', () async {
+          Completer done = new Completer();
+          // ignore: unawaited_futures
+          done.future.then(expectAsync1((_){}));
+
+          module.didLoad.listen((_) {},
+              onError: expectAsync2((Error error, StackTrace stackTrace) async {
+
+            try {
+              await module.unload().then(done.complete);
+            } catch (e) {
+              fail('Expected unload to succeed, got $e');
+            }
+          }));
+          expect(module.load(), throwsA(same(module.onLoadError)));
+        });
+
         test('can still be disposed', () {
           final completer = new Completer();
           completer.future.then(expectAsync1((_) {}));
@@ -712,6 +729,23 @@ void main() {
           expect(module.suspend(), throwsA(same(module.onSuspendError)));
         });
 
+        test('should not repeatedly emit that error for subsequent transitions', () async {
+          Completer done = new Completer();
+          // ignore: unawaited_futures
+          done.future.then(expectAsync1((_){}));
+
+          module.didSuspend.listen((_) {},
+              onError: expectAsync2((Error error, StackTrace stackTrace) async {
+
+            try {
+              await module.unload().then(done.complete);
+            } catch (e) {
+              fail('Expected unload to succeed, got $e');
+            }
+          }));
+          expect(module.suspend(), throwsA(same(module.onSuspendError)));
+        });
+
         test('can still be disposed', () {
           final completer = new Completer();
           completer.future.then(expectAsync1((_) {}));
@@ -851,6 +885,23 @@ void main() {
               onError: expectAsync2((Error error, StackTrace stackTrace) {
             expect(error, same(module.onResumeError));
             expect(stackTrace, isNotNull);
+          }));
+          expect(module.resume(), throwsA(same(module.onResumeError)));
+        });
+
+        test('should not repeatedly emit that error for subsequent transitions', () async {
+          Completer done = new Completer();
+          // ignore: unawaited_futures
+          done.future.then(expectAsync1((_){}));
+
+          module.didResume.listen((_) {},
+              onError: expectAsync2((Error error, StackTrace stackTrace) async {
+
+            try {
+              await module.unload().then(done.complete);
+            } catch (e) {
+              fail('Expected unload to succeed, got $e');
+            }
           }));
           expect(module.resume(), throwsA(same(module.onResumeError)));
         });
