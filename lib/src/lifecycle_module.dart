@@ -92,7 +92,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
-    _logger = new Logger('$name');
+    _logger = new Logger('w_module.LifecycleModule:$name');
 
     [
       _willLoadController,

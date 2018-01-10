@@ -76,7 +76,7 @@ class SerializableBus {
   static final SerializableBus sharedBus = new SerializableBus();
 
   Bridge _bridge;
-  final Logger _logger = new Logger('Serializable Bus');
+  final Logger _logger = new Logger('w_module.SerializableBus');
   Map<String, _ModuleRegistration> _moduleRegistrations =
       <String, _ModuleRegistration>{};
 

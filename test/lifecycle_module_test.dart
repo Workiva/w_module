@@ -1302,22 +1302,26 @@ void main() {
               logRecord(
                 level: Level.FINE,
                 message: equals('willLoadChildModule'),
-                loggerName: equals(parentModule.name),
+                loggerName:
+                    equals('w_module.LifecycleModule:${parentModule.name}'),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('willLoad'),
-                loggerName: equals(childModule.name),
+                loggerName:
+                    equals('w_module.LifecycleModule:${childModule.name}'),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('didLoad'),
-                loggerName: equals(childModule.name),
+                loggerName:
+                    equals('w_module.LifecycleModule:${childModule.name}'),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('didLoadChildModule'),
-                loggerName: equals(parentModule.name),
+                loggerName:
+                    equals('w_module.LifecycleModule:${parentModule.name}'),
               ),
             ]));
 
@@ -1537,27 +1541,32 @@ void main() {
               logRecord(
                 level: Level.FINE,
                 message: equals('willUnload'),
-                loggerName: equals(parentModule.name),
+                loggerName:
+                    equals('w_module.LifecycleModule:${parentModule.name}'),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('willUnload'),
-                loggerName: equals(childModule.name),
+                loggerName:
+                    equals('w_module.LifecycleModule:${childModule.name}'),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('willUnloadChildModule'),
-                loggerName: equals(parentModule.name),
+                loggerName:
+                    equals('w_module.LifecycleModule:${parentModule.name}'),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('didUnload'),
-                loggerName: equals(childModule.name),
+                loggerName:
+                    equals('w_module.LifecycleModule:${childModule.name}'),
               ),
               logRecord(
                 level: Level.FINE,
                 message: equals('didUnloadChildModule'),
-                loggerName: equals(parentModule.name),
+                loggerName:
+                    equals('w_module.LifecycleModule:${parentModule.name}'),
               ),
             ]));
 
