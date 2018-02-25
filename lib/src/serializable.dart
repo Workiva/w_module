@@ -26,10 +26,11 @@ import 'package:w_module/src/module.dart';
 
 // Any classes / methods that are going to be reflected must annotate with this
 class Reflectable extends reflect.Reflectable {
-  const Reflectable() :super(
-    reflect.invokingCapability, 
-    reflect.typingCapability,
-    );
+  const Reflectable()
+      : super(
+          reflect.invokingCapability,
+          reflect.typingCapability,
+        );
 }
 
 const _reflector = const Reflectable();
@@ -138,7 +139,6 @@ class SerializableBus {
 
   void _deserializeAndCall(
       SerializableModule module, String method, List data) {
-        
     reflect.InstanceMirror apiMirror = _reflector.reflect(module.api);
 
     if (apiMirror == null) {
@@ -167,12 +167,12 @@ class SerializableBus {
     for (var i = 0; i < apiMethodMirror.parameters.length; i++) {
       reflect.ParameterMirror param = apiMethodMirror.parameters[i];
       if (data[i] is Map && param.type.reflectedType != Map) {
-        reflect.ClassMirror paramClassMirror = _reflector.reflectType(param.type.reflectedType);
+        reflect.ClassMirror paramClassMirror =
+            _reflector.reflectType(param.type.reflectedType);
 
         // Paramter type must implement fromJson name constructor that takes a Map
         try {
-          var instance = paramClassMirror
-              .newInstance('fromJson', [data[i]]);
+          var instance = paramClassMirror.newInstance('fromJson', [data[i]]);
           reflectedData[i] = instance;
         } on NoSuchMethodError {
           _logger.warning(
