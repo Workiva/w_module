@@ -34,3 +34,6 @@ environment:
 transformers:
   - test/pub_serve:
       $include: test/**_test{.*,}dart
+  - reflectable:
+      entry_points:
+        - test/serializable_test.dart
