@@ -139,7 +139,7 @@ class SerializableBus {
 
   void _deserializeAndCall(
       SerializableModule module, String method, List data) {
-    reflect.InstanceMirror apiMirror = _reflector.reflect(module.api);
+    var apiMirror = _reflector.reflect(module.api);
 
     if (apiMirror == null) {
       _logger.warning(
@@ -147,8 +147,9 @@ class SerializableBus {
       return;
     }
 
-    reflect.ClassMirror classMirror = apiMirror.type;
-    reflect.MethodMirror apiMethodMirror = classMirror.declarations[method];
+    var classMirror = apiMirror.type;
+    var apiMethodMirror = classMirror.declarations[method] // ignore: avoid_as
+        as reflect.MethodMirror;
 
     if (apiMethodMirror == null) {
       _logger.warning(
@@ -165,10 +166,12 @@ class SerializableBus {
 
     List reflectedData = new List(data.length);
     for (var i = 0; i < apiMethodMirror.parameters.length; i++) {
-      reflect.ParameterMirror param = apiMethodMirror.parameters[i];
+      var param = apiMethodMirror.parameters[i];
       if (data[i] is Map && param.type.reflectedType != Map) {
-        reflect.ClassMirror paramClassMirror =
-            _reflector.reflectType(param.type.reflectedType);
+        var paramClassMirror =
+            // ignore: avoid_as
+            _reflector.reflectType(param.type.reflectedType)
+                as reflect.ClassMirror;
 
         // Paramter type must implement fromJson name constructor that takes a Map
         try {
