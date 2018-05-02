@@ -17,7 +17,7 @@ library w_module.src.lifecycle_module;
 import 'dart:async';
 
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart' show mustCallSuper, protected, required;
+import 'package:meta/meta.dart' show mustCallSuper, protected, required, visibleForTesting;
 import 'package:w_common/disposable.dart';
 
 import 'package:w_module/src/simple_module.dart';
@@ -52,6 +52,8 @@ enum LifecycleState {
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
 abstract class LifecycleModule extends SimpleModule with Disposable {
+  @visibleForTesting
+  bool verboseLogging = false;
   List<LifecycleModule> _childModules = [];
   Logger _logger;
   String _name;
@@ -792,7 +794,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   void _logLifecycleEvents(
       String logLabel, Stream<dynamic> lifecycleEventStream) {
 
-    listenToStream(lifecycleEventStream, (_) { if (Uri.base.queryParameters['w_module.verbose'] == 'true') {_logger.fine(logLabel);}},
+    listenToStream(lifecycleEventStream, (_) {
+      if (Uri.base.queryParameters['w_module.verbose'] == 'true' || verboseLogging) {
+        _logger.fine(logLabel);}},
         onError: (error) => _logger.warning('$logLabel error: $error'));
   }
 

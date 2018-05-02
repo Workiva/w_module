@@ -51,6 +51,7 @@ class TestLifecycleModule extends LifecycleModule {
   bool mockShouldUnload;
 
   TestLifecycleModule({String name}) : name = name ?? 'TestLifecycleModule' {
+    verboseLogging = true;
     // init test validation data
     eventList = [];
     mockShouldUnload = true;
