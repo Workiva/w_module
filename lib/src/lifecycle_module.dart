@@ -17,8 +17,7 @@ library w_module.src.lifecycle_module;
 import 'dart:async';
 
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart'
-    show mustCallSuper, protected, required;
+import 'package:meta/meta.dart' show mustCallSuper, protected, required;
 import 'package:w_common/disposable.dart';
 
 import 'package:w_module/src/simple_module.dart';
@@ -54,7 +53,7 @@ enum LifecycleState {
 /// unified lifecycle API.
 abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Enables verbose logging for this module.
-  /// 
+  ///
   /// Globally overridden by the 'w_module.verbose' url parameter.
   bool verboseLogging = false;
   List<LifecycleModule> _childModules = [];
