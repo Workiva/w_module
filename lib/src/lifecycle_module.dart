@@ -791,7 +791,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// A utility to logging LifecycleModule lifecycle events
   void _logLifecycleEvents(
       String logLabel, Stream<dynamic> lifecycleEventStream) {
-    listenToStream(lifecycleEventStream, (_) => _logger.fine(logLabel),
+
+    listenToStream(lifecycleEventStream, (_) { if (Uri.base.queryParameters['w_module.verbose'] == 'true') {_logger.fine(logLabel);}},
         onError: (error) => _logger.warning('$logLabel error: $error'));
   }
 

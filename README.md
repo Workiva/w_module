@@ -19,6 +19,7 @@
   - [**Disposal**](#disposal)
 - [**Examples**](#examples)
 - [**Development**](#development)
+- [**URL Parameters**](#url-parameters)
 
 
 ---
@@ -426,3 +427,7 @@ This project leverages [the dart_dev package](https://pub.dartlang.org/packages/
 for most of its tooling needs, including static analysis, code formatting,
 running tests, collecting coverage, and serving examples. Check out
 [the dart_dev readme](https://github.com/Workiva/dart_dev) for more information.
+
+### URL Parameters
+
+`?w_module.verbose=true` turns on verbose debug logging, particularly module lifecycle logging.
