@@ -17,7 +17,8 @@ library w_module.src.lifecycle_module;
 import 'dart:async';
 
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart' show mustCallSuper, protected, required, visibleForTesting;
+import 'package:meta/meta.dart'
+    show mustCallSuper, protected, required, visibleForTesting;
 import 'package:w_common/disposable.dart';
 
 import 'package:w_module/src/simple_module.dart';
@@ -793,11 +794,12 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// A utility to logging LifecycleModule lifecycle events
   void _logLifecycleEvents(
       String logLabel, Stream<dynamic> lifecycleEventStream) {
-
     listenToStream(lifecycleEventStream, (_) {
-      if (Uri.base.queryParameters['w_module.verbose'] == 'true' || verboseLogging) {
-        _logger.fine(logLabel);}},
-        onError: (error) => _logger.warning('$logLabel error: $error'));
+      if (Uri.base.queryParameters['w_module.verbose'] == 'true' ||
+          verboseLogging) {
+        _logger.fine(logLabel);
+      }
+    }, onError: (error) => _logger.warning('$logLabel error: $error'));
   }
 
   /// Handles a child [LifecycleModule]'s [didUnload] event.
