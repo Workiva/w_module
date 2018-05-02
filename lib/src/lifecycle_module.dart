@@ -18,7 +18,7 @@ import 'dart:async';
 
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart'
-    show mustCallSuper, protected, required, visibleForTesting;
+    show mustCallSuper, protected, required;
 import 'package:w_common/disposable.dart';
 
 import 'package:w_module/src/simple_module.dart';
@@ -53,7 +53,9 @@ enum LifecycleState {
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
 abstract class LifecycleModule extends SimpleModule with Disposable {
-  @visibleForTesting
+  /// Enables verbose logging for this module.
+  /// 
+  /// Globally overridden by the 'w_module.verbose' url parameter.
   bool verboseLogging = false;
   List<LifecycleModule> _childModules = [];
   Logger _logger;
