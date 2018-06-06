@@ -15,6 +15,7 @@ dependencies:
   meta: ^1.0.0
   platform_detect: ^1.1.0
   w_common: ^1.9.0
+  reflectable: ^1.0.3
 
 dev_dependencies:
   browser: ^0.10.0+2
@@ -33,3 +34,6 @@ environment:
 transformers:
   - test/pub_serve:
       $include: test/**_test{.*,}dart
+  - reflectable:
+      entry_points:
+        - test/serializable_test.dart

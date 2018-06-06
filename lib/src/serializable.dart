@@ -15,9 +15,8 @@
 library serializable_module.src.serializable;
 
 import 'dart:async';
-@MirrorsUsed(metaTargets: 'serializable_module.src.serializable.Reflectable')
-import 'dart:mirrors';
 
+import 'package:reflectable/reflectable.dart' as reflect;
 import 'package:logging/logging.dart';
 import 'package:w_common/disposable.dart' show Disposable;
 import 'package:w_common/json_serializable.dart' show JsonSerializable;
@@ -26,9 +25,15 @@ import 'package:w_module/src/event.dart';
 import 'package:w_module/src/module.dart';
 
 // Any classes / methods that are going to be reflected must annotate with this
-class Reflectable {
-  const Reflectable();
+class Reflectable extends reflect.Reflectable {
+  const Reflectable()
+      : super(
+          reflect.invokingCapability,
+          reflect.typingCapability,
+        );
 }
+
+const _reflector = const Reflectable();
 
 abstract class Bridge<T> extends Object with Disposable {
   final Stream<Map> apiCallReceived;
@@ -134,8 +139,7 @@ class SerializableBus {
 
   void _deserializeAndCall(
       SerializableModule module, String method, List data) {
-    InstanceMirror apiMirror = reflect(module.api);
-    List reflectedData = new List(data.length);
+    var apiMirror = _reflector.reflect(module.api);
 
     if (apiMirror == null) {
       _logger.warning(
@@ -143,8 +147,9 @@ class SerializableBus {
       return;
     }
 
-    ClassMirror classMirror = apiMirror.type;
-    MethodMirror apiMethodMirror = classMirror.declarations[new Symbol(method)];
+    var classMirror = apiMirror.type;
+    var apiMethodMirror = classMirror.declarations[method] // ignore: avoid_as
+        as reflect.MethodMirror;
 
     if (apiMethodMirror == null) {
       _logger.warning(
@@ -159,16 +164,18 @@ class SerializableBus {
       return;
     }
 
+    List reflectedData = new List(data.length);
     for (var i = 0; i < apiMethodMirror.parameters.length; i++) {
       var param = apiMethodMirror.parameters[i];
-
       if (data[i] is Map && param.type.reflectedType != Map) {
-        ClassMirror paramClassMirror = reflectClass(param.type.reflectedType);
+        var paramClassMirror =
+            // ignore: avoid_as
+            _reflector.reflectType(param.type.reflectedType)
+                as reflect.ClassMirror;
 
         // Paramter type must implement fromJson name constructor that takes a Map
         try {
-          var instance = paramClassMirror
-              .newInstance(new Symbol('fromJson'), [data[i]]).reflectee;
+          var instance = paramClassMirror.newInstance('fromJson', [data[i]]);
           reflectedData[i] = instance;
         } on NoSuchMethodError {
           _logger.warning(
@@ -179,7 +186,7 @@ class SerializableBus {
     }
 
     try {
-      apiMirror.invoke(new Symbol(method), reflectedData);
+      apiMirror.invoke(method, reflectedData);
     } catch (e) {
       _logger.severe(
           'Unable to call $method on ${module.serializableKey} w_module, ${e.toString()}');
