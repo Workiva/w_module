@@ -323,8 +323,8 @@ void main() {
         expect(
             Logger.root.onRecord,
             emitsInOrder([
-              logRecord(level: Level.FINE, message: equals('willLoad')),
-              logRecord(level: Level.FINE, message: equals('didLoad')),
+              logRecord(level: Level.FINEST, message: equals('willLoad')),
+              logRecord(level: Level.FINEST, message: equals('didLoad')),
             ]));
 
         await module.load();
@@ -495,8 +495,8 @@ void main() {
         expect(
             Logger.root.onRecord,
             emitsInOrder([
-              logRecord(level: Level.FINE, message: equals('willUnload')),
-              logRecord(level: Level.FINE, message: equals('didUnload')),
+              logRecord(level: Level.FINEST, message: equals('willUnload')),
+              logRecord(level: Level.FINEST, message: equals('didUnload')),
             ]));
 
         await module.unload();
@@ -704,8 +704,8 @@ void main() {
         expect(
             Logger.root.onRecord,
             emitsInOrder([
-              logRecord(level: Level.FINE, message: equals('willSuspend')),
-              logRecord(level: Level.FINE, message: equals('didSuspend')),
+              logRecord(level: Level.FINEST, message: equals('willSuspend')),
+              logRecord(level: Level.FINEST, message: equals('didSuspend')),
             ]));
 
         await module.suspend();
@@ -864,8 +864,8 @@ void main() {
         expect(
             Logger.root.onRecord,
             emitsInOrder([
-              logRecord(level: Level.FINE, message: equals('willResume')),
-              logRecord(level: Level.FINE, message: equals('didResume')),
+              logRecord(level: Level.FINEST, message: equals('willResume')),
+              logRecord(level: Level.FINEST, message: equals('didResume')),
             ]));
 
         await module.resume();
@@ -1300,25 +1300,25 @@ void main() {
             Logger.root.onRecord,
             emitsInOrder([
               logRecord(
-                level: Level.FINE,
+                level: Level.FINEST,
                 message: equals('willLoadChildModule'),
                 loggerName:
                     equals('w_module.LifecycleModule:${parentModule.name}'),
               ),
               logRecord(
-                level: Level.FINE,
+                level: Level.FINEST,
                 message: equals('willLoad'),
                 loggerName:
                     equals('w_module.LifecycleModule:${childModule.name}'),
               ),
               logRecord(
-                level: Level.FINE,
+                level: Level.FINEST,
                 message: equals('didLoad'),
                 loggerName:
                     equals('w_module.LifecycleModule:${childModule.name}'),
               ),
               logRecord(
-                level: Level.FINE,
+                level: Level.FINEST,
                 message: equals('didLoadChildModule'),
                 loggerName:
                     equals('w_module.LifecycleModule:${parentModule.name}'),
@@ -1539,31 +1539,31 @@ void main() {
             Logger.root.onRecord,
             emitsInOrder([
               logRecord(
-                level: Level.FINE,
+                level: Level.FINEST,
                 message: equals('willUnload'),
                 loggerName:
                     equals('w_module.LifecycleModule:${parentModule.name}'),
               ),
               logRecord(
-                level: Level.FINE,
+                level: Level.FINEST,
                 message: equals('willUnload'),
                 loggerName:
                     equals('w_module.LifecycleModule:${childModule.name}'),
               ),
               logRecord(
-                level: Level.FINE,
+                level: Level.FINEST,
                 message: equals('willUnloadChildModule'),
                 loggerName:
                     equals('w_module.LifecycleModule:${parentModule.name}'),
               ),
               logRecord(
-                level: Level.FINE,
+                level: Level.FINEST,
                 message: equals('didUnload'),
                 loggerName:
                     equals('w_module.LifecycleModule:${childModule.name}'),
               ),
               logRecord(
-                level: Level.FINE,
+                level: Level.FINEST,
                 message: equals('didUnloadChildModule'),
                 loggerName:
                     equals('w_module.LifecycleModule:${parentModule.name}'),
