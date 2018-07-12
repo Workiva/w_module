@@ -18,6 +18,7 @@ import 'dart:async';
 
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart' show mustCallSuper, protected, required;
+import 'package:opentracing/opentracing.dart';
 import 'package:w_common/disposable.dart';
 
 import 'package:w_module/src/simple_module.dart';
@@ -58,6 +59,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   LifecycleState _previousState;
   LifecycleState _state = LifecycleState.instantiated;
   Completer<Null> _transition;
+  Span _span;
 
   // Lifecycle event StreamControllers
   StreamController<LifecycleModule> _willLoadChildModuleController =
@@ -126,6 +128,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       'didUnload': didUnload,
     }.forEach(_logLifecycleEvents);
   }
+
+  /// If this module is in a transition state, this is the Span capturing the
+  /// transition state.
+  Span get activeSpan => _span;
 
   /// Name of the module for identification in exceptions and debug messages.
   // ignore: unnecessary_getters_setters
@@ -320,6 +326,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           reason: 'A module can only be loaded once.');
     }
 
+    // TODO childOf or followsFrom
+    _span = globalTracer()?.startSpan('load($name)');
+
     _state = LifecycleState.loading;
 
     // Keep track of this load's completer
@@ -330,6 +339,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     _load().then(transition.complete).catchError((error, trace) {
       transition.completeError(error, trace);
+      _span?.setTag('error', true);
+    }).whenComplete(() {
+      _span?.finish();
+      _span = null;
     });
 
     return transition.future;
@@ -462,6 +475,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           ]);
     }
 
+    _span = globalTracer()?.startSpan('suspend($name)');
+
     Future pendingTransition;
     if (_transition != null && !_transition.isCompleted) {
       pendingTransition = _transition.future;
@@ -475,7 +490,12 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         .then(transition.complete)
         .catchError((error, trace) {
       transition.completeError(error, trace);
+      _span?.setTag('error', true);
+    }).whenComplete(() {
+      _span?.finish();
+      _span = null;
     });
+
     return transition.future;
   }
 
@@ -525,6 +545,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       pendingTransition = _transition.future;
     }
 
+    _span = globalTracer()?.startSpan('resume($name)');
+
     _state = LifecycleState.resuming;
     final transition = new Completer<Null>();
     _transition = transition;
@@ -533,6 +555,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         .then(transition.complete)
         .catchError((error, trace) {
       transition.completeError(error, trace);
+      _span?.setTag('error', true);
+    }).whenComplete(() {
+      _span?.finish();
+      _span = null;
     });
 
     return _transition.future;
@@ -618,6 +644,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           ]);
     }
 
+   _span = globalTracer()?.startSpan('unload($name)');
+
     Future pendingTransition;
     if (_transition != null && !_transition.isCompleted) {
       pendingTransition = _transition.future;
@@ -631,7 +659,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     var unloadAndDispose = new Completer<Null>();
     unloadAndDispose.complete(transition.future.then((_) => dispose()));
     transition.complete(_unload(pendingTransition));
-    return unloadAndDispose.future;
+    return unloadAndDispose.future.whenComplete(_span?.finish);
   }
 
   //--------------------------------------------------------
