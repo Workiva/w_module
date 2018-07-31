@@ -400,10 +400,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           reason: 'A module can only be loaded once.');
     }
 
-    _startLoadTime = new DateTime.now();
-
     _activeSpan = _startTransitionSpan('load_module');
     _loadContext = _activeSpan.context;
+    _startLoadTime = _activeSpan.startTime;
 
     _state = LifecycleState.loading;
 
