@@ -53,6 +53,10 @@ enum LifecycleState {
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
 abstract class LifecycleModule extends SimpleModule with Disposable {
+  static int _nextId = 0;
+
+  int _instanceId = _nextId++;
+
   List<LifecycleModule> _childModules = [];
   Logger _logger;
   String _name;
@@ -151,7 +155,11 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       references.add(new Reference.childOf(_childOfContext));
     }
 
-    return tracer.startSpan(operationName, references: references);
+    return tracer.startSpan(operationName, references: references)
+      ..addTags({
+        'module.name': name,
+        'module.instanceId': _instanceId,
+      });
   }
 
   /// Name of the module for identification in exceptions and debug messages.
@@ -347,7 +355,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           reason: 'A module can only be loaded once.');
     }
 
-    _span = _startTransitionSpan('load($name)');
+    _span = _startTransitionSpan('load_module');
 
     _state = LifecycleState.loading;
 
@@ -499,7 +507,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           ]);
     }
 
-    _span = _startTransitionSpan('suspend($name)');
+    _span = _startTransitionSpan('suspend_module');
 
     Future pendingTransition;
     if (_transition != null && !_transition.isCompleted) {
@@ -569,7 +577,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       pendingTransition = _transition.future;
     }
 
-    _span = _startTransitionSpan('resume($name)');
+    _span = _startTransitionSpan('resume_module');
 
     _state = LifecycleState.resuming;
     final transition = new Completer<Null>();
@@ -668,7 +676,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           ]);
     }
 
-    _span = _startTransitionSpan('unload($name)');
+    _span = _startTransitionSpan('unload_module');
 
     Future pendingTransition;
     if (_transition != null && !_transition.isCompleted) {
