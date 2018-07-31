@@ -22,6 +22,7 @@ import 'package:opentracing/opentracing.dart';
 import 'package:w_common/disposable.dart';
 
 import 'package:w_module/src/simple_module.dart';
+import 'package:w_module/src/timing_specifiers.dart';
 
 /// Possible states a [LifecycleModule] may occupy.
 enum LifecycleState {
@@ -178,7 +179,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// only be started in [onLoad].
   ///
   /// Any [tags] specified will be added to the span which results from this call.
-  void didEnterFirstUsefulState({Map<String, dynamic> tags: const {}}) {
+  void specifyStartupTiming(
+    StartupTimingSpecifier specifier, {
+    Map<String, dynamic> tags: const {},
+  }) {
     // Load didn't start
     if (_loadContext == null || _startLoadTime == null) {
       return null;
@@ -191,7 +195,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     tracer
         .startSpan(
-          'module_entered_first_useful_state',
+          specifier.name,
           references: [tracer.followsFrom(_loadContext)],
           startTime: _startLoadTime,
           tags: _defaultTags..addAll(tags),

@@ -44,7 +44,8 @@ class DataLoadAsyncModule extends Module {
   @protected
   Future<Null> onLoad() {
     // trigger non-blocking async load of data
-    _events.didLoadData.first.then((_) => didEnterFirstUsefulState());
+    _events.didLoadData.first
+        .then((_) => specifyStartupTiming(StartupTimingSpecifier.firstUseful));
     _actions.loadData();
     return null;
   }
