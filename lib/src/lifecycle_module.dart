@@ -347,7 +347,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           reason: 'A module can only be loaded once.');
     }
 
-    // TODO childOf or followsFrom
     _span = _startTransitionSpan('load($name)');
 
     _state = LifecycleState.loading;
