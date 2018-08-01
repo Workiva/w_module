@@ -27,12 +27,14 @@ class DataLoadAsyncModule extends Module {
 
   DataLoadAsyncActions _actions;
   DataLoadAsyncComponents _components;
-  DataLoadAsyncStore _stores;
+  DataLoadAsyncEvents _events;
+  DataLoadAsyncStore _store;
 
   DataLoadAsyncModule() {
     _actions = new DataLoadAsyncActions();
-    _stores = new DataLoadAsyncStore(_actions);
-    _components = new DataLoadAsyncComponents(_actions, _stores);
+    _events = new DataLoadAsyncEvents();
+    _store = new DataLoadAsyncStore(_actions, _events);
+    _components = new DataLoadAsyncComponents(_actions, _store);
   }
 
   @override
@@ -42,8 +44,10 @@ class DataLoadAsyncModule extends Module {
   @protected
   Future<Null> onLoad() {
     // trigger non-blocking async load of data
+    _events.didLoadData.first
+        .then((_) => specifyStartupTiming(StartupTimingSpecifier.firstUseful));
     _actions.loadData();
-    return new Future.value();
+    return null;
   }
 }
 
@@ -62,15 +66,20 @@ class DataLoadAsyncActions {
   final Action loadData = new Action();
 }
 
+DispatchKey _dispatchKey = new DispatchKey('DataLoadAsync');
+
+class DataLoadAsyncEvents {
+  final Event didLoadData = new Event(_dispatchKey);
+}
+
 class DataLoadAsyncStore extends Store {
   DataLoadAsyncActions _actions;
-  List<String> _data;
-  bool _isLoading;
+  DataLoadAsyncEvents _events;
+  List<String> _data = [];
+  bool _isLoading = false;
 
-  DataLoadAsyncStore(this._actions) {
-    _isLoading = false;
-    _data = [];
-    triggerOnAction(_actions.loadData, _loadData);
+  DataLoadAsyncStore(this._actions, this._events) {
+    manageActionSubscription(_actions.loadData.listen(_loadData));
   }
 
   /// Public data
@@ -89,6 +98,8 @@ class DataLoadAsyncStore extends Store {
     // trigger on return of final data
     _data = ['Aaron', 'Dustin', 'Evan', 'Jay', 'Max', 'Trent'];
     _isLoading = false;
+    _events.didLoadData(null, _dispatchKey);
+    trigger();
   }
 }
 

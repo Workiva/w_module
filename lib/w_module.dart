@@ -26,3 +26,4 @@ export 'package:w_module/src/events_collection.dart';
 export 'package:w_module/src/lifecycle_module.dart' hide LifecycleState;
 export 'package:w_module/src/module.dart';
 export 'package:w_module/src/simple_module.dart';
+export 'package:w_module/src/timing_specifiers.dart';
