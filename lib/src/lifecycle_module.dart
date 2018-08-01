@@ -178,6 +178,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// only be started in [onLoad].
   ///
   /// Any [tags] specified will be added to the span which results from this call.
+  @protected
   void didEnterFirstUsefulState({Map<String, dynamic> tags: const {}}) {
     // Load didn't start
     if (_loadContext == null || _startLoadTime == null) {
