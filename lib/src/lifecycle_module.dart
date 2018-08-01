@@ -530,11 +530,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         .then(transition.complete)
         .catchError((error, trace) {
       transition.completeError(error, trace);
-      assert(activeSpan != null);
-      _activeSpan.setTag('error', true);
+      _activeSpan?.setTag('error', true);
     }).whenComplete(() {
-      assert(activeSpan != null);
-      _activeSpan.finish();
+      _activeSpan?.finish();
       _activeSpan = null;
     });
 
