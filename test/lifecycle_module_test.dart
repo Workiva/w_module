@@ -160,8 +160,6 @@ class TestLifecycleModule extends LifecycleModule {
     if (onUnloadError != null) {
       throw onUnloadError;
     }
-    assert(activeSpan.operationName == 'unload_module');
-    activeSpan.setTag('custom.unload.tag', 'somevalue');
     eventList.add('onUnload');
   }
 
@@ -234,7 +232,7 @@ void expectInLifecycleState(LifecycleModule module, LifecycleState state) {
       isInState = module.isUnloading;
       break;
   }
-  expect(isInState, isTrue);
+  expect(isInState, isTrue, reason: 'state should be $state');
 }
 
 Future<Null> gotoState(LifecycleModule module, LifecycleState state) async {
@@ -540,20 +538,6 @@ void main() {
         await module.unload();
       });
 
-      test('should record a span', () async {
-        await gotoState(module, LifecycleState.loaded);
-
-        subs.add(tracer.onSpanFinish
-            .where((span) => span.operationName == 'unload_module')
-            .listen(expectAsync1((span) {
-          expect(span.tags['module.name'], 'TestLifecycleModule');
-          expect(span.tags['custom.unload.tag'], 'somevalue');
-          expect(span.tags['error'], isNull);
-        })));
-
-        await module.unload();
-      });
-
       group('with an onUnload that throws', () {
         setUp(() async {
           await gotoState(module, LifecycleState.loaded);
@@ -571,16 +555,6 @@ void main() {
             expect(error, same(module.onUnloadError));
             expect(stackTrace, isNotNull);
           }));
-          expect(module.unload(), throwsA(same(module.onUnloadError)));
-        });
-
-        test('should add the `error` span tag', () async {
-          subs.add(tracer.onSpanFinish
-              .where((span) => span.operationName == 'unload_module')
-              .listen(expectAsync1((span) {
-            expect(span.tags['error'], true);
-          })));
-
           expect(module.unload(), throwsA(same(module.onUnloadError)));
         });
 

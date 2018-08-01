@@ -695,15 +695,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     Future pendingTransition;
     if (_transition != null && !_transition.isCompleted) {
       pendingTransition = _transition.future;
-      pendingTransition
-          // Need to `catchError` before `whenComplete` to prevent errors from
-          // getting thrown here when they should be handled elsewhere
-          .catchError((_) {})
-          .whenComplete(() {
-        _activeSpan = _startTransitionSpan('unload_module');
-      });
-    } else {
-      _activeSpan = _startTransitionSpan('unload_module');
     }
 
     _previousState = _state;
@@ -713,11 +704,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     var unloadAndDispose = new Completer<Null>();
     unloadAndDispose.complete(transition.future.then((_) => dispose()));
-
-    transition.future.catchError((e, trace) {
-      _activeSpan?.setTag('error', true);
-    }).whenComplete(_activeSpan?.finish);
-
     transition.complete(_unload(pendingTransition));
     return unloadAndDispose.future;
   }
