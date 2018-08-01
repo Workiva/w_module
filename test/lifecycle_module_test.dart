@@ -22,6 +22,7 @@ import 'package:opentracing/opentracing.dart';
 import 'package:test/test.dart';
 
 import 'package:w_module/src/lifecycle_module.dart';
+import 'package:w_module/src/timing_specifiers.dart';
 
 import 'test_tracer.dart';
 import 'utils.dart';
@@ -93,6 +94,15 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   Future<Null> loadChildModule(LifecycleModule newModule) =>
       super.loadChildModule(newModule);
+
+  // Overriding without re-applying the @protected annotation allows us to call
+  // specifyStartupTiming in our tests below.
+  @override
+  void specifyStartupTiming(
+    StartupTimingSpecifier specifier, {
+    Map<String, dynamic> tags: const {},
+  }) =>
+      super.specifyStartupTiming(specifier, tags: tags);
 
   @override
   @protected
@@ -354,6 +364,44 @@ void main() {
         })));
 
         await module.load();
+      });
+
+      group('should record user specified timing', () {
+        DateTime startTime;
+
+        setUp(() async {
+          final Completer<DateTime> startTimeCompleter = new Completer();
+
+          subs.add(tracer.onSpanFinish
+              .where((span) => span.operationName == 'load_module')
+              .listen(expectAsync1((span) {
+            startTimeCompleter.complete(span.startTime);
+          })));
+
+          await module.load();
+
+          startTime = await startTimeCompleter.future;
+        });
+
+        tearDown(() {
+          startTime = null;
+        });
+
+        [
+          StartupTimingSpecifier.firstComponentRender,
+          StartupTimingSpecifier.firstEditable,
+          StartupTimingSpecifier.firstReadable,
+          StartupTimingSpecifier.firstUseful,
+        ].forEach((specifier) {
+          test('should specify timing for ${specifier.name}', () async {
+            subs.add(tracer.onSpanFinish
+                .where((span) => span.operationName == specifier.name)
+                .listen(expectAsync1((span) {
+              expect(span.startTime, startTime);
+            })));
+            module.specifyStartupTiming(specifier);
+          });
+        });
       });
 
       group('with an onLoad that throws', () {
