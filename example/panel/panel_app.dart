@@ -22,12 +22,18 @@ import 'package:platform_detect/platform_detect.dart';
 import 'package:react/react_dom.dart' as react_dom;
 import 'package:react/react_client.dart' as react_client;
 import 'package:w_module/w_module.dart' hide Event;
+import 'package:opentracing/opentracing.dart';
 
 import 'modules/panel_module.dart';
+import 'modules/sample_tracer.dart';
 
 Future<Null> main() async {
   Element container = querySelector('#panel-container');
   react_client.setClientConfiguration();
+
+  final tracer = new SampleTracer();
+  initGlobalTracer(tracer);
+  assert(globalTracer() == tracer);
 
   // instantiate the core app module and wait for it to complete loading
   PanelModule panelModule = new PanelModule();
