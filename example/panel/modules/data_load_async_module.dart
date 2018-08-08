@@ -45,9 +45,9 @@ class DataLoadAsyncModule extends Module {
   Future<Null> onLoad() {
     // trigger non-blocking async load of data
     _events.didLoadData.first
-        .then((_) => specifyStartupTiming(StartupTimingSpecifier.firstUseful));
+        .then((_) => specifyStartupTiming(StartupTimingType.firstUseful));
     _actions.loadData();
-    return null;
+    return new Future.value();
   }
 }
 

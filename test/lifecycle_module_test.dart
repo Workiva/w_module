@@ -99,7 +99,7 @@ class TestLifecycleModule extends LifecycleModule {
   // specifyStartupTiming in our tests below.
   @override
   void specifyStartupTiming(
-    StartupTimingSpecifier specifier, {
+    StartupTimingType specifier, {
     Map<String, dynamic> tags: const {},
   }) =>
       super.specifyStartupTiming(specifier, tags: tags);
@@ -388,10 +388,10 @@ void main() {
         });
 
         [
-          StartupTimingSpecifier.firstComponentRender,
-          StartupTimingSpecifier.firstEditable,
-          StartupTimingSpecifier.firstReadable,
-          StartupTimingSpecifier.firstUseful,
+          StartupTimingType.firstComponentRender,
+          StartupTimingType.firstEditable,
+          StartupTimingType.firstReadable,
+          StartupTimingType.firstUseful,
         ].forEach((specifier) {
           test('should specify timing for ${specifier.name}', () async {
             subs.add(tracer.onSpanFinish

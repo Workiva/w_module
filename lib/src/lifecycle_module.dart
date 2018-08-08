@@ -183,7 +183,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     );
   }
 
-  /// Creates a span from the start of [load] until now.
+  /// Creates a span with `globalTracer` from the start of [load] until now.
   ///
   /// This is different from [onLoad] as this indicates that whichever asynchronous
   /// processes required to make this module interactible (such as any data needed
@@ -193,7 +193,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Any [tags] specified will be added to the span which results from this call.
   @protected
   void specifyStartupTiming(
-    StartupTimingSpecifier specifier, {
+    StartupTimingType specifier, {
     Map<String, dynamic> tags: const {},
   }) {
     // Load didn't start
