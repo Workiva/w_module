@@ -137,7 +137,7 @@ class TestLifecycleModule extends LifecycleModule {
     if (onLoadError != null) {
       throw onLoadError;
     }
-    assert(activeSpan.operationName == 'load_module');
+    assert(activeSpan.operationName == 'LifecycleModule.load');
     activeSpan.setTag('custom.load.tag', 'somevalue');
     eventList.add('onLoad');
   }
@@ -170,7 +170,7 @@ class TestLifecycleModule extends LifecycleModule {
     if (onSuspendError != null) {
       throw onSuspendError;
     }
-    assert(activeSpan.operationName == 'suspend_module');
+    assert(activeSpan.operationName == 'LifecycleModule.suspend');
     activeSpan.setTag('custom.suspend.tag', 'somevalue');
     eventList.add('onSuspend');
   }
@@ -182,7 +182,7 @@ class TestLifecycleModule extends LifecycleModule {
     if (onResumeError != null) {
       throw onResumeError;
     }
-    assert(activeSpan.operationName == 'resume_module');
+    assert(activeSpan.operationName == 'LifecycleModule.resume');
     activeSpan.setTag('custom.resume.tag', 'somevalue');
     eventList.add('onResume');
   }
@@ -347,7 +347,7 @@ void main() {
 
       test('should record a span', () async {
         subs.add(tracer.onSpanFinish.listen(expectAsync1((span) {
-          expect(span.operationName, 'load_module');
+          expect(span.operationName, 'LifecycleModule.load');
           expect(span.tags['module.name'], 'TestLifecycleModule');
           expect(span.tags['custom.load.tag'], 'somevalue');
           expect(span.tags['error'], isNull);
@@ -375,7 +375,7 @@ void main() {
 
         test('should add the `error` span tag', () async {
           subs.add(tracer.onSpanFinish.listen(expectAsync1((span) {
-            expect(span.operationName, 'load_module');
+            expect(span.operationName, 'LifecycleModule.load');
             expect(span.tags['module.name'], 'TestLifecycleModule');
             expect(span.tags['error'], true);
           })));
@@ -750,7 +750,7 @@ void main() {
       test('should record a span', () async {
         await gotoState(module, LifecycleState.loaded);
         subs.add(tracer.onSpanFinish
-            .where((span) => span.operationName == 'suspend_module')
+            .where((span) => span.operationName == 'LifecycleModule.suspend')
             .listen((span) {
           expect(span.tags['custom.suspend.tag'], 'somevalue');
         }));
@@ -779,7 +779,7 @@ void main() {
         test('should add the `error` span tag', () async {
           await gotoState(module, LifecycleState.loaded);
           subs.add(tracer.onSpanFinish
-              .where((span) => span.operationName == 'suspend_module')
+              .where((span) => span.operationName == 'LifecycleModule.suspend')
               .listen(expectAsync1((span) {
             expect(span.tags['error'], true);
           })));
@@ -933,7 +933,7 @@ void main() {
         await gotoState(module, LifecycleState.suspended);
 
         subs.add(tracer.onSpanFinish
-            .where((span) => span.operationName == 'resume_module')
+            .where((span) => span.operationName == 'LifecycleModule.resume')
             .listen(expectAsync1((span) {
           expect(span.tags['custom.resume.tag'], 'somevalue');
         })));
@@ -961,7 +961,7 @@ void main() {
 
         test('should add the `error` span tag', () async {
           subs.add(tracer.onSpanFinish
-              .where((span) => span.operationName == 'resume_module')
+              .where((span) => span.operationName == 'LifecycleModule.resume')
               .listen(expectAsync1((span) {
             expect(span.tags['error'], true);
           })));
@@ -1356,7 +1356,7 @@ void main() {
 
       subs.add(tracer.onSpanFinish
           .where((span) =>
-              span.operationName == 'load_module' &&
+              span.operationName == 'LifecycleModule.load' &&
               span.tags['module.name'] == 'parent')
           .listen((span) {
         expect(parentSpanContext, isNull,
@@ -1545,7 +1545,7 @@ void main() {
       setUp(() async {
         subs.add(tracer.onSpanFinish
             .where((span) =>
-                span.operationName == 'suspend_module' &&
+                span.operationName == 'LifecycleModule.suspend' &&
                 span.tags['module.name'] == 'parent')
             .listen(expectAsync1((span) {
           parentSuspendContext = span.context;
@@ -1632,7 +1632,7 @@ void main() {
       setUp(() async {
         subs.add(tracer.onSpanFinish
             .where((span) =>
-                span.operationName == 'resume_module' &&
+                span.operationName == 'LifecycleModule.resume' &&
                 span.tags['module.name'] == 'parent')
             .listen(expectAsync1((span) {
           parentResumeContext = span.context;
