@@ -414,8 +414,7 @@ void runTests(bool runSpanTests) {
 
         if (runSpanTests) {
           test('should add the `error` span tag', () async {
-            subs.add(
-                getTestTracer().onSpanFinish.listen(expectAsync1((span) {
+            subs.add(getTestTracer().onSpanFinish.listen(expectAsync1((span) {
               expect(span.operationName, 'LifecycleModule.load');
               expect(span.tags['module.name'], 'TestLifecycleModule');
               expect(span.tags['error'], true);
