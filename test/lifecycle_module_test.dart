@@ -1690,7 +1690,7 @@ void runTests(bool runSpanTests) {
                 throwsA(same(childModule.onSuspendError)));
 
             final span = await childSpanCompleter.future;
-            await new Future(() {}); // wait for parent to finish resuming
+            await new Future(() {}); // wait for parent to finish suspending
 
             expect(parentSuspendContext?.spanId, isNotNull);
             expect(span.parentContext.spanId, parentSuspendContext.spanId);
@@ -1797,7 +1797,7 @@ void runTests(bool runSpanTests) {
                 throwsA(same(childModule.onResumeError)));
 
             final span = await childSpanCompleter.future;
-            await new Future(() {}); // wait for parent to finish suspending
+            await new Future(() {}); // wait for parent to finish resuming
 
             expect(parentResumeContext?.spanId, isNotNull);
             expect(span.parentContext.spanId, parentResumeContext.spanId);
