@@ -137,8 +137,10 @@ class TestLifecycleModule extends LifecycleModule {
     if (onLoadError != null) {
       throw onLoadError;
     }
-    assert(activeSpan.operationName == 'LifecycleModule.load');
-    activeSpan.setTag('custom.load.tag', 'somevalue');
+    if (activeSpan != null) {
+      expect(activeSpan.operationName, 'LifecycleModule.load');
+      activeSpan.setTag('custom.load.tag', 'somevalue');
+    }
     eventList.add('onLoad');
   }
 
@@ -170,8 +172,10 @@ class TestLifecycleModule extends LifecycleModule {
     if (onSuspendError != null) {
       throw onSuspendError;
     }
-    assert(activeSpan.operationName == 'LifecycleModule.suspend');
-    activeSpan.setTag('custom.suspend.tag', 'somevalue');
+    if (activeSpan != null) {
+      expect(activeSpan.operationName, 'LifecycleModule.suspend');
+      activeSpan.setTag('custom.suspend.tag', 'somevalue');
+    }
     eventList.add('onSuspend');
   }
 
@@ -182,8 +186,10 @@ class TestLifecycleModule extends LifecycleModule {
     if (onResumeError != null) {
       throw onResumeError;
     }
-    assert(activeSpan.operationName == 'LifecycleModule.resume');
-    activeSpan.setTag('custom.resume.tag', 'somevalue');
+    if (activeSpan != null) {
+      expect(activeSpan.operationName, 'LifecycleModule.resume');
+      activeSpan.setTag('custom.resume.tag', 'somevalue');
+    }
     eventList.add('onResume');
   }
 
@@ -285,14 +291,34 @@ Future<Null> executeStateTransition(
   }
 }
 
+final StateError testError = new StateError('You should have expected this');
+
 void main() {
   Logger.root.level = Level.ALL;
-  final StateError testError = new StateError('You should have expected this');
 
-  final TestTracer tracer = new TestTracer();
-  initGlobalTracer(tracer);
-  assert(globalTracer() == tracer);
+  group('LifecycleModule', () {
+    group('with globalTracer', () {
+      TestTracer tracer;
+      setUp(() {
+        tracer = new TestTracer();
+        initGlobalTracer(tracer);
+        assert(globalTracer() == tracer);
+      });
 
+      runTests(tracer: tracer);
+    });
+    group('without globalTracer', () {
+      setUp(() {
+        initGlobalTracer(null);
+        assert(globalTracer() == null);
+      });
+
+      runTests();
+    });
+  });
+}
+
+void runTests({TestTracer tracer}) {
   group('LifecycleModule', () {
     TestLifecycleModule module;
     List<StreamSubscription> subs = [];
@@ -345,16 +371,17 @@ void main() {
         await module.load();
       });
 
-      test('should record a span', () async {
-        subs.add(tracer.onSpanFinish.listen(expectAsync1((span) {
-          expect(span.operationName, 'LifecycleModule.load');
-          expect(span.tags['module.name'], 'TestLifecycleModule');
-          expect(span.tags['custom.load.tag'], 'somevalue');
-          expect(span.tags['error'], isNull);
-        })));
+      if (tracer != null) {
+        test('should record a span', () async {
+          subs.add(tracer.onSpanFinish.listen(expectAsync1((span) {
+            expect(span.operationName, 'LifecycleModule.load');
+            expect(span.tags['module.name'], 'TestLifecycleModule');
+            expect(span.tags['custom.load.tag'], 'somevalue');
+            expect(span.tags['error'], isNull);
+          })));
 
-        await module.load();
-      });
+          await module.load();
+        });
 
       group('with an onLoad that throws', () {
         setUp(() {
@@ -373,15 +400,17 @@ void main() {
           expect(module.load(), throwsA(same(module.onLoadError)));
         });
 
-        test('should add the `error` span tag', () async {
-          subs.add(tracer.onSpanFinish.listen(expectAsync1((span) {
-            expect(span.operationName, 'LifecycleModule.load');
-            expect(span.tags['module.name'], 'TestLifecycleModule');
-            expect(span.tags['error'], true);
-          })));
+        if (tracer != null) {
+          test('should add the `error` span tag', () async {
+            subs.add(tracer.onSpanFinish.listen(expectAsync1((span) {
+              expect(span.operationName, 'LifecycleModule.load');
+              expect(span.tags['module.name'], 'TestLifecycleModule');
+              expect(span.tags['error'], true);
+            })));
 
-          expect(module.load(), throwsA(same(module.onLoadError)));
-        });
+            expect(module.load(), throwsA(same(module.onLoadError)));
+          });
+        }
 
         test('should not repeatedly emit that error for subsequent transitions',
             () async {
@@ -747,16 +776,18 @@ void main() {
         await module.suspend();
       });
 
-      test('should record a span', () async {
-        await gotoState(module, LifecycleState.loaded);
-        subs.add(tracer.onSpanFinish
-            .where((span) => span.operationName == 'LifecycleModule.suspend')
-            .listen((span) {
-          expect(span.tags['custom.suspend.tag'], 'somevalue');
-        }));
+      if (tracer != null) {
+        test('should record a span', () async {
+          await gotoState(module, LifecycleState.loaded);
+          subs.add(tracer.onSpanFinish
+              .where((span) => span.operationName == 'LifecycleModule.suspend')
+              .listen((span) {
+            expect(span.tags['custom.suspend.tag'], 'somevalue');
+          }));
 
-        await module.suspend();
-      });
+          await module.suspend();
+        });
+      }
 
       group('with an onSuspend that throws', () {
         setUp(() async {
@@ -776,16 +807,19 @@ void main() {
           expect(module.suspend(), throwsA(same(module.onSuspendError)));
         });
 
-        test('should add the `error` span tag', () async {
-          await gotoState(module, LifecycleState.loaded);
-          subs.add(tracer.onSpanFinish
-              .where((span) => span.operationName == 'LifecycleModule.suspend')
-              .listen(expectAsync1((span) {
-            expect(span.tags['error'], true);
-          })));
+        if (tracer != null) {
+          test('should add the `error` span tag', () async {
+            await gotoState(module, LifecycleState.loaded);
+            subs.add(tracer.onSpanFinish
+                .where(
+                    (span) => span.operationName == 'LifecycleModule.suspend')
+                .listen(expectAsync1((span) {
+              expect(span.tags['error'], true);
+            })));
 
-          expect(module.suspend(), throwsA(same(module.onSuspendError)));
-        });
+            expect(module.suspend(), throwsA(same(module.onSuspendError)));
+          });
+        }
 
         test('should not repeatedly emit that error for subsequent transitions',
             () async {
@@ -929,17 +963,19 @@ void main() {
         await module.resume();
       });
 
-      test('should record a span', () async {
-        await gotoState(module, LifecycleState.suspended);
+      if (tracer != null) {
+        test('should record a span', () async {
+          await gotoState(module, LifecycleState.suspended);
 
-        subs.add(tracer.onSpanFinish
-            .where((span) => span.operationName == 'LifecycleModule.resume')
-            .listen(expectAsync1((span) {
-          expect(span.tags['custom.resume.tag'], 'somevalue');
-        })));
+          subs.add(tracer.onSpanFinish
+              .where((span) => span.operationName == 'LifecycleModule.resume')
+              .listen(expectAsync1((span) {
+            expect(span.tags['custom.resume.tag'], 'somevalue');
+          })));
 
-        await module.resume();
-      });
+          await module.resume();
+        });
+      }
 
       group('with an onResume that throws', () {
         setUp(() async {
@@ -959,15 +995,17 @@ void main() {
           expect(module.resume(), throwsA(same(module.onResumeError)));
         });
 
-        test('should add the `error` span tag', () async {
-          subs.add(tracer.onSpanFinish
-              .where((span) => span.operationName == 'LifecycleModule.resume')
-              .listen(expectAsync1((span) {
-            expect(span.tags['error'], true);
-          })));
+        if (tracer != null) {
+          test('should add the `error` span tag', () async {
+            subs.add(tracer.onSpanFinish
+                .where((span) => span.operationName == 'LifecycleModule.resume')
+                .listen(expectAsync1((span) {
+              expect(span.tags['error'], true);
+            })));
 
-          expect(module.resume(), throwsA(same(module.onResumeError)));
-        });
+            expect(module.resume(), throwsA(same(module.onResumeError)));
+          });
+        }
 
         test('should not repeatedly emit that error for subsequent transitions',
             () async {
@@ -1354,17 +1392,19 @@ void main() {
       parentModule = new TestLifecycleModule(name: 'parent');
       childModule = new TestLifecycleModule(name: 'child');
 
-      subs.add(tracer.onSpanFinish
-          .where((span) =>
-              span.operationName == 'LifecycleModule.load' &&
-              span.tags['module.name'] == 'parent')
-          .listen((span) {
-        expect(parentSpanContext, isNull,
-            reason:
-                'parentSpanContext should only be set once because the parent module should only be loaded once.');
+      if (tracer != null) {
+        subs.add(tracer.onSpanFinish
+            .where((span) =>
+                span.operationName == 'LifecycleModule.load' &&
+                span.tags['module.name'] == 'parent')
+            .listen((span) {
+          expect(parentSpanContext, isNull,
+              reason:
+                  'parentSpanContext should only be set once because the parent module should only be loaded once.');
 
-        parentSpanContext = span.context;
-      }));
+          parentSpanContext = span.context;
+        }));
+      }
 
       await parentModule.load();
     });
@@ -1426,16 +1466,18 @@ void main() {
         await parentModule.loadChildModule(childModule);
       });
 
-      test('should record a span with `followsFrom` ref', () async {
-        subs.add(tracer.onSpanFinish
-            .where((span) => span.tags['module.name'] == 'child')
-            .listen(expectAsync1((span) {
-          expect(span.parentContext.spanId, parentSpanContext.spanId);
-          expect(span.tags['custom.load.tag'], 'somevalue');
-        })));
+      if (tracer != null) {
+        test('should record a span with `followsFrom` ref', () async {
+          subs.add(tracer.onSpanFinish
+              .where((span) => span.tags['module.name'] == 'child')
+              .listen(expectAsync1((span) {
+            expect(span.parentContext.spanId, parentSpanContext.spanId);
+            expect(span.tags['custom.load.tag'], 'somevalue');
+          })));
 
-        await parentModule.loadChildModule(childModule);
-      });
+          await parentModule.loadChildModule(childModule);
+        });
+      }
 
       group('with a child with an onLoad that throws', () {
         setUp(() {
@@ -1457,18 +1499,20 @@ void main() {
               throwsA(same(childModule.onLoadError)));
         });
 
-        test('should record a span with `followsFrom` ref and `error` tag',
-            () async {
-          subs.add(tracer.onSpanFinish
-              .where((span) => span.tags['module.name'] == 'child')
-              .listen(expectAsync1((span) {
-            expect(span.parentContext.spanId, parentSpanContext.spanId);
-            expect(span.tags['error'], true);
-          })));
+        if (tracer != null) {
+          test('should record a span with `followsFrom` ref and `error` tag',
+              () async {
+            subs.add(tracer.onSpanFinish
+                .where((span) => span.operationName == 'LifecycleModule.load')
+                .listen(expectAsync1((span) {
+              expect(span.parentContext.spanId, parentSpanContext.spanId);
+              expect(span.tags['error'], true);
+            })));
 
-          expect(parentModule.loadChildModule(childModule),
-              throwsA(same(childModule.onLoadError)));
-        });
+            expect(parentModule.loadChildModule(childModule),
+                throwsA(same(childModule.onLoadError)));
+          });
+        }
       });
 
       group('with a parent with an onDidLoadChildModule that throws', () {
@@ -1543,13 +1587,15 @@ void main() {
       SpanContext parentSuspendContext;
 
       setUp(() async {
-        subs.add(tracer.onSpanFinish
-            .where((span) =>
-                span.operationName == 'LifecycleModule.suspend' &&
-                span.tags['module.name'] == 'parent')
-            .listen(expectAsync1((span) {
-          parentSuspendContext = span.context;
-        })));
+        if (tracer != null) {
+          subs.add(tracer.onSpanFinish
+              .where((span) =>
+                  span.operationName == 'LifecycleModule.suspend' &&
+                  span.tags['module.name'] == 'parent')
+              .listen(expectAsync1((span) {
+            parentSuspendContext = span.context;
+          })));
+        }
 
         await parentModule.loadChildModule(childModule);
       });
@@ -1559,12 +1605,6 @@ void main() {
       });
 
       test('should suspend child modules', () async {
-        Completer<Span> childSpanCompleter = new Completer();
-
-        subs.add(tracer.onSpanFinish
-            .where((span) => span.tags['module.name'] == 'child')
-            .listen(expectAsync1(childSpanCompleter.complete)));
-
         parentModule.eventList.clear();
         childModule.eventList.clear();
         await parentModule.suspend();
@@ -1572,14 +1612,32 @@ void main() {
             equals(['willSuspend', 'onSuspend', 'didSuspend']));
         expect(childModule.eventList,
             equals(['willSuspend', 'onSuspend', 'didSuspend']));
-
-        final span = await childSpanCompleter.future;
-        await new Future(() {}); // wait for parent to finish suspending
-
-        assert(parentSuspendContext?.spanId != null);
-        expect(span.parentContext.spanId, parentSuspendContext.spanId);
-        expect(span.tags['custom.suspend.tag'], 'somevalue');
       });
+
+      if (tracer != null) {
+        test('child module suspends should record spans', () async {
+          Completer<Span> childSpanCompleter = new Completer();
+
+          subs.add(tracer.onSpanFinish
+              .where((span) => span.tags['module.name'] == 'child')
+              .listen(expectAsync1(childSpanCompleter.complete)));
+
+          parentModule.eventList.clear();
+          childModule.eventList.clear();
+          await parentModule.suspend();
+          expect(parentModule.eventList,
+              equals(['willSuspend', 'onSuspend', 'didSuspend']));
+          expect(childModule.eventList,
+              equals(['willSuspend', 'onSuspend', 'didSuspend']));
+
+          final span = await childSpanCompleter.future;
+          await new Future(() {}); // wait for parent to finish suspending
+
+          expect(parentSuspendContext?.spanId, isNotNull);
+          expect(span.parentContext.spanId, parentSuspendContext.spanId);
+          expect(span.tags['custom.suspend.tag'], 'somevalue');
+        });
+      }
 
       group('with a child with an onSuspend that throws', () {
         setUp(() {
@@ -1597,23 +1655,25 @@ void main() {
               throwsA(same(childModule.onSuspendError)));
         });
 
-        test('should add `error` span tag and `followsFrom` ref', () async {
-          Completer<Span> childSpanCompleter = new Completer();
+        if (tracer != null) {
+          test('should add `error` span tag and `followsFrom` ref', () async {
+            Completer<Span> childSpanCompleter = new Completer();
 
-          subs.add(tracer.onSpanFinish
-              .where((span) => span.tags['module.name'] == 'child')
-              .listen(expectAsync1(childSpanCompleter.complete)));
+            subs.add(tracer.onSpanFinish
+                .where((span) => span.tags['module.name'] == 'child')
+                .listen(expectAsync1(childSpanCompleter.complete)));
 
-          expect(parentModule.suspend(),
-              throwsA(same(childModule.onSuspendError)));
+            expect(parentModule.suspend(),
+                throwsA(same(childModule.onSuspendError)));
 
-          final span = await childSpanCompleter.future;
-          await new Future(() {}); // wait for parent to finish suspending
+            final span = await childSpanCompleter.future;
+            await new Future(() {}); // wait for parent to finish suspending
 
-          assert(parentSuspendContext?.spanId != null);
-          expect(span.parentContext.spanId, parentSuspendContext.spanId);
-          expect(span.tags['error'], true);
-        });
+            expect(parentSuspendContext?.spanId, isNotNull);
+            expect(span.parentContext.spanId, parentSuspendContext.spanId);
+            expect(span.tags['error'], true);
+          });
+        }
 
         test('should still suspend other children', () async {
           var secondChildModule = new TestLifecycleModule();
@@ -1630,13 +1690,15 @@ void main() {
       SpanContext parentResumeContext;
 
       setUp(() async {
-        subs.add(tracer.onSpanFinish
-            .where((span) =>
-                span.operationName == 'LifecycleModule.resume' &&
-                span.tags['module.name'] == 'parent')
-            .listen(expectAsync1((span) {
-          parentResumeContext = span.context;
-        })));
+        if (tracer != null) {
+          subs.add(tracer.onSpanFinish
+              .where((span) =>
+                  span.operationName == 'LifecycleModule.resume' &&
+                  span.tags['module.name'] == 'parent')
+              .listen(expectAsync1((span) {
+            parentResumeContext = span.context;
+          })));
+        }
 
         await parentModule.loadChildModule(childModule);
         await parentModule.suspend();
@@ -1647,12 +1709,6 @@ void main() {
       });
 
       test('should resume child modules', () async {
-        Completer<Span> childSpanCompleter = new Completer();
-
-        subs.add(tracer.onSpanFinish
-            .where((span) => span.tags['module.name'] == 'child')
-            .listen(expectAsync1(childSpanCompleter.complete)));
-
         parentModule.eventList.clear();
         childModule.eventList.clear();
         await parentModule.resume();
@@ -1660,14 +1716,32 @@ void main() {
             equals(['willResume', 'onResume', 'didResume']));
         expect(childModule.eventList,
             equals(['willResume', 'onResume', 'didResume']));
-
-        final span = await childSpanCompleter.future;
-        await new Future(() {}); // wait for parent to finish resuming
-
-        assert(parentResumeContext?.spanId != null);
-        expect(span.parentContext.spanId, parentResumeContext.spanId);
-        expect(span.tags['custom.resume.tag'], 'somevalue');
       });
+
+      if (useSpanTests) {
+        test('child module resumes should record spans', () async {
+          Completer<Span> childSpanCompleter = new Completer();
+
+          subs.add(tracer.onSpanFinish
+              .where((span) => span.tags['module.name'] == 'child')
+              .listen(expectAsync1(childSpanCompleter.complete)));
+
+          parentModule.eventList.clear();
+          childModule.eventList.clear();
+          await parentModule.resume();
+          expect(parentModule.eventList,
+              equals(['willResume', 'onResume', 'didResume']));
+          expect(childModule.eventList,
+              equals(['willResume', 'onResume', 'didResume']));
+
+          final span = await childSpanCompleter.future;
+          await new Future(() {}); // wait for parent to finish resuming
+
+          expect(parentResumeContext?.spanId, isNotNull);
+          expect(span.parentContext.spanId, parentResumeContext.spanId);
+          expect(span.tags['custom.resume.tag'], 'somevalue');
+        });
+      }
 
       group('with a child with an onResume that throws', () {
         setUp(() {
@@ -1685,23 +1759,25 @@ void main() {
               parentModule.resume(), throwsA(same(childModule.onResumeError)));
         });
 
-        test('should add `error` span tag and `followsFrom` ref', () async {
-          Completer<Span> childSpanCompleter = new Completer();
+        if (tracer != null) {
+          test('should add `error` span tag and `followsFrom` ref', () async {
+            Completer<Span> childSpanCompleter = new Completer();
 
-          subs.add(tracer.onSpanFinish
-              .where((span) => span.tags['module.name'] == 'child')
-              .listen(expectAsync1(childSpanCompleter.complete)));
+            subs.add(tracer.onSpanFinish
+                .where((span) => span.tags['module.name'] == 'child')
+                .listen(expectAsync1(childSpanCompleter.complete)));
 
-          expect(
-              parentModule.resume(), throwsA(same(childModule.onResumeError)));
+            expect(parentModule.resume(),
+                throwsA(same(childModule.onResumeError)));
 
-          final span = await childSpanCompleter.future;
-          await new Future(() {}); // wait for parent to finish suspending
+            final span = await childSpanCompleter.future;
+            await new Future(() {}); // wait for parent to finish suspending
 
-          assert(parentResumeContext?.spanId != null);
-          expect(span.parentContext.spanId, parentResumeContext.spanId);
-          expect(span.tags['error'], true);
-        });
+            expect(parentResumeContext?.spanId, isNotNull);
+            expect(span.parentContext.spanId, parentResumeContext.spanId);
+            expect(span.tags['error'], true);
+          });
+        }
 
         test('should still resume other children', () async {
           var secondChildModule = new TestLifecycleModule();

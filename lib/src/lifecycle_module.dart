@@ -939,7 +939,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       _willSuspendController.add(this);
       List<Future<Null>> childSuspendFutures = <Future<Null>>[];
       for (var child in _childModules.toList()) {
-        childSuspendFutures.add(new Future(() async {
+        childSuspendFutures.add(new Future.sync(() async {
           child._parentContext = _activeSpan?.context;
           return child.suspend().whenComplete(() {
             child._parentContext = null;
@@ -974,6 +974,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         throw new ModuleUnloadCanceledException(
             shouldUnloadResult.messagesAsString());
       }
+
+      _activeSpan = _startTransitionSpan('unload');
+
       _willUnloadController.add(this);
       await Future.wait(_childModules.toList().map((child) {
         child._parentContext = _activeSpan?.context;
@@ -998,7 +1001,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       // then rethrow the exception so that the caller (either unload() or
       // onWillDispose()) can handle it.
       _didUnloadController.addError(error, stackTrace);
+      _activeSpan?.setTag('error', true);
       rethrow;
+    } finally {
+      _activeSpan?.finish();
     }
   }
 }
