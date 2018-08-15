@@ -22,15 +22,17 @@ Future<Null> main(List<String> args) async {
   // https://github.com/Workiva/dart_dev
 
   List<String> directories = ['example/', 'lib/', 'test/', 'tool/'];
+
   config.analyze.entryPoints = [
     'example/panel/',
     'example/random_color/',
+    'bin/',
     'lib/',
     'test/',
     'tool/'
   ];
   config.copyLicense.directories = directories;
-  config.format.paths = directories;
+  config.format.paths = ['bin']..addAll(directories);
 
   await dev(args);
 }
