@@ -23,9 +23,6 @@ import 'package:w_module/w_module.dart';
 class DataLoadBlockingModule extends Module {
   List<String> data;
 
-  @override
-  final String name = 'DataLoadBlockingModule';
-
   DataLoadBlockingComponents _components;
 
   DataLoadBlockingModule() {

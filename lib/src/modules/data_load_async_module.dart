@@ -22,9 +22,6 @@ import 'package:w_flux/w_flux.dart';
 import 'package:w_module/w_module.dart';
 
 class DataLoadAsyncModule extends Module {
-  @override
-  final String name = 'DataLoadAsyncModule';
-
   DataLoadAsyncActions _actions;
   DataLoadAsyncComponents _components;
   DataLoadAsyncStore _stores;

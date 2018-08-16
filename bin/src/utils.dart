@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:meta/meta.dart';
 import 'package:w_module/w_module.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/file_system/file_system.dart' as fs;
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/source/package_map_resolver.dart';
@@ -44,6 +45,7 @@ Iterable<TruncatedClassElement> getClassesThatExtendFromModule(
         .expand(getSubclassesOfLifecycleModule)
         .where((element) => element.getGetter('name') == null));
 
+  print(list.map((t) => t.name).toString());
   return list.map((c) => new TruncatedClassElement(c.name, c.source.uri.path));
 }
 
@@ -99,7 +101,6 @@ void writeGettersToFile(TruncatedClassElement e) {
   }
 
   if (i == lines.length) {
-    print(outputLines.toString());
     print('ran out of lines');
     exit(1);
   }
@@ -268,7 +269,26 @@ void verifyAnalysis(AnalysisContext context, Iterable<Source> sources) {
 }
 
 List<ClassElement> getSubclassesOfLifecycleModule(LibraryElement library) =>
-    library.definingCompilationUnit.types.where((e) =>
+    library.definingCompilationUnit.types.where((e) {
+      print('does ${e.name} do the thing');
+      return
         e is ClassElement &&
         !e.isEnum &&
-        e.allSupertypes.any((type) => type.name == 'LifecycleModule'));
+          doesTypeExtendLifecycleModule(e.supertype);
+    });
+
+bool doesTypeExtendLifecycleModule(InterfaceType e) {
+  print('checking ${e?.name}');
+
+  if (e == null) {
+    print('no');
+    return false;
+  }
+
+  if (e.name == 'LifecycleModule') {
+    print('yes');
+    return true;
+  }
+
+  return doesTypeExtendLifecycleModule(e.superclass);
+}

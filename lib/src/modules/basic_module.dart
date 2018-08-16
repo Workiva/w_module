@@ -18,9 +18,6 @@ import 'package:react/react.dart' as react;
 import 'package:w_module/w_module.dart';
 
 class BasicModule extends Module {
-  @override
-  final String name = 'BasicModule';
-
   BasicModuleComponents _components;
 
   BasicModule() {
