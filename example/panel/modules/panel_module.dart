@@ -32,9 +32,6 @@ import './lifecycle_echo_module.dart';
 import './hierarchy_module.dart';
 
 class PanelModule extends Module {
-  @override
-  final String name = 'PanelModule';
-
   PanelActions _actions;
   PanelComponents _components;
   PanelStore _stores;

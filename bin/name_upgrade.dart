@@ -11,16 +11,7 @@ const String targetArg = 'target';
 const String targetAbbr = 't';
 
 final ArgParser argParser = new ArgParser()
-  ..addOption(helpArg, abbr: helpAbbr, help: 'Shows this help')
-  // TODO: this might not be feasible
-  // consider doing targets in repocommander and just losing out on examples without a pubspec
-  ..addOption(
-    targetArg,
-    abbr: targetAbbr,
-    allowMultiple: true,
-    help: 'Comma-delimited list of packages to ignore from validation.',
-    splitCommas: true,
-  );
+  ..addOption(helpArg, abbr: helpAbbr, help: 'Shows this help');
 
 void showHelpAndExit() {
   stdout.writeln(argParser.usage);
@@ -40,27 +31,19 @@ Future main(List<String> args) async {
     showHelpAndExit();
   }
 
-  // Use of default values doesn't work with lists because it puts the whole
-  // default object into a single-item list
-  List<String> rawTargets = ['lib', 'example', 'examples', 'app'];
-  if (argResults.wasParsed(targetArg)) {
-    rawTargets = argResults[targetArg];
-  }
+  final List<String> targets = ['lib', 'example', 'examples', 'app'];
 
-  final List<String> targets = utils.getTargetsThatExist(rawTargets);
-
-  if (targets.isEmpty) {
-    stdout.writeln('No target entrypoints found. Tried: ${targets.toString}');
-    exit(1);
-  }
+  utils.moveTargetsIntoLib(targets);
 
   final sdkDir = utils.getSdkDir();
 
   final context = utils.createAnalysisContext(sdkDir);
 
   final classes =
-      utils.getClassesThatExtendFromModule(context, sdkDir, targets);
+      utils.getClassesThatExtendFromModule(context, sdkDir);
 
   classes.forEach(utils.writeGettersToFile);
-//  utils.writeGettersToFile(classes.first);
+
+  utils.moveTargetsOutOfLib(targets);
 }
+

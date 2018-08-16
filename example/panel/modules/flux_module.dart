@@ -21,8 +21,6 @@ import 'package:react/react.dart' as react;
 import 'package:w_module/w_module.dart';
 
 class FluxModule extends Module {
-  @override
-  final String name = 'FluxModule';
 
   FluxActions _actions;
   FluxComponents _components;

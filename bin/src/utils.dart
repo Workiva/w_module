@@ -33,8 +33,8 @@ class TruncatedClassElement {
 
 // TODO this needs to incorporate the targets
 Iterable<TruncatedClassElement> getClassesThatExtendFromModule(
-    AnalysisContext context, Directory sdkDir, List<String> targets) {
-  final entryPoints = getPackageEntryPoints(targets);
+    AnalysisContext context, Directory sdkDir) {
+  final entryPoints = getPackageEntryPoints();
   final sources = parseSources(context, entryPoints);
   verifyAnalysis(context, sources);
 
@@ -45,7 +45,6 @@ Iterable<TruncatedClassElement> getClassesThatExtendFromModule(
         .expand(getSubclassesOfLifecycleModule)
         .where((element) => element.getGetter('name') == null));
 
-  print(list.map((t) => t.name).toString());
   return list.map((c) => new TruncatedClassElement(c.name, c.source.uri.path));
 }
 
@@ -105,8 +104,6 @@ void writeGettersToFile(TruncatedClassElement e) {
     exit(1);
   }
 
-  final bracketLine = lines[i];
-
   outputLines
     ..writeln('${' ' * padding}@override')
     ..writeln('${' ' * padding}String get name => \'${e.name}\';');
@@ -122,8 +119,6 @@ void writeGettersToFile(TruncatedClassElement e) {
   for (; i < lines.length; i++) {
     outputLines.writeln(lines[i]);
   }
-
-  print(outputLines.toString());
 
   f.writeAsStringSync(outputLines.toString());
 }
@@ -184,11 +179,11 @@ Directory getSdkDir() {
   return vmExecutable.parent.parent;
 }
 
-Iterable<String> getPackageEntryPoints(List<String> targets) {
+Iterable<String> getPackageEntryPoints() {
   final currentPath = Directory.current.path;
-  var targetPaths = targets.map((target) => path.join(currentPath, target));
+  final libPath = path.join(currentPath, 'lib');
 
-  var lib = new Directory(path.join(currentPath, 'lib'));
+  final lib = new Directory(libPath);
   if (!lib.existsSync()) return [];
 
   bool entityIsDartFile(FileSystemEntity entity) {
@@ -200,8 +195,7 @@ Iterable<String> getPackageEntryPoints(List<String> targets) {
   }
 
   bool fileIsInLibPath(FileSystemEntity file) {
-    return targetPaths
-        .any((targetPath) => path.isWithin(targetPath, file.path));
+    return path.isWithin(libPath, file.path);
   }
 
   bool fileIsNotPartOf(FileSystemEntity entity) {
@@ -270,7 +264,6 @@ void verifyAnalysis(AnalysisContext context, Iterable<Source> sources) {
 
 List<ClassElement> getSubclassesOfLifecycleModule(LibraryElement library) =>
     library.definingCompilationUnit.types.where((e) {
-      print('does ${e.name} do the thing');
       return
         e is ClassElement &&
         !e.isEnum &&
@@ -278,17 +271,31 @@ List<ClassElement> getSubclassesOfLifecycleModule(LibraryElement library) =>
     });
 
 bool doesTypeExtendLifecycleModule(InterfaceType e) {
-  print('checking ${e?.name}');
-
   if (e == null) {
-    print('no');
     return false;
   }
 
   if (e.name == 'LifecycleModule') {
-    print('yes');
     return true;
   }
 
   return doesTypeExtendLifecycleModule(e.superclass);
 }
+
+void runMoveCommand(String from, String to) {
+  Process.runSync('mv', [from, to]);
+}
+
+void moveTargetsIntoLib(List<String> targets) {
+  targets.forEach((target) {
+    runMoveCommand(target, tempNameForTarget(target));
+  });
+}
+
+void moveTargetsOutOfLib(List<String> targets) {
+  targets.forEach((target) {
+    runMoveCommand(tempNameForTarget(target), target);
+  });
+}
+
+String tempNameForTarget(String target) => 'lib/w_module_temp_$target';

@@ -28,4 +28,7 @@ import 'package:w_module/src/lifecycle_module.dart';
 ///   notification of internal module state change.
 /// - The [components] class exposes react-dart compatible UI components that
 ///   can be used to render module data.
-abstract class Module extends LifecycleModule {}
+abstract class Module extends LifecycleModule {
+  @override
+  String get name => 'Module';
+}

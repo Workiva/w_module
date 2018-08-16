@@ -31,9 +31,6 @@ import './deferred_module.dart';
 import './lifecycle_echo_module.dart';
 
 class HierarchyModule extends Module {
-  @override
-  final String name = 'HierarchyModule';
-
   HierarchyActions _actions;
   HierarchyComponents _components;
   HierarchyStore _stores;

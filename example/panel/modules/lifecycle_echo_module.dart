@@ -21,9 +21,6 @@ import 'package:react/react.dart' as react;
 import 'package:w_module/w_module.dart';
 
 class LifecycleEchoModule extends Module {
-  @override
-  final String name = 'LifecycleEchoModule';
-
   LifecycleEchoComponents _components;
 
   LifecycleEchoModule() {
@@ -91,4 +88,7 @@ class LifecycleEchoComponents implements ModuleComponents {
       ]);
 }
 
-class LifecycleEchoChildModule extends Module {}
+class LifecycleEchoChildModule extends Module {
+  @override
+  String get name => 'LifecycleEchoChildModule';
+}

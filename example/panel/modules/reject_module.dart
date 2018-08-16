@@ -20,9 +20,6 @@ import 'package:w_flux/w_flux.dart';
 import 'package:w_module/w_module.dart';
 
 class RejectModule extends Module {
-  @override
-  final String name = 'RejectModule';
-
   RejectActions _actions;
   RejectStore _stores;
 
