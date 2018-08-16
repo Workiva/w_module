@@ -31,7 +31,7 @@ Future main(List<String> args) async {
     showHelpAndExit();
   }
 
-  final List<String> targets = ['lib', 'example', 'examples', 'app'];
+  final List<String> targets = ['lib', 'example', 'examples', 'app', 'dev-app'];
 
   utils.moveTargetsIntoLib(targets);
 
@@ -39,11 +39,9 @@ Future main(List<String> args) async {
 
   final context = utils.createAnalysisContext(sdkDir);
 
-  final classes =
-      utils.getClassesThatExtendFromModule(context, sdkDir);
-
-  classes.forEach(utils.writeGettersToFile);
+  utils
+      .getClassesThatExtendFromModule(context, sdkDir)
+      .forEach(utils.writeGettersToFile);
 
   utils.moveTargetsOutOfLib(targets);
 }
-

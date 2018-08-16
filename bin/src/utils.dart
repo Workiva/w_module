@@ -1,6 +1,5 @@
 import 'dart:io';
-import 'package:meta/meta.dart';
-import 'package:w_module/w_module.dart';
+
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/file_system/file_system.dart' as fs;
@@ -13,48 +12,31 @@ import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
-import 'package:analyzer/src/dart/resolver/inheritance_manager.dart';
-import 'package:analyzer/src/dart/resolver/scope.dart';
 import 'package:path/path.dart' as path;
 
 final RegExp newLinePartOfRegexp = new RegExp('\npart of ');
 final RegExp partOfRegexp = new RegExp('part of ');
 
-/// Just the fields of a `ClassElement` we care about
-class TruncatedClassElement {
-  /// Class name
-  final String name;
-
-  /// Path to the file where this class is declared
-  final String path;
-
-  TruncatedClassElement(this.name, this.path);
-}
-
-// TODO this needs to incorporate the targets
-Iterable<TruncatedClassElement> getClassesThatExtendFromModule(
+Iterable<ClassElement> getClassesThatExtendFromModule(
     AnalysisContext context, Directory sdkDir) {
   final entryPoints = getPackageEntryPoints();
   final sources = parseSources(context, entryPoints);
   verifyAnalysis(context, sources);
 
-  final libraries = parseLibraries(context, sources);
-
-  final List<ClassElement> list = []
-    ..addAll(libraries
-        .expand(getSubclassesOfLifecycleModule)
-        .where((element) => element.getGetter('name') == null));
-
-  return list.map((c) => new TruncatedClassElement(c.name, c.source.uri.path));
+  return parseLibraries(context, sources)
+      .expand(getSubclassesOfLifecycleModule)
+      .where((element) => element.getGetter('name') == null);
 }
 
-void writeGettersToFile(TruncatedClassElement e) {
-  String filePath = e.path.substring(e.path.indexOf('/') + 1);
+void writeGettersToFile(ClassElement e) {
+  final ePath = e.source.uri.path;
+
+  String filePath = ePath.substring(ePath.indexOf('/') + 1);
+
   File f = new File('lib/$filePath');
   if (!f.existsSync()) {
     stdout.writeln('Does not exist: ${f.path}');
-//    exit(1);
-    return;
+    exit(1);
   }
 
   final RegExp classDeclaration = new RegExp('class ${e.name}');
@@ -243,30 +225,12 @@ void verifyAnalysis(AnalysisContext context, Iterable<Source> sources) {
   while (result.hasMoreWork) {
     result = context.performAnalysisTask();
   }
-
-  for (Source source in sources) {
-    try {
-      context.computeErrors(source);
-    } catch (e) {
-      print('Analysis computer errors failed: ${e}');
-//      exit(1);
-      print('Attempting to ignore');
-    }
-
-    final errors = context.getErrors(source).errors;
-    if (errors.isNotEmpty) {
-//      print('Analysis failed:\n${errors.first.toString()}');
-//      exit(1);
-//      print('Attempting to ignore');
-    }
-  }
 }
 
 List<ClassElement> getSubclassesOfLifecycleModule(LibraryElement library) =>
     library.definingCompilationUnit.types.where((e) {
-      return
-        e is ClassElement &&
-        !e.isEnum &&
+      return e is ClassElement &&
+          !e.isEnum &&
           doesTypeExtendLifecycleModule(e.supertype);
     });
 
