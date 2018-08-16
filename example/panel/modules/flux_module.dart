@@ -21,7 +21,6 @@ import 'package:react/react.dart' as react;
 import 'package:w_module/w_module.dart';
 
 class FluxModule extends Module {
-
   FluxActions _actions;
   FluxComponents _components;
   FluxStore _stores;
