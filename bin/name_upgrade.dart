@@ -31,7 +31,7 @@ Future main(List<String> args) async {
     showHelpAndExit();
   }
 
-  final List<String> targets = ['lib', 'example', 'examples', 'app', 'dev-app'];
+  final List<String> targets = ['example', 'examples', 'app', 'dev-app'];
 
   utils.moveTargetsIntoLib(targets);
 
