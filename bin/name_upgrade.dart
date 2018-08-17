@@ -33,6 +33,9 @@ Future main(List<String> args) async {
 
   final List<String> targets = ['example', 'examples', 'app', 'dev-app'];
 
+  // The AnalyzerContext we use only contains the content in lib.
+  // Move all the code we care about into lib temporarily to upgrade any
+  // modules that might live outside of there normally.
   utils.moveTargetsIntoLib(targets);
 
   final sdkDir = utils.getSdkDir();
