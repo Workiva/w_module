@@ -101,6 +101,7 @@ class TestLifecycleModule extends LifecycleModule {
   void specifyStartupTiming(
     StartupTimingType specifier, {
     Map<String, dynamic> tags: const {},
+    List<Reference> references: const [],
   }) =>
       super.specifyStartupTiming(specifier, tags: tags);
 
@@ -171,6 +172,10 @@ class TestLifecycleModule extends LifecycleModule {
     await new Future.delayed(new Duration(milliseconds: 1));
     if (onUnloadError != null) {
       throw onUnloadError;
+    }
+    if (activeSpan != null) {
+      expect(activeSpan.operationName, 'LifecycleModule.unload');
+      activeSpan.setTag('custom.unload.tag', 'somevalue');
     }
     eventList.add('onUnload');
   }
@@ -336,6 +341,15 @@ TestTracer globalTestTracer() {
 }
 
 void runTests(bool runSpanTests) {
+  test('Calling `specifyStartupTiming` without calling `load()` throws', () {
+    final module = new TestLifecycleModule();
+
+    expect(
+      () => module.specifyStartupTiming(StartupTimingType.firstUseful),
+      throwsStateError,
+    );
+  });
+
   group('without children', () {
     TestLifecycleModule module;
     List<StreamSubscription> subs = [];

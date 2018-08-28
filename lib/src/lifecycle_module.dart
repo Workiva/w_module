@@ -195,10 +195,12 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   void specifyStartupTiming(
     StartupTimingType specifier, {
     Map<String, dynamic> tags: const {},
+    List<Reference> references: const [],
   }) {
     // Load didn't start
     if (_loadContext == null || _startLoadTime == null) {
-      return null;
+      throw new StateError(
+          'Calling `specifyStartupTiming` before calling `load()`');
     }
 
     final tracer = globalTracer();
@@ -209,7 +211,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     tracer
         .startSpan(
           specifier.name,
-          references: [tracer.followsFrom(_loadContext)],
+          references: [tracer.followsFrom(_loadContext)]..addAll(references),
           startTime: _startLoadTime,
           tags: _defaultTags..addAll(tags),
         )
