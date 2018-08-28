@@ -25,6 +25,9 @@ import './deferred_heavy_lifter_implementation.dart'
     deferred as heavy_lifter_with_data;
 
 class DeferredModule extends Module {
+  @override
+  final String name = 'DeferredModule';
+
   HeavyLifter data;
 
   DeferredComponents _components;

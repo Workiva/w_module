@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/file_system/file_system.dart' as fs;
@@ -17,7 +18,7 @@ import 'package:path/path.dart' as path;
 final RegExp newLinePartOfRegexp = new RegExp('\npart of ');
 final RegExp partOfRegexp = new RegExp('part of ');
 
-Iterable<ClassElement> getClassesThatExtendFromModule(
+Iterable<ClassElement> getClassesThatExtendFromModuleWithoutNameGetter(
     AnalysisContext context, Directory sdkDir) {
   final entryPoints = getPackageEntryPoints();
   final sources = parseSources(context, entryPoints);
@@ -25,7 +26,7 @@ Iterable<ClassElement> getClassesThatExtendFromModule(
 
   return parseLibraries(context, sources)
       .expand(getSubclassesOfLifecycleModule)
-      .where((element) => element.getGetter('name') == null);
+      .where((element) => element.getField('name') == null);
 }
 
 void writeGettersToFile(ClassElement e) {
@@ -39,68 +40,18 @@ void writeGettersToFile(ClassElement e) {
     exit(1);
   }
 
-  final RegExp classDeclaration = new RegExp('class ${e.name}');
-
-  final lines = f.readAsLinesSync();
   final StringBuffer outputLines = new StringBuffer();
 
-  int i, padding;
-
-  // Find the line with `class SomeModule`
-  for (i = 0; i < lines.length; i++) {
-    final line = lines[i];
-    if (line.contains(classDeclaration)) {
-      padding = 2 + line.length - line.trimLeft().length;
-      break;
-    }
-    outputLines.writeln(line);
-  }
-
-  if (i == lines.length) {
-    print(outputLines.toString());
-    print('ran out of lines');
-    exit(1);
-  }
-
-  bool addClosingBracket = false;
-
-  // Find the line with the first {
-  for (; i < lines.length; i++) {
-    final line = lines[i];
-    if (line.contains('{')) {
-      if (line.endsWith('}')) {
-        outputLines.writeln(line.substring(0, line.indexOf('{') + 1));
-        addClosingBracket = true;
-        break;
-      }
-
-      outputLines.writeln(line);
-      break;
-    }
-
-    outputLines.writeln(line);
-  }
-
-  if (i == lines.length) {
-    print('ran out of lines');
-    exit(1);
-  }
+  final source = f.readAsStringSync();
+  // The offset of the end of the class's opening '{' bracket token
+  // ignore: avoid_as
+  final insertionOffset = (e.computeNode() as ClassDeclaration).leftBracket.end;
 
   outputLines
-    ..writeln('${' ' * padding}@override')
-    ..writeln('${' ' * padding}String get name => \'${e.name}\';');
-
-  if (addClosingBracket) {
-    outputLines.writeln('}');
-  }
-
-  // Already printed this line
-  i++;
-
-  // Write all remaining lines
-  for (; i < lines.length; i++) {
-    outputLines.writeln(lines[i]);
-  }
+    ..writeln(source.substring(0, insertionOffset))
+    ..writeln('  @override')
+    ..writeln('  String get name => \'${e.name}\';')
+    ..write(source.substring(insertionOffset));
 
   f.writeAsStringSync(outputLines.toString());
 }
