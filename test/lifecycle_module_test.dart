@@ -800,6 +800,52 @@ void runTests(bool runSpanTests) {
 
           await module.suspend();
         });
+
+        test(
+            'if a transition is in progress should wait to start this until that finishes',
+            () async {
+          await gotoState(module, LifecycleState.suspended);
+
+          Completer<Span> suspendCompleter = new Completer(),
+              resumeCompleter = new Completer();
+
+          // We go to suspend first so we can call resume
+          // So we need to ignore the first suspend's span to get the correct timestamps
+          bool foundFirstSuspend = false;
+
+          subs.add(getTestTracer().onSpanFinish.listen(expectAsync1((span) {
+                if (span.operationName == 'LifecycleModule.suspend') {
+                  expect(span.tags['custom.suspend.tag'], 'somevalue');
+                  if (foundFirstSuspend) {
+                    suspendCompleter.complete(span);
+                  } else {
+                    foundFirstSuspend = true;
+                  }
+                } else if (span.operationName == 'LifecycleModule.resume') {
+                  expect(span.tags['custom.resume.tag'], 'somevalue');
+                  resumeCompleter.complete(span);
+                } else {
+                  fail(
+                      'The only transitions in this test should be load, suspend, and resume');
+                }
+              }, count: 3)));
+
+          // ignore: unawaited_futures
+          module.resume();
+          await new Future(() {});
+          expect(module.isResuming, isTrue);
+
+          await module.suspend();
+
+          final suspendSpan = await suspendCompleter.future;
+          final resumeSpan = await resumeCompleter.future;
+
+          final resumeEnd = resumeSpan.startTime.add(resumeSpan.duration);
+
+          // checks that resume ended before or at the same time the suspend started
+          expect(
+              resumeEnd.compareTo(suspendSpan.startTime), lessThanOrEqualTo(0));
+        });
       }
 
       group('with an onSuspend that throws', () {
@@ -977,6 +1023,32 @@ void runTests(bool runSpanTests) {
         await module.resume();
       });
 
+      test('an error in suspend bubbles up during resume', () async {
+        await gotoState(module, LifecycleState.loaded);
+
+        module.onSuspendError = testError;
+        module.suspend(); // fails
+        await new Future(() {});
+        expect(module.isSuspending, isTrue);
+
+        var error;
+
+        try {
+          await module.resume();
+        } catch (e) {
+          error = e;
+        }
+
+        expect(error, isStateError);
+
+        // TODO: This is actually not an ideal state to wind up in.
+        // - It shouldn't end up in `resuming` because it didn't actually start resuming
+        // - It shouldn't end up in `suspended` because it never finished suspending
+        // - It shouldn't end up in `loaded` because it started to suspend
+        // We'll need to figure out how to handle this better.
+        expect(module.isResuming, isTrue);
+      });
+
       if (runSpanTests) {
         test('should record a span', () async {
           await gotoState(module, LifecycleState.suspended);
@@ -989,6 +1061,46 @@ void runTests(bool runSpanTests) {
           })));
 
           await module.resume();
+        });
+
+        test(
+            'if a transition is in progress should wait to start this until that finishes',
+            () async {
+          await gotoState(module, LifecycleState.loaded);
+
+          Completer<Span> suspendCompleter = new Completer(),
+              resumeCompleter = new Completer();
+
+          subs.add(getTestTracer().onSpanFinish.listen(expectAsync1((span) {
+                if (span.operationName == 'LifecycleModule.suspend') {
+                  expect(span.tags['custom.suspend.tag'], 'somevalue');
+                  suspendCompleter.complete(span);
+                } else if (span.operationName == 'LifecycleModule.resume') {
+                  expect(span.tags['custom.resume.tag'], 'somevalue');
+                  resumeCompleter.complete(span);
+                } else if (span.operationName == 'LifecycleModule.load') {
+                  // Do nothing; this is just to handle the third expected span
+                } else {
+                  fail(
+                      'The only transitions in this test should be load, suspend, and resume');
+                }
+              }, count: 3)));
+
+          // ignore: unawaited_futures
+          module.suspend();
+          await new Future(() {});
+          expect(module.isSuspending, isTrue);
+
+          await module.resume();
+
+          final suspendSpan = await suspendCompleter.future;
+          final resumeSpan = await resumeCompleter.future;
+
+          final suspendEnd = suspendSpan.startTime.add(suspendSpan.duration);
+
+          // checks that suspend ended before or at the same time the resume started
+          expect(
+              suspendEnd.compareTo(resumeSpan.startTime), lessThanOrEqualTo(0));
         });
       }
 
@@ -1632,6 +1744,15 @@ void runTests(bool runSpanTests) {
             equals(['willSuspend', 'onSuspend', 'didSuspend']));
         expect(childModule.eventList,
             equals(['willSuspend', 'onSuspend', 'didSuspend']));
+      });
+
+      test('an error in suspend bubbles up during resume', () async {
+        assert(parentModule.isLoaded);
+
+        parentModule.onSuspendError = testError;
+        parentModule.suspend(); // fails
+        await new Future(() {});
+        expect(parentModule.resume(), throwsA(same(testError)));
       });
 
       if (runSpanTests) {

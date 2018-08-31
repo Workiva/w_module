@@ -524,13 +524,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     Future pendingTransition;
     if (_transition != null && !_transition.isCompleted) {
-      pendingTransition = _transition.future
-          // Need to `catchError` before `whenComplete` to prevent errors from
-          // getting thrown here when they should be handled elsewhere
-          .catchError((_) {})
-            ..whenComplete(() {
-              _activeSpan = _startTransitionSpan('suspend');
-            });
+      pendingTransition = _transition.future.then((_) {
+        _activeSpan = _startTransitionSpan('suspend');
+      });
     } else {
       _activeSpan = _startTransitionSpan('suspend');
     }
@@ -595,13 +591,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     Future pendingTransition;
     if (_transition != null && !_transition.isCompleted) {
-      pendingTransition = _transition.future
-          // Need to `catchError` before `whenComplete` to prevent errors from
-          // getting thrown here when they should be handled elsewhere
-          .catchError((_) {})
-            ..whenComplete(() {
-              _activeSpan = _startTransitionSpan('resume');
-            });
+      pendingTransition = _transition.future.then((_) {
+        _activeSpan = _startTransitionSpan('resume');
+      });
     } else {
       _activeSpan = _startTransitionSpan('resume');
     }
