@@ -18,7 +18,7 @@ import 'package:path/path.dart' as path;
 final RegExp newLinePartOfRegexp = new RegExp('\npart of ');
 final RegExp partOfRegexp = new RegExp('part of ');
 
-Iterable<ClassElement> getClassesThatExtendFromModuleWithoutNameGetter(
+Iterable<ClassElement> moduleClassesWithoutNames(
     AnalysisContext context, Directory sdkDir) {
   final entryPoints = getPackageEntryPoints();
   final sources = parseSources(context, entryPoints);
@@ -29,7 +29,29 @@ Iterable<ClassElement> getClassesThatExtendFromModuleWithoutNameGetter(
       .where((element) => element.getField('name') == null);
 }
 
-void writeGettersToFile(ClassElement e) {
+Map<Source, List<ClassElement>> groupClassesBySource(
+    List<ClassElement> classes) {
+  final Map<Source, List<ClassElement>> results = {};
+
+  classes.forEach((c) {
+    if (results.containsKey(c.source)) {
+      results[c.source].add(c);
+    } else {
+      results[c.source] = [c];
+    }
+  });
+
+  return results;
+}
+
+void writeGettersForSource(Source source, List<ClassElement> classes) {
+  // Sort descending to modify the bottom classes before the top
+  classes.sort((a, b) => b.computeNode().end - a.computeNode().end);
+
+  classes.forEach(writeGetterForClass);
+}
+
+void writeGetterForClass(ClassElement e) {
   final ePath = e.source.uri.path;
 
   String filePath = ePath.substring(ePath.indexOf('/') + 1);

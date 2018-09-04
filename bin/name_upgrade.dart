@@ -43,8 +43,8 @@ Future main(List<String> args) async {
   final context = utils.createAnalysisContext(sdkDir);
 
   utils
-      .getClassesThatExtendFromModuleWithoutNameGetter(context, sdkDir)
-      .forEach(utils.writeGettersToFile);
+      .groupClassesBySource(utils.moduleClassesWithoutNames(context, sdkDir))
+      .forEach(utils.writeGettersForSource);
 
   utils.moveTargetsOutOfLib(targets);
 }
