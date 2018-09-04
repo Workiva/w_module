@@ -26,7 +26,7 @@ Iterable<ClassElement> moduleClassesWithoutNames(
 
   return parseLibraries(context, sources)
       .expand(getSubclassesOfLifecycleModule)
-      .where((element) => element.getField('name') == null);
+      .where((element) => !element.isAbstract && element.getField('name') == null);
 }
 
 Map<Source, List<ClassElement>> groupClassesBySource(
