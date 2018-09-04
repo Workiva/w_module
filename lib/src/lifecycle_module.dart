@@ -132,6 +132,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       'willUnload': willUnload,
       'didUnload': didUnload,
     }.forEach(_logLifecycleEvents);
+
+    _name = 'LifecycleModule($runtimeType)';
   }
 
   /// If this module is in a transition state, this is the Span capturing the
@@ -183,7 +185,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
   /// Name of the module for identification in exceptions and debug messages.
   // ignore: unnecessary_getters_setters
-  String get name => _name ?? 'LifecycleModule($runtimeType)';
+  String get name => _name;
 
   /// Deprecated: the module name should be defined by overriding the getter in
   /// a subclass and it should not be mutable.

@@ -30,6 +30,11 @@ const String shouldUnloadError = 'Mock shouldUnload false message';
 
 class MockStreamSubscription extends Mock implements StreamSubscription<Null> {}
 
+class UnnamedModule extends LifecycleModule {
+  // This module does override the name getter
+  // so lifecycle methods should not create spans
+}
+
 class TestLifecycleModule extends LifecycleModule {
   Iterable<StreamSubscription<LifecycleModule>> _eventListStreamSubscriptions;
 
@@ -334,7 +339,7 @@ void runTests(bool runSpanTests) {
     TestLifecycleModule module;
     List<StreamSubscription> subs = [];
 
-    setUp(() async {
+    setUp(() {
       module = new TestLifecycleModule();
     });
 
@@ -2330,4 +2335,30 @@ void runTests(bool runSpanTests) {
       expect(result.messagesAsString(), equals('mock message\nmock message 2'));
     });
   });
+
+  if (runSpanTests) {
+    group('with an unnamed module', () {
+      UnnamedModule module;
+      setUp(() {
+        module = new UnnamedModule();
+      });
+
+      tearDown(() async {
+        await module.dispose();
+      });
+
+      test('does not create spans for transitions', () async {
+        final sub = getTestTracer().onSpanFinish.listen((_) {
+          fail('No span should be created');
+        });
+        addTearDown(sub.cancel);
+
+        await module.load();
+        await module.suspend();
+        await module.resume();
+        await module.unload();
+        await new Future.delayed(new Duration(milliseconds: 10));
+      });
+    });
+  }
 }
