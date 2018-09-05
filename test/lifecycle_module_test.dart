@@ -799,9 +799,9 @@ void runTests(bool runSpanTests) {
           subs.add(getTestTracer()
               .onSpanFinish
               .where((span) => span.operationName == 'LifecycleModule.suspend')
-              .listen((span) {
+              .listen(expectAsync1((span) {
             expect(span.tags['custom.suspend.tag'], 'somevalue');
-          }));
+          })));
 
           await module.suspend();
         });
@@ -811,8 +811,8 @@ void runTests(bool runSpanTests) {
             () async {
           await gotoState(module, LifecycleState.suspended);
 
-          Completer<Span> suspendCompleter = new Completer(),
-              resumeCompleter = new Completer();
+          Completer<Span> suspendCompleter = new Completer();
+          Completer<Span> resumeCompleter = new Completer();
 
           // We go to suspend first so we can call resume
           // So we need to ignore the first suspend's span to get the correct timestamps
@@ -837,7 +837,7 @@ void runTests(bool runSpanTests) {
 
           // ignore: unawaited_futures
           module.resume();
-          await new Future(() {});
+          await new Future(() {}); // wait for resume to start but not end
           expect(module.isResuming, isTrue);
 
           await module.suspend();
@@ -1073,8 +1073,8 @@ void runTests(bool runSpanTests) {
             () async {
           await gotoState(module, LifecycleState.loaded);
 
-          Completer<Span> suspendCompleter = new Completer(),
-              resumeCompleter = new Completer();
+          Completer<Span> suspendCompleter = new Completer();
+          Completer<Span> resumeCompleter = new Completer();
 
           subs.add(getTestTracer().onSpanFinish.listen(expectAsync1((span) {
                 if (span.operationName == 'LifecycleModule.suspend') {
@@ -1093,7 +1093,7 @@ void runTests(bool runSpanTests) {
 
           // ignore: unawaited_futures
           module.suspend();
-          await new Future(() {});
+          await new Future(() {}); // wait for suspend to start but not end
           expect(module.isSuspending, isTrue);
 
           await module.resume();
@@ -1531,13 +1531,13 @@ void runTests(bool runSpanTests) {
             .where((span) =>
                 span.operationName == 'LifecycleModule.load' &&
                 span.tags['module.name'] == 'parent')
-            .listen((span) {
+            .listen(expectAsync1((span) {
           expect(parentSpanContext, isNull,
               reason:
                   'parentSpanContext should only be set once because the parent module should only be loaded once.');
 
           parentSpanContext = span.context;
-        }));
+        })));
       }
 
       await parentModule.load();
@@ -1755,8 +1755,9 @@ void runTests(bool runSpanTests) {
         assert(parentModule.isLoaded);
 
         parentModule.onSuspendError = testError;
+        // ignore: unawaited_future
         parentModule.suspend(); // fails
-        await new Future(() {});
+        await new Future(() {}); // wait for suspend to start but not end
         expect(parentModule.resume(), throwsA(same(testError)));
       });
 
@@ -2357,6 +2358,7 @@ void runTests(bool runSpanTests) {
         await module.suspend();
         await module.resume();
         await module.unload();
+        // Wait some time after transitions are over to be sure no spans are created
         await new Future.delayed(new Duration(milliseconds: 10));
       });
     });

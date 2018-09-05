@@ -158,8 +158,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Builds a span that conditionally applies a followsFrom reference if this module
   /// was loaded by a parent module.
   ///
-  /// Returns `null` if this module does not override the [name] getter or if
-  /// if no globalTracer is configured.
+  /// Returns `null` if no globalTracer is configured, or if this module does
+  /// not override the [name] getter (as the default name becomes nonsensical
+  /// when compiled to js).
   Span _startTransitionSpan(String operationName) {
     if (name == _name) {
       return null;
