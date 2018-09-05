@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/// Deprecated: 1.6.0
+/// To be removed: 2.0.0
+///
+/// The serializable module classes rely on `dart:mirrors`, which are no longer
+/// supported in the browser in Dart 2.
+@deprecated
 library serializable_module;
 
 export 'package:w_module/src/serializable.dart';

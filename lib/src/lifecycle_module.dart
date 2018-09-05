@@ -136,6 +136,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       'willUnload': willUnload,
       'didUnload': didUnload,
     }.forEach(_logLifecycleEvents);
+
+    _name = 'LifecycleModule($runtimeType)';
   }
 
   /// If this module is in a transition state, this is the Span capturing the
@@ -164,8 +166,14 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Builds a span that conditionally applies a followsFrom reference if this module
   /// was loaded by a parent module.
   ///
-  /// Returns `null` if no globalTracer is configured.
+  /// Returns `null` if no globalTracer is configured, or if this module does
+  /// not override the [name] getter (as the default name becomes nonsensical
+  /// when compiled to js).
   Span _startTransitionSpan(String operationName) {
+    if (name == _name) {
+      return null;
+    }
+
     final tracer = globalTracer();
     if (tracer == null) {
       return null;
@@ -222,7 +230,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
   /// Name of the module for identification in exceptions and debug messages.
   // ignore: unnecessary_getters_setters
-  String get name => _name ?? 'LifecycleModule($runtimeType)';
+  String get name => _name;
 
   Map<String, dynamic> get _defaultTags => {
         'span.kind': 'client',
@@ -575,13 +583,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     Future pendingTransition;
     if (_transition != null && !_transition.isCompleted) {
-      pendingTransition = _transition.future
-          // Need to `catchError` before `whenComplete` to prevent errors from
-          // getting thrown here when they should be handled elsewhere
-          .catchError((_) {})
-            ..whenComplete(() {
-              _activeSpan = _startTransitionSpan('suspend');
-            });
+      pendingTransition = _transition.future.then((_) {
+        _activeSpan = _startTransitionSpan('suspend');
+      });
     } else {
       _activeSpan = _startTransitionSpan('suspend');
     }
@@ -646,13 +650,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     Future pendingTransition;
     if (_transition != null && !_transition.isCompleted) {
-      pendingTransition = _transition.future
-          // Need to `catchError` before `whenComplete` to prevent errors from
-          // getting thrown here when they should be handled elsewhere
-          .catchError((_) {})
-            ..whenComplete(() {
-              _activeSpan = _startTransitionSpan('resume');
-            });
+      pendingTransition = _transition.future.then((_) {
+        _activeSpan = _startTransitionSpan('resume');
+      });
     } else {
       _activeSpan = _startTransitionSpan('resume');
     }
