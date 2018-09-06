@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:args/args.dart';
 
 import 'src/utils.dart' as utils;
+import 'src/analyzer_tools.dart';
 
 const String helpArg = 'help';
 const String helpAbbr = 'h';
@@ -38,13 +39,8 @@ Future main(List<String> args) async {
   // modules that might live outside of there normally.
   utils.moveTargetsIntoLib(targets);
 
-  final sdkDir = utils.getSdkDir();
-
-  final context = utils.createAnalysisContext(sdkDir);
-
-  utils
-      .groupClassesBySource(utils.moduleClassesWithoutNames(context, sdkDir))
-      .forEach(utils.writeGettersForSource);
+  final classes = getModulesWithoutNamesBySource();
+  classes.forEach(utils.writeGettersForSource);
 
   utils.moveTargetsOutOfLib(targets);
 }
