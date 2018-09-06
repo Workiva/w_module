@@ -1,0 +1,6 @@
+name: everything
+version: 0.0.0
+
+dependencies:
+  w_module:
+    path: ..

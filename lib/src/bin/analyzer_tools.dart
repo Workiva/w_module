@@ -7,11 +7,11 @@ import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/source/package_map_resolver.dart';
 import 'package:analyzer/source/pub_package_map_provider.dart';
 import 'package:analyzer/source/sdk_ext.dart';
-import 'package:analyzer/src/dart/sdk/sdk.dart';
-import 'package:analyzer/src/generated/engine.dart';
-import 'package:analyzer/src/generated/java_io.dart';
-import 'package:analyzer/src/generated/source.dart';
-import 'package:analyzer/src/generated/source_io.dart';
+import 'package:analyzer/src/dart/sdk/sdk.dart'; // ignore: implementation_imports
+import 'package:analyzer/src/generated/engine.dart'; // ignore: implementation_imports
+import 'package:analyzer/src/generated/java_io.dart'; // ignore: implementation_imports
+import 'package:analyzer/src/generated/source.dart'; // ignore: implementation_imports
+import 'package:analyzer/src/generated/source_io.dart'; // ignore: implementation_imports
 import 'package:path/path.dart' as path;
 
 final RegExp newLinePartOfRegexp = new RegExp('\npart of ');
@@ -20,8 +20,9 @@ final RegExp partOfRegexp = new RegExp('part of ');
 final Directory sdkDir = new File(Platform.resolvedExecutable).parent.parent;
 final AnalysisContext context = _createAnalysisContext(sdkDir);
 
-Map<Source, List<ClassElement>> getModulesWithoutNamesBySource() {
-  final entryPoints = _getPackageEntryPoints();
+Map<Source, List<ClassElement>> getModulesWithoutNamesBySource(
+    {Directory packageDir}) {
+  final entryPoints = _getPackageEntryPoints(packageDir);
   final sources = _parseSources(context, entryPoints);
   _verifyAnalysis(context, sources);
 
@@ -30,7 +31,8 @@ Map<Source, List<ClassElement>> getModulesWithoutNamesBySource() {
 
   final Iterable<ClassElement> subclasses = libraries
       .expand(getSubclassesOfLifecycleModule)
-      .where(isNameMissingOnConcreteClass);
+      .where(isConcreteClass)
+      .where(isNameGetterMissing);
 
   return groupClassesBySource(subclasses);
 }
@@ -55,7 +57,7 @@ bool doesTypeExtendLifecycleModule(InterfaceType e) =>
         doesTypeExtendLifecycleModule(e.superclass));
 
 Map<Source, List<ClassElement>> groupClassesBySource(
-    List<ClassElement> classes) {
+    Iterable<ClassElement> classes) {
   final Map<Source, List<ClassElement>> results = {};
 
   classes.forEach((c) {
@@ -69,10 +71,10 @@ Map<Source, List<ClassElement>> groupClassesBySource(
   return results;
 }
 
-// Abstract classes are going to be overridden anyway, so they shouldn't have
-// enforced names of their own.
-bool isNameMissingOnConcreteClass(ClassElement element) =>
-    !element.isAbstract && element.getField('name') == null;
+bool isConcreteClass(ClassElement element) => !element.isAbstract;
+
+bool isNameGetterMissing(ClassElement element) =>
+    element.getField('name')?.getter == null;
 
 AnalysisContext _createAnalysisContext(Directory sdkDir) {
   final resolvers = _getUriResolvers(sdkDir);
@@ -106,8 +108,9 @@ Iterable<UriResolver> _getUriResolvers(Directory sdkDir) {
   return resolvers;
 }
 
-Iterable<String> _getPackageEntryPoints() {
-  final currentPath = Directory.current.path;
+Iterable<String> _getPackageEntryPoints(Directory packageDir) {
+  final currentPath = packageDir?.path ?? Directory.current.path;
+
   final libPath = path.join(currentPath, 'lib');
 
   final lib = new Directory(libPath);

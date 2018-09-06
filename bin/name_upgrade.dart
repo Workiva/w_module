@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:w_module/src/bin/analyzer_tools.dart';
 
-import 'src/utils.dart' as utils;
-import 'src/analyzer_tools.dart';
+import 'src/utils.dart';
 
 const String helpArg = 'help';
 const String helpAbbr = 'h';
@@ -37,10 +37,10 @@ Future main(List<String> args) async {
   // The AnalyzerContext we use only contains the content in lib.
   // Move all the code we care about into lib temporarily to upgrade any
   // modules that might live outside of there normally.
-  utils.moveTargetsIntoLib(targets);
+  moveTargetsIntoLib(targets);
 
   final classes = getModulesWithoutNamesBySource();
-  classes.forEach(utils.writeGettersForSource);
+  classes.forEach(writeGettersForSource);
 
-  utils.moveTargetsOutOfLib(targets);
+  moveTargetsOutOfLib(targets);
 }
