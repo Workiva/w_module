@@ -5,12 +5,6 @@ import 'fixtures.dart';
 
 void main() {
   group('AnalyzerTools', () {
-    modulesWithoutNames.forEach((source, classes) {
-      print(source.shortName);
-      print(classes.map((e) => '  ${e.name}').join('\n'));
-      print('}\n');
-    });
-
     const String accessorsName = 'accessors.dart';
     group(accessorsName, () {
       List<ClassElement> classes;
@@ -19,12 +13,15 @@ void main() {
         classes = modulesForSourceName(accessorsName);
       });
 
-      test('catches setter-only `name`', () {
-        expect(findClassByName(classes, 'ModuleWithNameSetter'), isNotNull);
+      [
+        'ModuleWithNameSetter',
+      ].forEach((className) {
+        test('catches $className', () {
+          expect(findClassByName(classes, className), isNotNull);
+        });
       });
 
-      <
-          String>[
+      [
         'ModuleWithNameGetter',
         'ModuleWithNameGetterSetter',
         'ModuleWithNameField',
@@ -45,8 +42,7 @@ void main() {
         classes = modulesForSourceName(inheritanceName);
       });
 
-      <
-          String>[
+      [
         'UnnamedModule',
         'UnnamedModuleExtendsFromNamedModule',
         'UnnamedModuleExtendsFromUnnamedModule',
@@ -60,8 +56,7 @@ void main() {
         });
       });
 
-      <
-          String>[
+      [
         'NamedModule',
         'NamedModuleExtendsFromNamedModule',
         'NamedModuleExtendsFromUnnamedModule',
