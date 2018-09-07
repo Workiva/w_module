@@ -60,7 +60,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
   List<LifecycleModule> _childModules = [];
   Logger _logger;
-  String _name;
+  String _defaultName;
   LifecycleState _previousState;
   LifecycleState _state = LifecycleState.instantiated;
   Completer<Null> _transition;
@@ -137,7 +137,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       'didUnload': didUnload,
     }.forEach(_logLifecycleEvents);
 
-    _name = 'LifecycleModule($runtimeType)';
+    _defaultName = 'LifecycleModule($runtimeType)';
   }
 
   /// If this module is in a transition state, this is the Span capturing the
@@ -170,7 +170,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// not override the [name] getter (as the default name becomes nonsensical
   /// when compiled to js).
   Span _startTransitionSpan(String operationName) {
-    if (name == _name) {
+    if (name == _defaultName) {
       return null;
     }
 
@@ -230,7 +230,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
   /// Name of the module for identification in exceptions and debug messages.
   // ignore: unnecessary_getters_setters
-  String get name => _name;
+  String get name => _defaultName;
 
   Map<String, dynamic> get _defaultTags => {
         'span.kind': 'client',
@@ -243,7 +243,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   @deprecated
   // ignore: unnecessary_getters_setters
   set name(String newName) {
-    _name = newName;
+    _defaultName = newName;
   }
 
   /// List of child components so that lifecycle can iterate over them as needed

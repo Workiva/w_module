@@ -32,8 +32,14 @@ const String shouldUnloadError = 'Mock shouldUnload false message';
 class MockStreamSubscription extends Mock implements StreamSubscription<Null> {}
 
 class UnnamedModule extends LifecycleModule {
-  // This module does override the name getter
+  // This module does not override the name getter
   // so lifecycle methods should not create spans
+
+  // Overriding without re-applying the @protected annotation allows us to call
+  // loadChildModule in our tests below.
+  @override
+  Future<Null> loadChildModule(LifecycleModule newModule) =>
+      super.loadChildModule(newModule);
 }
 
 class TestLifecycleModule extends LifecycleModule {
@@ -58,7 +64,7 @@ class TestLifecycleModule extends LifecycleModule {
   List<String> eventList;
   bool mockShouldUnload;
 
-  TestLifecycleModule({String name}) : name = name ?? 'TestLifecycleModule' {
+  TestLifecycleModule({String name: 'TestLifecycleModule'}) : name = name {
     // init test validation data
     eventList = [];
     mockShouldUnload = true;
@@ -2406,6 +2412,148 @@ void runTests(bool runSpanTests) {
       expect(parentModule.eventList, equals(['onShouldUnload']));
       expect(childModule.eventList, equals(['onShouldUnload']));
     });
+  }, timeout: new Timeout(new Duration(seconds: 2)));
+
+  group('without name with children', () {
+    TestLifecycleModule childModule;
+    UnnamedModule parentModule;
+    List<StreamSubscription> subs = [];
+
+    setUp(() async {
+      parentModule = new UnnamedModule();
+      childModule = new TestLifecycleModule(name: 'child');
+
+      subs.add(getTestTracer()
+          .onSpanFinish
+          .where((span) => span.tags['module.name'] != 'child')
+          .listen((span) {
+        fail(
+            'Only the child module should have spans. Found: ${span.tags['module.name']}');
+      }));
+
+      await parentModule.load();
+    });
+
+    tearDown(() async {
+      await parentModule.dispose();
+      await childModule.tearDown();
+      subs.forEach((sub) => sub.cancel());
+      subs.clear();
+    });
+
+    if (runSpanTests) {
+      test('should record a span for child with no parent', () async {
+        subs.add(getTestTracer()
+            .onSpanFinish
+            .where((span) => span.operationName == 'LifecycleModule.load')
+            .where((span) => span.tags['module.name'] == 'child')
+            .listen(expectAsync1((span) {
+          expect(span.parentContext, isNull);
+          expect(span.tags['custom.load.tag'], 'somevalue');
+        })));
+
+        await parentModule.loadChildModule(childModule);
+      });
+
+      test('should record a span with `error` tag and no parent', () async {
+        childModule.onLoadError = testError;
+
+        subs.add(getTestTracer()
+            .onSpanFinish
+            .where((span) => span.operationName == 'LifecycleModule.load')
+            .where((span) => span.tags['module.name'] == 'child')
+            .listen(expectAsync1((span) {
+          expect(span.parentContext, isNull);
+          expect(span.tags['error'], true);
+        })));
+
+        expect(parentModule.loadChildModule(childModule),
+            throwsA(same(childModule.onLoadError)));
+      });
+
+      test('child module suspend should record spans with no parent', () async {
+        await parentModule.loadChildModule(childModule);
+        subs.add(getTestTracer()
+            .onSpanFinish
+            .where((span) => span.operationName == 'LifecycleModule.suspend')
+            .where((span) => span.tags['module.name'] == 'child')
+            .listen(expectAsync1((span) {
+          expect(span.parentContext, isNull);
+          expect(span.tags['custom.suspend.tag'], 'somevalue');
+        })));
+
+        await parentModule.suspend();
+      });
+
+      test(
+          'child module suspend throws should record a span with `error` tag and no parent',
+          () async {
+        await parentModule.loadChildModule(childModule);
+        childModule.onSuspendError = testError;
+
+        subs.add(getTestTracer()
+            .onSpanFinish
+            .where((span) => span.operationName == 'LifecycleModule.suspend')
+            .where((span) => span.tags['module.name'] == 'child')
+            .listen(expectAsync1((span) {
+          expect(span.parentContext, isNull);
+          expect(span.tags['error'], true);
+        })));
+
+        expect(
+            parentModule.suspend(), throwsA(same(childModule.onSuspendError)));
+      });
+
+      test('child module resume should record a span with no parent', () async {
+        await parentModule.loadChildModule(childModule);
+
+        subs.add(getTestTracer()
+            .onSpanFinish
+            .where((span) => span.operationName == 'LifecycleModule.resume')
+            .where((span) => span.tags['module.name'] == 'child')
+            .listen(expectAsync1((span) {
+          expect(span.parentContext, isNull);
+          expect(span.tags['custom.resume.tag'], 'somevalue');
+        })));
+
+        await gotoState(parentModule, LifecycleState.suspended);
+        await parentModule.resume();
+      });
+
+      test(
+          'child module resume should record a span with `error` tag and no parent',
+          () async {
+        await parentModule.loadChildModule(childModule);
+        childModule.onResumeError = testError;
+
+        subs.add(getTestTracer()
+            .onSpanFinish
+            .where((span) => span.operationName == 'LifecycleModule.resume')
+            .where((span) => span.tags['module.name'] == 'child')
+            .listen(expectAsync1((span) {
+          expect(span.parentContext, isNull);
+          expect(span.tags['error'], true);
+        })));
+
+        await gotoState(parentModule, LifecycleState.suspended);
+        expect(parentModule.resume(), throwsA(same(childModule.onResumeError)));
+      });
+
+      test('should record a span on unload', () async {
+        await parentModule.loadChildModule(childModule);
+
+        subs.add(getTestTracer()
+            .onSpanFinish
+            .where((span) => span.operationName == 'LifecycleModule.unload')
+            .where((span) => span.tags['module.name'] == 'child')
+            .listen(expectAsync1((span) {
+          expect(span.parentContext, isNull);
+          expect(span.tags['custom.unload.tag'], 'somevalue');
+        })));
+
+        await parentModule.unload();
+      });
+    }
   }, timeout: new Timeout(new Duration(seconds: 2)));
 
   group('shouldUnloadResult', () {
