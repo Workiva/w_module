@@ -456,7 +456,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
       try {
         _childModules.add(childModule);
-        childModule._parentContext = _activeSpan?.context;
+        childModule._parentContext = _loadSpanContext;
 
         await childModule.load();
         await onDidLoadChildModule(childModule);
