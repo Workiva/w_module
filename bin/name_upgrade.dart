@@ -3,8 +3,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:w_module/src/bin/analyzer_tools.dart';
-
-import 'src/utils.dart';
+import 'package:w_module/src/bin/utils.dart';
 
 const String helpArg = 'help';
 const String helpAbbr = 'h';

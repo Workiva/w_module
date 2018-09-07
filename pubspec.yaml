@@ -11,6 +11,8 @@ authors:
 homepage: https://github.com/Workiva/w_module
 
 dependencies:
+  analyzer: ^0.29.11
+  args: ^0.13.07
   logging: ^0.11.0
   meta: ^1.0.0
   platform_detect: ^1.1.0

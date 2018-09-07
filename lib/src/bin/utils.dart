@@ -8,14 +8,20 @@ import 'package:analyzer/src/generated/source_io.dart';
 final RegExp newLinePartOfRegexp = new RegExp('\npart of ');
 final RegExp partOfRegexp = new RegExp('part of ');
 
-void writeGettersForSource(Source source, List<ClassElement> classes) {
+void writeGettersForSource(
+  Source source,
+  List<ClassElement> classes, {
+  bool checkOnly,
+}) {
   // Sort descending to modify the bottom classes before the top
   classes.sort((a, b) => b.computeNode().end - a.computeNode().end);
 
-  classes.forEach(writeGetterForClass);
+  classes.forEach((c) => writeGetterForClass(c, checkOnly: checkOnly));
 }
 
-void writeGetterForClass(ClassElement e) {
+File getFileForPath() {}
+
+void writeGetterForClass(ClassElement e, {bool checkOnly: false}) {
   final ePath = e.source.uri.path;
 
   String filePath = ePath.substring(ePath.indexOf('/') + 1);
@@ -39,7 +45,11 @@ void writeGetterForClass(ClassElement e) {
     ..writeln('  String get name => \'${e.name}\';')
     ..write(source.substring(insertionOffset));
 
-  f.writeAsStringSync(outputLines.toString());
+  if (checkOnly) {
+    stdout.writeln(outputLines.toString());
+  } else {
+    f.writeAsStringSync(outputLines.toString());
+  }
 }
 
 void runMoveCommand(String from, String to) {
