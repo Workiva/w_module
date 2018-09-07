@@ -193,12 +193,27 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
   /// Creates a span with `globalTracer` from the start of [load] until now.
   ///
-  /// This is different from [onLoad] as this indicates that whichever asynchronous
-  /// processes required to make this module interactible (such as any data needed
-  /// to populate its store) will be finished by this point, whereas it might
-  /// only be started in [onLoad].
+  /// This span is intended to represent the time it takes for the module to
+  /// finish asynchronously loading any necessary data and entering a state which
+  /// is ready for user interaction.
   ///
-  /// Any [tags] specified will be added to the span which results from this call.
+  /// Any [tags] or [references] specified will be added to this span.
+  @protected
+  void specifyEnterFirstUsefulStateTiming({
+    Map<String, dynamic> tags: const {},
+    List<Reference> references: const [],
+  }) =>
+      specifyStartupTiming(
+        StartupTimingType.firstUseful,
+        tags: tags,
+        references: references,
+      );
+
+  /// Creates a span with `globalTracer` from the start of [load] until now.
+  ///
+  /// The [specifier] indicates the purpose of this span.
+  ///
+  /// Any [tags] or [references] specified will be added to this span.
   @protected
   void specifyStartupTiming(
     StartupTimingType specifier, {
@@ -218,7 +233,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     tracer
         .startSpan(
-          specifier.name,
+          specifier.operationName,
           references: [tracer.followsFrom(_loadContext)]..addAll(references),
           startTime: _startLoadTime,
           tags: _defaultTags..addAll(tags),

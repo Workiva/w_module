@@ -448,15 +448,14 @@ void runTests(bool runSpanTests) {
           });
 
           [
-            StartupTimingType.firstComponentRender,
-            StartupTimingType.firstEditable,
-            StartupTimingType.firstReadable,
             StartupTimingType.firstUseful,
           ].forEach((specifier) {
-            test('should specify timing for ${specifier.name}', () async {
+            test('should specify timing for ${specifier.operationName}',
+                () async {
               subs.add(getTestTracer()
                   .onSpanFinish
-                  .where((span) => span.operationName == specifier.name)
+                  .where(
+                      (span) => span.operationName == specifier.operationName)
                   .listen(expectAsync1((span) {
                 expect(span.startTime, startTime);
               })));
