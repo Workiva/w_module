@@ -6,7 +6,6 @@ const String tempDirPath = 'test_fixtures/test_temp';
 const String inputDirPath = 'test_fixtures/test_input';
 const String expectedOutputDirPath = 'test_fixtures/test_expected';
 
-
 ClassElement findClassByName(List<ClassElement> classes, String name) {
   for (ClassElement element in classes) {
     if (element.name == name) {

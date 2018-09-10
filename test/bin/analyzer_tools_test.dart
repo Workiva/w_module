@@ -25,7 +25,8 @@ void main() {
 
     setUp(() {
       createTempDir();
-      modulesWithoutNames = getModulesWithoutNamesBySource(packageDir: packageDir);
+      modulesWithoutNames =
+          getModulesWithoutNamesBySource(packageDir: packageDir);
     });
 
     tearDown(() {
@@ -123,9 +124,7 @@ void main() {
 
       File tempFile, expectedFile;
       String tempContents, expectedContents;
-      tempFiles
-        .where((entity) => entity is File)
-        .forEach((entity) {
+      tempFiles.where((entity) => entity is File).forEach((entity) {
         tempFile = entity;
         expectedFile = expectedFiles.firstWhere((entity) =>
             fileNameFromPath(entity.path) == fileNameFromPath(tempFile.path));
