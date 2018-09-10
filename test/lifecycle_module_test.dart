@@ -2441,7 +2441,7 @@ void runTests(bool runSpanTests) {
     });
 
     if (runSpanTests) {
-      test('should record a span for child with no parent', () async {
+      test('should record a span for child when parent has no name', () async {
         subs.add(getTestTracer()
             .onSpanFinish
             .where((span) => span.operationName == 'LifecycleModule.load')
@@ -2454,7 +2454,8 @@ void runTests(bool runSpanTests) {
         await parentModule.loadChildModule(childModule);
       });
 
-      test('should record a span with `error` tag and no parent', () async {
+      test('should record a span with `error` tag when parent has no name',
+          () async {
         childModule.onLoadError = testError;
 
         subs.add(getTestTracer()
@@ -2470,7 +2471,8 @@ void runTests(bool runSpanTests) {
             throwsA(same(childModule.onLoadError)));
       });
 
-      test('child module suspend should record spans with no parent', () async {
+      test('child module suspend should record spans when parent has no name',
+          () async {
         await parentModule.loadChildModule(childModule);
         subs.add(getTestTracer()
             .onSpanFinish
@@ -2485,7 +2487,7 @@ void runTests(bool runSpanTests) {
       });
 
       test(
-          'child module suspend throws should record a span with `error` tag and no parent',
+          'child module suspend throws should record a span with `error` tag and parent has no name',
           () async {
         await parentModule.loadChildModule(childModule);
         childModule.onSuspendError = testError;
@@ -2503,7 +2505,8 @@ void runTests(bool runSpanTests) {
             parentModule.suspend(), throwsA(same(childModule.onSuspendError)));
       });
 
-      test('child module resume should record a span with no parent', () async {
+      test('child module resume should record a span when parent has no name',
+          () async {
         await parentModule.loadChildModule(childModule);
 
         subs.add(getTestTracer()
@@ -2520,7 +2523,7 @@ void runTests(bool runSpanTests) {
       });
 
       test(
-          'child module resume should record a span with `error` tag and no parent',
+          'child module resume should record a span with `error` tag and parent has no name',
           () async {
         await parentModule.loadChildModule(childModule);
         childModule.onResumeError = testError;
