@@ -8,25 +8,17 @@ import 'package:analyzer/src/generated/source_io.dart';
 final RegExp newLinePartOfRegexp = new RegExp('\npart of ');
 final RegExp partOfRegexp = new RegExp('part of ');
 
-void writeGettersForSource(
-  Source source,
-  List<ClassElement> classes, {
-  bool checkOnly,
-}) {
+void writeGettersForSource(Source source, List<ClassElement> classes) {
   // Sort descending to modify the bottom classes before the top
   classes.sort((a, b) => b.computeNode().end - a.computeNode().end);
 
-  classes.forEach((c) => writeGetterForClass(c, checkOnly: checkOnly));
+  classes.forEach((c) => writeGetterForClass(c));
 }
 
-File getFileForPath() {}
-
-void writeGetterForClass(ClassElement e, {bool checkOnly: false}) {
+void writeGetterForClass(ClassElement e) {
   final ePath = e.source.uri.path;
 
-  String filePath = ePath.substring(ePath.indexOf('/') + 1);
-
-  File f = new File('lib/$filePath');
+  File f = new File(ePath);
   if (!f.existsSync()) {
     stdout.writeln('Does not exist: ${f.path}');
     exit(1);
@@ -45,11 +37,7 @@ void writeGetterForClass(ClassElement e, {bool checkOnly: false}) {
     ..writeln('  String get name => \'${e.name}\';')
     ..write(source.substring(insertionOffset));
 
-  if (checkOnly) {
-    stdout.writeln(outputLines.toString());
-  } else {
-    f.writeAsStringSync(outputLines.toString());
-  }
+  f.writeAsStringSync(outputLines.toString());
 }
 
 void runMoveCommand(String from, String to) {
