@@ -154,6 +154,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   ///   ...
   /// }
   /// ```
+  @protected
   Span get activeSpan => _activeSpan;
 
   /// Set internally by this module for the load span so it can be used as a
