@@ -13,6 +13,7 @@ homepage: https://github.com/Workiva/w_module
 dependencies:
   logging: ^0.11.0
   meta: ^1.0.0
+  opentracing: ^0.2.1
   platform_detect: ^1.1.0
   w_common: ^1.9.0
 
