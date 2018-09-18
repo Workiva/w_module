@@ -1,3 +1,4 @@
+@TestOn("vm")
 import 'dart:io';
 
 import 'package:analyzer/dart/element/element.dart';
