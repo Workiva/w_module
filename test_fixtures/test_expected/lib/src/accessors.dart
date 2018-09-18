@@ -15,7 +15,7 @@ class ModuleWithNameGetterSetter extends Module {
 
 class ModuleWithNameSetter extends Module {
   @override
-  String get name => 'ModuleWithNameSetter';
+  final String name = 'ModuleWithNameSetter';
 
   @override
   set name(String newName) {}

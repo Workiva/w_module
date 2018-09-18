@@ -115,7 +115,7 @@ void main() {
           temp.listSync(recursive: true, followLinks: false);
 
       final Directory expected = new Directory('$expectedOutputDirPath/lib');
-      expect(expected.exists(), isTrue);
+      expect(expected.existsSync(), isTrue);
 
       final List<FileSystemEntity> expectedFiles =
           expected.listSync(recursive: true, followLinks: false);

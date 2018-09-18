@@ -34,7 +34,7 @@ void writeGetterForClass(ClassElement e) {
   outputLines
     ..writeln(source.substring(0, insertionOffset))
     ..writeln('  @override')
-    ..writeln('  String get name => \'${e.name}\';')
+    ..writeln('  final String name = \'${e.name}\';')
     ..write(source.substring(insertionOffset));
 
   f.writeAsStringSync(outputLines.toString());

@@ -17,12 +17,13 @@ ClassElement findClassByName(List<ClassElement> classes, String name) {
 }
 
 // because doing this in dart is ~30 lines
-void createTempDir() => Process.run('cp', ['-r', inputDirPath, tempDirPath]);
+void createTempDir() =>
+    Process.runSync('cp', ['-r', inputDirPath, tempDirPath]);
 
 void clearTempDir() {
   final directory = new Directory(tempDirPath);
   if (directory.existsSync()) {
-    return directory.deleteSync(recursive: true);
+    directory.deleteSync(recursive: true);
   }
 }
 

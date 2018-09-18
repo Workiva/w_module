@@ -7,17 +7,17 @@ class NamedModule extends Module {
 
 class UnnamedModule extends Module {
   @override
-  String get name => 'UnnamedModule';
+  final String name = 'UnnamedModule';
 }
 
 class UnnamedModuleExtendsFromNamedModule extends NamedModule {
   @override
-  String get name => 'UnnamedModuleExtendsFromNamedModule';
+  final String name = 'UnnamedModuleExtendsFromNamedModule';
 }
 
 class UnnamedModuleExtendsFromUnnamedModule extends UnnamedModule {
   @override
-  String get name => 'UnnamedModuleExtendsFromUnnamedModule';
+  final String name = 'UnnamedModuleExtendsFromUnnamedModule';
 }
 
 class NamedModuleExtendsFromNamedModule extends NamedModule {
@@ -32,19 +32,19 @@ class NamedModuleExtendsFromUnnamedModule extends UnnamedModule {
 
 class UnnamedUnnamedUnnamed extends UnnamedModuleExtendsFromUnnamedModule {
   @override
-  String get name => 'UnnamedUnnamedUnnamed';
+  final String name = 'UnnamedUnnamedUnnamed';
 }
 class UnnamedUnnamedNamed extends UnnamedModuleExtendsFromNamedModule {
   @override
-  String get name => 'UnnamedUnnamedNamed';
+  final String name = 'UnnamedUnnamedNamed';
 }
 class UnnamedNamedUnnamed extends NamedModuleExtendsFromUnnamedModule {
   @override
-  String get name => 'UnnamedNamedUnnamed';
+  final String name = 'UnnamedNamedUnnamed';
 }
 class UnnamedNamedNamed extends NamedModuleExtendsFromNamedModule {
   @override
-  String get name => 'UnnamedNamedNamed';
+  final String name = 'UnnamedNamedNamed';
 }
 
 class NamedUnnamedUnnamed extends UnnamedModuleExtendsFromUnnamedModule {
