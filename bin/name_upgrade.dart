@@ -38,7 +38,10 @@ Future main(List<String> args) async {
   // modules that might live outside of there normally.
   moveTargetsIntoLib(targets);
 
+  print('Analyzing sources to find modules to upgrade.');
+  print('(This can take several minutes for large repos)');
   final classes = getModulesWithoutNamesBySource();
+  print('Upgrading modules...');
   classes.forEach(writeGettersForSource);
 
   moveTargetsOutOfLib(targets);
