@@ -18,7 +18,10 @@ void writeGettersForSource(Source source, List<ClassElement> classes) {
 void writeGetterForClass(ClassElement e) {
   final ePath = e.source.uri.path;
 
-  File f = new File(ePath);
+  String filePath = ePath.substring(ePath.indexOf('/') + 1);
+  File f = new File('lib/$filePath');
+
+  // File f = new File(ePath);
   if (!f.existsSync()) {
     stdout.writeln('Does not exist: ${f.path}');
     exit(1);

@@ -31,18 +31,20 @@ Future main(List<String> args) async {
     showHelpAndExit();
   }
 
-  final List<String> targets = ['example', 'examples', 'app', 'dev-app'];
+  final List<String> targets = ['example', 'examples'];
 
   // The AnalyzerContext we use only contains the content in lib.
   // Move all the code we care about into lib temporarily to upgrade any
   // modules that might live outside of there normally.
   moveTargetsIntoLib(targets);
 
-  print('Analyzing sources to find modules to upgrade.');
-  print('(This can take several minutes for large repos)');
-  final classes = getModulesWithoutNamesBySource();
-  print('Upgrading modules...');
-  classes.forEach(writeGettersForSource);
-
-  moveTargetsOutOfLib(targets);
+  try {
+    print('Analyzing sources to find modules to upgrade.');
+    print('(This can take several minutes for large repos)');
+    final classes = getModulesWithoutNamesBySource();
+    print('Upgrading modules...');
+    classes.forEach(writeGettersForSource);
+  } finally {
+    moveTargetsOutOfLib(targets);
+  }
 }
