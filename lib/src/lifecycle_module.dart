@@ -177,10 +177,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       references.add(new Reference.followsFrom(_parentContext));
     }
 
-    return tracer.startSpan('LifecycleModule.$operationName',
-        references: references)
+    return tracer.startSpan('$name.$operationName', references: references)
       ..addTags({
-        'module.name': name,
         'module.instanceId': _instanceId,
       });
   }
