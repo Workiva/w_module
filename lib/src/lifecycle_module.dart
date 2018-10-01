@@ -187,14 +187,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   // ignore: unnecessary_getters_setters
   String get name => _defaultName;
 
-  /// Deprecated: the module name should be defined by overriding the getter in
-  /// a subclass and it should not be mutable.
-  @deprecated
-  // ignore: unnecessary_getters_setters
-  set name(String newName) {
-    _defaultName = newName;
-  }
-
   /// List of child components so that lifecycle can iterate over them as needed
   Iterable<LifecycleModule> get childModules => _childModules.toList();
 
