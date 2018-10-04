@@ -1004,6 +1004,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       rethrow;
     } finally {
       _activeSpan?.finish();
+      _activeSpan = null;
     }
   }
 }
