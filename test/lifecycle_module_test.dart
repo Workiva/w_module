@@ -100,6 +100,11 @@ class TestLifecycleModule extends LifecycleModule {
   }
 
   // Overriding without re-applying the @protected annotation allows us to call
+  // activeSpan in our tests below.
+  @override
+  Span get activeSpan => super.activeSpan;
+
+  // Overriding without re-applying the @protected annotation allows us to call
   // loadChildModule in our tests below.
   @override
   Future<Null> loadChildModule(LifecycleModule newModule) =>
@@ -402,6 +407,11 @@ void runTests(bool runSpanTests) {
           })));
 
           await module.load();
+        });
+
+        test('activeSpan should be null when load is finished', () async {
+          await module.load();
+          expect(module.activeSpan, isNull);
         });
       }
 
@@ -785,6 +795,7 @@ void runTests(bool runSpanTests) {
             ['willResume', 'onResume', 'didResume']
               ..addAll(expectedSuspendEvents));
       });
+
       test('should emit lifecycle log events', () async {
         await gotoState(module, LifecycleState.loaded);
         expect(
@@ -809,6 +820,12 @@ void runTests(bool runSpanTests) {
           })));
 
           await module.suspend();
+        });
+
+        test('activeSpan should be null when suspend is finished', () async {
+          await gotoState(module, LifecycleState.loaded);
+          await module.suspend();
+          expect(module.activeSpan, isNull);
         });
 
         test(
@@ -1072,6 +1089,12 @@ void runTests(bool runSpanTests) {
           })));
 
           await module.resume();
+        });
+
+        test('activeSpan should be null when resume is finished', () async {
+          await gotoState(module, LifecycleState.suspended);
+          await module.resume();
+          expect(module.activeSpan, isNull);
         });
 
         test(
@@ -2010,6 +2033,11 @@ void runTests(bool runSpanTests) {
           expect(parentUnloadContext?.spanId, isNotNull);
           expect(span.parentContext.spanId, parentUnloadContext.spanId);
           expect(span.tags['custom.unload.tag'], 'somevalue');
+        });
+
+        test('activeSpan should be null when unload is finished', () async {
+          await parentModule.unload();
+          expect(parentModule.activeSpan, isNull);
         });
       }
 
