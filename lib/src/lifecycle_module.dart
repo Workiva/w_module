@@ -22,6 +22,7 @@ import 'package:opentracing/opentracing.dart';
 import 'package:w_common/disposable.dart';
 
 import 'package:w_module/src/simple_module.dart';
+import 'package:w_module/src/timing_specifiers.dart';
 
 /// Possible states a [LifecycleModule] may occupy.
 enum LifecycleState {
@@ -54,7 +55,7 @@ enum LifecycleState {
 /// unified lifecycle API.
 abstract class LifecycleModule extends SimpleModule with Disposable {
   static int _nextId = 0;
-
+  // Used by tracing to tell apart multiple instances of the same module
   int _instanceId = _nextId++;
 
   List<LifecycleModule> _childModules = [];
@@ -64,7 +65,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   LifecycleState _state = LifecycleState.instantiated;
   Completer<Null> _transition;
   Span _activeSpan;
-  SpanContext _loadSpanContext;
+
+  // Used by tracing to create a span if the consumer specifies when the module
+  // reaches its first useful state
+  DateTime _startLoadTime;
 
   // Lifecycle event StreamControllers
   StreamController<LifecycleModule> _willLoadChildModuleController =
@@ -153,6 +157,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   @protected
   Span get activeSpan => _activeSpan;
 
+  /// Set internally by this module for the load span so it can be used as a
+  /// `Reference` to other spans after the span is finished.
+  SpanContext _loadContext;
+
   /// Set internally by the parent module if this module is called by [loadChildModule]
   SpanContext _parentContext;
 
@@ -177,15 +185,73 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       references.add(new Reference.followsFrom(_parentContext));
     }
 
-    return tracer.startSpan('$name.$operationName', references: references)
-      ..addTags({
-        'module.instanceId': _instanceId,
-      });
+    return tracer.startSpan(
+      '$name.$operationName',
+      references: references,
+      tags: _defaultTags,
+    );
+  }
+
+  /// Creates a span with `globalTracer` from the start of [load] until now.
+  ///
+  /// This span is intended to represent the time it takes for the module to
+  /// finish asynchronously loading any necessary data and entering a state which
+  /// is ready for user interaction.
+  ///
+  /// Any [tags] or [references] specified will be added to this span.
+  @protected
+  void specifyFirstUsefulState({
+    Map<String, dynamic> tags: const {},
+    List<Reference> references: const [],
+  }) =>
+      specifyStartupTiming(
+        StartupTimingType.firstUseful,
+        tags: tags,
+        references: references,
+      );
+
+  /// Creates a span with `globalTracer` from the start of [load] until now.
+  ///
+  /// The [specifier] indicates the purpose of this span.
+  ///
+  /// Any [tags] or [references] specified will be added to this span.
+  @protected
+  void specifyStartupTiming(
+    StartupTimingType specifier, {
+    Map<String, dynamic> tags: const {},
+    List<Reference> references: const [],
+  }) {
+    // Load didn't start
+    if (_loadContext == null || _startLoadTime == null) {
+      throw new StateError(
+          'Calling `specifyStartupTiming` before calling `load()`');
+    }
+
+    final tracer = globalTracer();
+    if (tracer == null) {
+      return null;
+    }
+
+    tracer
+        .startSpan(
+          '$name.${specifier.operationName}',
+          references: [tracer.followsFrom(_loadContext)]..addAll(references),
+          startTime: _startLoadTime,
+          tags: _defaultTags..addAll(tags),
+        )
+        .finish();
+
+    _startLoadTime = null;
   }
 
   /// Name of the module for identification in exceptions and debug messages.
   // ignore: unnecessary_getters_setters
   String get name => _defaultName;
+
+  Map<String, dynamic> get _defaultTags => {
+        'span.kind': 'client',
+        'module.instanceId': _instanceId,
+      };
 
   /// Deprecated: the module name should be defined by overriding the getter in
   /// a subclass and it should not be mutable.
@@ -377,7 +443,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     }
 
     _activeSpan = _startTransitionSpan('load');
-    _loadSpanContext = _activeSpan?.context;
+    _loadContext = _activeSpan?.context;
+    _startLoadTime = _activeSpan?.startTime;
 
     _state = LifecycleState.loading;
 
@@ -455,7 +522,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
       try {
         _childModules.add(childModule);
-        childModule._parentContext = _loadSpanContext;
+        childModule._parentContext = _loadContext;
 
         await childModule.load();
         await onDidLoadChildModule(childModule);

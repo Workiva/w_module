@@ -22,6 +22,7 @@ import 'package:opentracing/opentracing.dart';
 import 'package:test/test.dart';
 
 import 'package:w_module/src/lifecycle_module.dart';
+import 'package:w_module/src/timing_specifiers.dart';
 
 import 'test_tracer.dart';
 import 'utils.dart';
@@ -109,6 +110,23 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   Future<Null> loadChildModule(LifecycleModule newModule) =>
       super.loadChildModule(newModule);
+
+  @override
+  void specifyFirstUsefulState({
+    Map<String, dynamic> tags: const {},
+    List<Reference> references: const [],
+  }) =>
+      super.specifyFirstUsefulState(tags: tags, references: references);
+
+  // Overriding without re-applying the @protected annotation allows us to call
+  // specifyStartupTiming in our tests below.
+  @override
+  void specifyStartupTiming(
+    StartupTimingType specifier, {
+    Map<String, dynamic> tags: const {},
+    List<Reference> references: const [],
+  }) =>
+      super.specifyStartupTiming(specifier, tags: tags, references: references);
 
   @override
   @protected
@@ -346,6 +364,15 @@ TestTracer getTestTracer() {
 }
 
 void runTests(bool runSpanTests) {
+  test('Calling `specifyStartupTiming` without calling `load()` throws', () {
+    final module = new TestLifecycleModule();
+
+    expect(
+      () => module.specifyStartupTiming(StartupTimingType.firstUseful),
+      throwsStateError,
+    );
+  });
+
   group('without children', () {
     TestLifecycleModule module;
     List<StreamSubscription> subs = [];
@@ -407,6 +434,60 @@ void runTests(bool runSpanTests) {
           })));
 
           await module.load();
+        });
+
+        group('should record user specified timing', () {
+          DateTime startTime;
+
+          setUp(() async {
+            final Completer<DateTime> startTimeCompleter = new Completer();
+
+            subs.add(getTestTracer()
+                .onSpanFinish
+                .where(
+                    (span) => span.operationName == 'TestLifecycleModule.load')
+                .listen(expectAsync1((span) {
+              startTimeCompleter.complete(span.startTime);
+            })));
+
+            await module.load();
+
+            startTime = await startTimeCompleter.future;
+          });
+
+          tearDown(() {
+            startTime = null;
+          });
+
+          [
+            StartupTimingType.firstUseful,
+          ].forEach((specifier) {
+            test('should specify timing for ${specifier.operationName}',
+                () async {
+              subs.add(getTestTracer()
+                  .onSpanFinish
+                  .where((span) =>
+                      span.operationName ==
+                      'TestLifecycleModule.${specifier.operationName}')
+                  .listen(expectAsync1((span) {
+                expect(span.startTime, startTime);
+              })));
+              module.specifyStartupTiming(specifier);
+            });
+          });
+
+          test('shorthand for firstUseful timing', () {
+            subs.add(getTestTracer()
+                .onSpanFinish
+                .where((span) =>
+                    span.operationName ==
+                    'TestLifecycleModule.${StartupTimingType.firstUseful.operationName}')
+                .listen(expectAsync1((span) {
+              expect(span.startTime, startTime);
+            })));
+
+            module.specifyFirstUsefulState();
+          });
         });
 
         test('activeSpan should be null when load is finished', () async {
@@ -1050,6 +1131,21 @@ void runTests(bool runSpanTests) {
         await module.resume();
       });
 
+      if (runSpanTests) {
+        test('should record a span', () async {
+          await gotoState(module, LifecycleState.suspended);
+
+          subs.add(getTestTracer()
+              .onSpanFinish
+              .where(
+                  (span) => span.operationName == 'TestLifecycleModule.resume')
+              .listen(expectAsync1((span) {
+            expect(span.tags['custom.resume.tag'], 'somevalue');
+          })));
+
+          await module.resume();
+        });
+      }
       test('an error in suspend bubbles up during resume', () async {
         await gotoState(module, LifecycleState.loaded);
 
@@ -1777,6 +1873,34 @@ void runTests(bool runSpanTests) {
             equals(['willSuspend', 'onSuspend', 'didSuspend']));
       });
 
+      if (runSpanTests) {
+        test('child module suspends should record spans', () async {
+          Completer<Span> childSpanCompleter = new Completer();
+
+          subs.add(getTestTracer()
+              .onSpanFinish
+              .where((span) => span.operationName == 'child.suspend')
+              .listen(expectAsync1((span) {
+            childSpanCompleter.complete(span);
+          })));
+
+          parentModule.eventList.clear();
+          childModule.eventList.clear();
+          await parentModule.suspend();
+          expect(parentModule.eventList,
+              equals(['willSuspend', 'onSuspend', 'didSuspend']));
+          expect(childModule.eventList,
+              equals(['willSuspend', 'onSuspend', 'didSuspend']));
+
+          final span = await childSpanCompleter.future;
+          await new Future(() {}); // wait for parent to finish suspending
+
+          expect(parentSuspendContext?.spanId, isNotNull);
+          expect(span.parentContext.spanId, parentSuspendContext.spanId);
+          expect(span.tags['custom.suspend.tag'], 'somevalue');
+        });
+      }
+
       test('an error in suspend bubbles up during resume', () async {
         assert(parentModule.isLoaded);
 
@@ -2364,7 +2488,7 @@ void runTests(bool runSpanTests) {
     });
 
     if (runSpanTests) {
-      test('should record a span for child with no parent', () async {
+      test('should record a span for child when parent has no name', () async {
         subs.add(getTestTracer()
             .onSpanFinish
             .where((span) => span.operationName == 'child.load')
@@ -2376,7 +2500,8 @@ void runTests(bool runSpanTests) {
         await parentModule.loadChildModule(childModule);
       });
 
-      test('should record a span with `error` tag and no parent', () async {
+      test('should record a span with `error` tag when parent has no name',
+          () async {
         childModule.onLoadError = testError;
 
         subs.add(getTestTracer()
@@ -2391,7 +2516,8 @@ void runTests(bool runSpanTests) {
             throwsA(same(childModule.onLoadError)));
       });
 
-      test('child module suspend should record spans with no parent', () async {
+      test('child module suspend should record spans when parent has no name',
+          () async {
         await parentModule.loadChildModule(childModule);
         subs.add(getTestTracer()
             .onSpanFinish
@@ -2405,7 +2531,7 @@ void runTests(bool runSpanTests) {
       });
 
       test(
-          'child module suspend throws should record a span with `error` tag and no parent',
+          'child module suspend throws should record a span with `error` tag and parent has no name',
           () async {
         await parentModule.loadChildModule(childModule);
         childModule.onSuspendError = testError;
@@ -2422,7 +2548,8 @@ void runTests(bool runSpanTests) {
             parentModule.suspend(), throwsA(same(childModule.onSuspendError)));
       });
 
-      test('child module resume should record a span with no parent', () async {
+      test('child module resume should record a span when parent has no name',
+          () async {
         await parentModule.loadChildModule(childModule);
 
         subs.add(getTestTracer()
@@ -2438,7 +2565,7 @@ void runTests(bool runSpanTests) {
       });
 
       test(
-          'child module resume should record a span with `error` tag and no parent',
+          'child module resume should record a span with `error` tag and parent has no name',
           () async {
         await parentModule.loadChildModule(childModule);
         childModule.onResumeError = testError;
