@@ -38,6 +38,6 @@ ARG GIT_BRANCH
 ARG GIT_MERGE_HEAD
 ARG GIT_MERGE_BRANCH
 RUN pub get --packages-dir && \
-	pub run dart_dev test --pub-serve --web-compiler=dartdevc -p chrome -p vm && \
+	pub run dart_dev test --pub-serve --web-compiler=dartdevc -p chrome -p vm
 ARG BUILD_ARTIFACTS_BUILD=/build/pubspec.lock
 FROM scratch
