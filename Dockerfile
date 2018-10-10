@@ -15,7 +15,7 @@ WORKDIR /build/
 ADD . /build/
 RUN echo "Starting the script sections" && \
 		pub get --packages-dir && \
-		xvfb-run -s '-screen 0 1024x768x24' pub run dart_dev test --pub-serve --web-compiler=dartdevc -p chrome -p vm && \
+		pub run dart_dev test --pub-serve --web-compiler=dartdevc -p chrome -p vm && \
 		echo "Script sections completed"
 ARG BUILD_ARTIFACTS_BUILD=/build/pubspec.lock
 FROM scratch
