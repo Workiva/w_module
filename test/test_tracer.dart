@@ -35,7 +35,7 @@ class TestSpan implements Span {
   })
       : this.startTime = startTime ?? new DateTime.now(),
         this.tags = tags ?? {},
-        this.references = references ?? {} {
+        this.references = references ?? [] {
     if (childOf != null) {
       references.add(new Reference.childOf(childOf));
     }

@@ -438,6 +438,7 @@ void runTests(bool runSpanTests) {
 
         group('should record user specified timing', () {
           DateTime startTime;
+          Span parentSpan;
 
           setUp(() async {
             final Completer<DateTime> startTimeCompleter = new Completer();
@@ -453,40 +454,59 @@ void runTests(bool runSpanTests) {
             await module.load();
 
             startTime = await startTimeCompleter.future;
+
+            parentSpan = getTestTracer().startSpan('custom span')..finish();
           });
 
           tearDown(() {
             startTime = null;
           });
 
-          [
-            StartupTimingType.firstUseful,
-          ].forEach((specifier) {
-            test('should specify timing for ${specifier.operationName}',
-                () async {
-              subs.add(getTestTracer()
-                  .onSpanFinish
-                  .where((span) =>
-                      span.operationName ==
-                      'TestLifecycleModule.${specifier.operationName}')
-                  .listen(expectAsync1((span) {
-                expect(span.startTime, startTime);
-              })));
-              module.specifyStartupTiming(specifier);
-            });
-          });
-
-          test('shorthand for firstUseful timing', () {
+          void specifyTimingTest(
+            StartupTimingType specifier,
+            void specifyDelegate(
+                {Map<String, String> tags, List<Reference> references}),
+          ) {
             subs.add(getTestTracer()
                 .onSpanFinish
                 .where((span) =>
                     span.operationName ==
-                    'TestLifecycleModule.${StartupTimingType.firstUseful.operationName}')
+                    'TestLifecycleModule.${specifier.operationName}')
                 .listen(expectAsync1((span) {
               expect(span.startTime, startTime);
+              expect(span.tags, containsPair('custom.tag', 'custom value'));
+              expect(span.references.length, 2);
+              expect(
+                  span.references,
+                  anyElement((Reference ref) =>
+                      ref.referencedContext == parentSpan.context));
             })));
 
-            module.specifyFirstUsefulState();
+            specifyDelegate(
+              tags: {'custom.tag': 'custom value'},
+              references: [getTestTracer().followsFrom(parentSpan.context)],
+            );
+          }
+
+          ;
+
+          [
+            StartupTimingType.firstUseful,
+          ].forEach((specifier) {
+            test('specifyStartupTiming for ${specifier.operationName}', () {
+              specifyTimingTest(
+                  specifier,
+                  ({tags, references}) => module.specifyStartupTiming(
+                        specifier,
+                        tags: tags,
+                        references: references,
+                      ));
+            });
+          });
+
+          test('shorthand for firstUseful timing', () {
+            specifyTimingTest(
+                StartupTimingType.firstUseful, module.specifyFirstUsefulState);
           });
         });
 
