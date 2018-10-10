@@ -488,8 +488,6 @@ void runTests(bool runSpanTests) {
             );
           }
 
-          ;
-
           [
             StartupTimingType.firstUseful,
           ].forEach((specifier) {
