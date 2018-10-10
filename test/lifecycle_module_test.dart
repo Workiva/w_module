@@ -476,10 +476,8 @@ void runTests(bool runSpanTests) {
               expect(span.startTime, startTime);
               expect(span.tags, containsPair('custom.tag', 'custom value'));
               expect(span.references.length, 2);
-              expect(
-                  span.references,
-                  anyElement((Reference ref) =>
-                      ref.referencedContext == parentSpan.context));
+              expect(span.references.map((ref) => ref.referencedContext),
+                  contains(parentSpan.context));
             })));
 
             specifyDelegate(
