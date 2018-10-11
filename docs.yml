@@ -1,3 +1,6 @@
 title: w_module
 base: github:Workiva/w_module/
 src: README.md
+topics:
+  - title: Tracing with w_module
+    src: docs/tracing.md
