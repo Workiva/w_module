@@ -36,7 +36,7 @@ class DataLoadAsyncModule extends Module {
     _store = new DataLoadAsyncStore(_actions, _events);
     _components = new DataLoadAsyncComponents(_actions, _store);
 
-    [_actions, _events, _store].forEach(manageDisposable);
+    [_events, _store].forEach(manageDisposable);
   }
 
   @override
