@@ -18,6 +18,7 @@ import 'dart:async';
 
 import 'package:meta/meta.dart' show protected;
 import 'package:react/react.dart' as react;
+import 'package:w_common/disposable.dart';
 import 'package:w_flux/w_flux.dart';
 import 'package:w_module/w_module.dart';
 
@@ -36,7 +37,7 @@ class DataLoadAsyncModule extends Module {
     _store = new DataLoadAsyncStore(_actions, _events);
     _components = new DataLoadAsyncComponents(_actions, _store);
 
-    [_events, _store].forEach(manageDisposable);
+    <Disposable>[_events, _store].forEach(manageDisposable);
   }
 
   @override
@@ -70,8 +71,11 @@ class DataLoadAsyncActions {
 
 DispatchKey _dispatchKey = new DispatchKey('DataLoadAsync');
 
-class DataLoadAsyncEvents {
+class DataLoadAsyncEvents extends EventsCollection {
   final Event didLoadData = new Event(_dispatchKey);
+  DataLoadAsyncEvents() : super(_dispatchKey) {
+    manageEvent(new Event(_dispatchKey));
+  }
 }
 
 class DataLoadAsyncStore extends Store {

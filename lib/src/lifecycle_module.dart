@@ -120,9 +120,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       _didUnloadController,
     ].forEach(manageStreamController);
 
-    <
-        String,
-        Stream>{
+    <String, Stream>{
       'willLoad': willLoad,
       'didLoad': didLoad,
       'willLoadChildModule': willLoadChildModule,

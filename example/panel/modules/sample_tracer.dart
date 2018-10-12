@@ -130,8 +130,7 @@ class SampleTracer implements AbstractTracer {
       references: references,
       startTime: startTime,
       tags: tags,
-    )
-      ..whenFinished.then((span) {
+    )..whenFinished.then((span) {
         print(span.toString());
       });
   }
