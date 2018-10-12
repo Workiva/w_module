@@ -58,7 +58,7 @@ Sometimes, lifecycle methods such as `load` will complete before the module is s
 
 In cases like these, use `specifyStartupTiming`:
 
-```
+```dart
   Future<Null> onLoad() {
     // ... kick off async loadData logic
 

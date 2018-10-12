@@ -250,7 +250,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
   Map<String, dynamic> get _defaultTags => {
         'span.kind': 'client',
-        'module.instanceId': _instanceId,
+        'module.instance_id': _instanceId,
       };
 
   /// Deprecated: the module name should be defined by overriding the getter in
