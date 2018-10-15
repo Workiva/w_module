@@ -13,7 +13,7 @@ homepage: https://github.com/Workiva/w_module
 dependencies:
   logging: ^0.11.0
   meta: ^1.0.0
-  opentracing: ^0.2.1
+  opentracing: ^0.2.3
   platform_detect: ^1.1.0
   w_common: ^1.9.0
 
@@ -21,8 +21,8 @@ dev_dependencies:
   browser: ^0.10.0+2
   coverage: ^0.7.3
   dart_dev: ^1.8.0
-  dart_style: ^0.2.16
-  dartdoc: ^0.9.0
+  dart_style: ^1.0.7
+  dartdoc: ">=0.13.0 <0.16.0"
   mockito: ^1.0.1
   react: ^3.0.0
   test: ^0.12.0
