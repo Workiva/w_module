@@ -1,10 +1,18 @@
 language: dart
 dart:
   - 1.24.3
+  - stable
+sudo: required
+addons:
+  chrome: stable
+cache:
+  directories:
+    - $HOME/.pub-cache
 script:
-  - pub get --packages-dir
+  - pub get
   - pub run dart_dev format --check
   - pub run dart_dev analyze
   - pub run dart_dev test
   - pub run dart_dev coverage --no-html
   - bash <(curl -s https://codecov.io/bash) -f coverage/coverage.lcov
+
