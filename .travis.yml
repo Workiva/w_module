@@ -10,8 +10,8 @@ cache:
     - $HOME/.pub-cache
 script:
   - pub get
-  - pub run dart_dev format --check
+  - pub run dart_dev dart2-only -- format --check
   - pub run dart_dev analyze
   - pub run dart_dev test
-  - pub run dart_dev dart1-only coverage --no-html && bash <(curl -s https://codecov.io/bash) -f coverage/coverage.lcov
+  - pub run dart_dev dart1-only -- coverage --no-html && bash <(curl -s https://codecov.io/bash) -f coverage/coverage.lcov
 
