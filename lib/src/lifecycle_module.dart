@@ -594,7 +594,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           ]);
     }
 
-    Future pendingTransition;
+    Future<Null> pendingTransition;
     if (_transition != null && !_transition.isCompleted) {
       pendingTransition = _transition.future.then((_) {
         _activeSpan = _startTransitionSpan('suspend');
@@ -661,7 +661,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           allowedStates: [LifecycleState.suspended, LifecycleState.suspending]);
     }
 
-    Future pendingTransition;
+    Future<Null> pendingTransition;
     if (_transition != null && !_transition.isCompleted) {
       pendingTransition = _transition.future.then((_) {
         _activeSpan = _startTransitionSpan('resume');
