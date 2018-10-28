@@ -85,7 +85,7 @@ class PanelStore extends Store {
   PanelModule _parentModule;
 
   PanelStore(this._actions, this._parentModule) {
-    triggerOnAction(_actions.changeToPanel, _changeToPanel);
+    triggerOnActionV2(_actions.changeToPanel, _changeToPanel);
   }
 
   bool get isRenderable => _isRenderable;
@@ -138,7 +138,7 @@ class PanelStore extends Store {
 }
 
 // ignore: non_constant_identifier_names
-Object PanelComponent = react.registerComponent(() => new _PanelComponent());
+var PanelComponent = react.registerComponent(() => new _PanelComponent());
 
 class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
   @override

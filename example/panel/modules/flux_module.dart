@@ -70,7 +70,7 @@ class FluxStore extends Store {
 }
 
 // ignore: non_constant_identifier_names
-Object MyFluxComponent = react.registerComponent(() => new _MyFluxComponent());
+var MyFluxComponent = react.registerComponent(() => new _MyFluxComponent());
 
 class _MyFluxComponent extends FluxComponent<FluxActions, FluxStore> {
   @override
