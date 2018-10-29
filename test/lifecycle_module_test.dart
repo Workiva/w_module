@@ -159,7 +159,6 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   @protected
   Future<Null> onDidUnloadChildModule(LifecycleModule module) async {
-    await new Future.value(null);
     if (onDidUnloadChildModuleError != null) {
       throw onDidUnloadChildModuleError;
     }
