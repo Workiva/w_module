@@ -120,7 +120,7 @@ class HierarchyStore extends Store {
 }
 
 // ignore: non_constant_identifier_names
-Object HierarchyComponent =
+var HierarchyComponent =
     react.registerComponent(() => new _HierarchyComponent());
 
 class _HierarchyComponent

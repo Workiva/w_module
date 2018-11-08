@@ -10,6 +10,9 @@ authors:
   - Trent Grover <trent.grover@workiva.com>
 homepage: https://github.com/Workiva/w_module
 
+environment:
+  sdk: '>=1.24.3 <3.0.0'
+
 dependencies:
   logging: ^0.11.0
   meta: ^1.0.0
@@ -18,18 +21,16 @@ dependencies:
   w_common: ^1.9.0
 
 dev_dependencies:
-  browser: ^0.10.0+2
-  coverage: ^0.7.3
-  dart_dev: ^1.8.0
-  dart_style: ^1.0.7
-  dartdoc: ">=0.13.0 <0.16.0"
-  mockito: ^1.0.1
-  react: ^3.0.0
-  test: ^0.12.0
-  w_flux: '>=1.0.0 <3.0.0'
-
-environment:
-  sdk: '>=1.9.0 <2.0.0'
+  build_runner: ">=0.6.0 <1.0.0"
+  build_test: ">=0.9.0 <1.0.0"
+  build_web_compilers: ">=0.2.0 <1.0.0"
+  coverage: ">=0.10.0 <0.13.0"
+  dart_dev: ^2.0.0
+  dart_style: ^1.0.9
+  mockito: ">=2.2.2 <4.0.0"
+  react: ^4.4.2
+  test: ">=0.12.30 <2.0.0"
+  w_flux: ">=1.0.0 <3.0.0"
 
 transformers:
   - test/pub_serve:

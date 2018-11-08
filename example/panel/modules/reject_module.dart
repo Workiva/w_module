@@ -80,7 +80,7 @@ class RejectStore extends Store {
 }
 
 // ignore: non_constant_identifier_names
-Object RejectComponent = react.registerComponent(() => new _RejectComponent());
+var RejectComponent = react.registerComponent(() => new _RejectComponent());
 
 class _RejectComponent extends FluxComponent<RejectActions, RejectStore> {
   @override

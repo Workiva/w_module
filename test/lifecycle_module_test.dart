@@ -149,6 +149,7 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   @protected
   Future<Null> onWillUnloadChildModule(LifecycleModule module) async {
+    await new Future.value(null);
     if (onWillUnloadChildModuleError != null) {
       throw onWillUnloadChildModuleError;
     }
@@ -280,6 +281,8 @@ void expectInLifecycleState(LifecycleModule module, LifecycleState state) {
 }
 
 Future<Null> gotoState(LifecycleModule module, LifecycleState state) async {
+  // wait for next event loop. fixes sync-async in Dart 2
+  await new Future.value(null);
   if (state == LifecycleState.instantiated) {
     return;
   }
@@ -288,7 +291,7 @@ Future<Null> gotoState(LifecycleModule module, LifecycleState state) async {
   if (state == LifecycleState.loading) {
     return;
   }
-  await future;
+  await future; // Dart 2 would have run synchronously up until this await
   if (state == LifecycleState.loaded) {
     return;
   }

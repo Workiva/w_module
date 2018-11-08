@@ -110,7 +110,7 @@ class DataLoadAsyncStore extends Store {
 }
 
 // ignore: non_constant_identifier_names
-Object DataLoadAsyncComponent =
+var DataLoadAsyncComponent =
     react.registerComponent(() => new _DataLoadAsyncComponent());
 
 class _DataLoadAsyncComponent

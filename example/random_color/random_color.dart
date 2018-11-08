@@ -159,7 +159,7 @@ class RandomColorStore extends Store {
 }
 
 // ignore: non_constant_identifier_names
-Object RandomColorComponent =
+var RandomColorComponent =
     react.registerComponent(() => new _RandomColorComponent());
 
 class _RandomColorComponent
