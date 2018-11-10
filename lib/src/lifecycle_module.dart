@@ -81,6 +81,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   StreamController<LifecycleModule> _didLoadController =
       new StreamController<LifecycleModule>.broadcast();
 
+  Completer<Null> _willLoadCompleter = new Completer<Null>();
+  Completer<Null> _didLoadCompleter = new Completer<Null>();
+
   StreamController<LifecycleModule> _willSuspendController =
       new StreamController<LifecycleModule>.broadcast();
   StreamController<LifecycleModule> _didSuspendController =
@@ -100,6 +103,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       new StreamController<LifecycleModule>.broadcast();
   StreamController<LifecycleModule> _didUnloadController =
       new StreamController<LifecycleModule>.broadcast();
+
+  Completer<Null> _willUnloadCompleter = new Completer<Null>();
+  Completer<Null> _didUnloadCompleter = new Completer<Null>();
 
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
@@ -266,7 +272,12 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   ///
   /// Any error or exception thrown during the [LifecycleModule]'s
   /// [onLoad] call will be emitted.
+  ///
+  /// Deprecated: use didLoadFuture instead
+  @Deprecated('3.0.0')
   Stream<LifecycleModule> get didLoad => _didLoadController.stream;
+
+  Future<Null> get didLoadFuture => _didLoadCompleter.future;
 
   /// A child [LifecycleModule] was loaded.
   ///
@@ -303,7 +314,12 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   ///
   /// Any error or exception thrown during the [LifecycleModule]'s
   /// [onUnload] call will be emitted.
+  ///
+  /// Deprecated: use didUnloadFuture instead
+  @Deprecated('3.0.0')
   Stream<LifecycleModule> get didUnload => _didUnloadController.stream;
+
+  Future<Null> get didUnloadFuture => _didUnloadCompleter.future;
 
   /// A child [LifecycleModule] was unloaded.
   ///
@@ -333,10 +349,20 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   Stream<LifecycleModule> get willResume => _willResumeController.stream;
 
   /// The [LifecycleModule] is about to be unloaded.
+  ///
+  /// Deprecated: Use willUnloadFuture instead
+  @Deprecated('3.0.0')
   Stream<LifecycleModule> get willUnload => _willUnloadController.stream;
 
+  Future<Null> get willUnloadFuture => _willUnloadCompleter.future;
+
   /// The [LifecycleModule] is about to be loaded.
+  ///
+  /// Deprecated: use willLoadFuture instead
+  @Deprecated('3.0.0')
   Stream<LifecycleModule> get willLoad => _willLoadController.stream;
+
+  Future<Null> get willLoadFuture => _willLoadCompleter.future;
 
   /// The [LifecycleModule] is about to be suspended.
   Stream<LifecycleModule> get willSuspend => _willSuspendController.stream;
@@ -924,14 +950,17 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
   Future<Null> _load() async {
     try {
+      _willLoadCompleter.complete();
       _willLoadController.add(this);
       await onLoad();
       if (_state == LifecycleState.loading) {
         _state = LifecycleState.loaded;
         _transition = null;
       }
+      _didLoadCompleter.complete();
       _didLoadController.add(this);
     } catch (error, stackTrace) {
+      _didLoadCompleter.completeError(error, stackTrace);
       _didLoadController.addError(error, stackTrace);
       rethrow;
     }
@@ -1041,6 +1070,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
       _activeSpan = _startTransitionSpan('unload');
 
+      _willUnloadCompleter.complete();
       _willUnloadController.add(this);
       await Future.wait(_childModules.toList().map((child) {
         child._parentContext = _activeSpan?.context;
@@ -1054,6 +1084,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         _previousState = null;
         _transition = null;
       }
+      _didUnloadCompleter.complete();
       _didUnloadController.add(this);
     } on ModuleUnloadCanceledException catch (error, _) {
       // In the event of a cancellation, rethrow the exception and allow the
@@ -1064,6 +1095,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       // not explicitly cancel the unload), emit the unload failure event and
       // then rethrow the exception so that the caller (either unload() or
       // onWillDispose()) can handle it.
+      _didUnloadCompleter.completeError(error, stackTrace);
       _didUnloadController.addError(error, stackTrace);
       _activeSpan?.setTag('error', true);
       rethrow;
