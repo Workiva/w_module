@@ -483,7 +483,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Attempting to load a child module after a module has been unloaded will
   /// throw a [StateError].
   @protected
-  Future<Null> loadChildModule(LifecycleModule childModule) {//
+  Future<Null> loadChildModule(LifecycleModule childModule) {
     if (isOrWillBeDisposed) {
       return _buildDisposedOrDisposingResponse(methodName: 'loadChildModule');
     }
