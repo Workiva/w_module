@@ -1500,6 +1500,12 @@ void runTests(bool runSpanTests) {
                 }
               });
 
+              tearDown(() {
+                if (withChild) {
+                  expect(module.childModules, isEmpty);
+                }
+              });
+
               test('should unload and then dispose', () async {
                 expectInLifecycleState(module, state);
                 await module.dispose();
