@@ -136,6 +136,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     }.forEach(_logLifecycleEvents);
 
     _defaultName = 'LifecycleModule($runtimeType)';
+
+    getManagedDisposer(() async {
+      _childModules.clear();
+    });
   }
 
   /// If this module is in a transition state, this is the Span capturing the
@@ -510,15 +514,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           onError: (error, stackTrace) =>
               _didUnloadChildModuleController.addError);
 
-      // The child module may not reach an unloaded state successfully, but
-      // should always eventually be disposed. For this reason, we listen for
-      // its disposal before removing it from the list of child modules.
-      // ignore: unawaited_futures
-      childModule.didDispose.then((_) {
-        _childModules.remove(childModule);
-      });
-
       try {
+        manageDisposable(childModule);
         _childModules.add(childModule);
         childModule._parentContext = _loadContext;
 
@@ -883,21 +880,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           error,
           stackTrace);
     }
-
-    if (_childModules.isNotEmpty) {
-      await Future.wait(_childModules.map((child) => child.dispose()));
-    }
-  }
-
-  @mustCallSuper
-  @override
-  @protected
-  Future<Null> onDispose() async {
-    if (isInstantiated || isUnloaded) {
-      return;
-    }
-
-    _childModules.clear();
   }
 
   Future<Null> _buildDisposedOrDisposingResponse(
