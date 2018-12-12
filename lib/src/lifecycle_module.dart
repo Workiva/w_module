@@ -514,6 +514,14 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           onError: (error, stackTrace) =>
               _didUnloadChildModuleController.addError);
 
+      // The child module may not reach an unloaded state successfully, but
+      // should always eventually be disposed. For this reason, we listen for
+      // its disposal before removing it from the list of child modules.
+      // ignore: unawaited_futures
+      childModule.didDispose.then((_) {
+        _childModules.remove(childModule);
+      });
+
       try {
         manageDisposable(childModule);
         _childModules.add(childModule);
