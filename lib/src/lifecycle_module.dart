@@ -136,6 +136,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     }.forEach(_logLifecycleEvents);
 
     _defaultName = 'LifecycleModule($runtimeType)';
+
+    getManagedDisposer(() async {
+      _childModules.clear();
+    });
   }
 
   /// If this module is in a transition state, this is the Span capturing the
@@ -519,6 +523,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       });
 
       try {
+        manageDisposable(childModule);
         _childModules.add(childModule);
         childModule._parentContext = _loadContext;
 
@@ -882,10 +887,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           'unload. The module will still be disposed.',
           error,
           stackTrace);
-    }
-
-    if (_childModules.isNotEmpty) {
-      await Future.wait(_childModules.map((child) => child.dispose()));
     }
   }
 
