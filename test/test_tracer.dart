@@ -32,7 +32,8 @@ class TestSpan implements Span {
     List<Reference> references,
     DateTime startTime,
     Map<String, dynamic> tags,
-  })  : this.startTime = startTime ?? new DateTime.now(),
+  })
+      : this.startTime = startTime ?? new DateTime.now(),
         this.tags = tags ?? {},
         this.references = references ?? [] {
     if (childOf != null) {
@@ -79,6 +80,9 @@ class TestSpan implements Span {
 
   @override
   void setTag(String tagName, dynamic value) => tags[tagName] = value;
+
+  @override
+  set startTime(DateTime value) => startTime = value;
 
   @override
   Future<Span> get whenFinished => _whenFinished.future;
@@ -162,4 +166,10 @@ class TestTracer implements AbstractTracer {
   Future<dynamic> flush() {
     return null;
   }
+
+  @override
+  ScopeManager scopeManager;
+
+  @override
+  Span get activeSpan => scopeManager?.active?.span;
 }
