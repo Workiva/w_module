@@ -113,7 +113,9 @@ class TestLifecycleModule extends LifecycleModule {
 
   @override
   void specifyFirstUsefulState({
+    // ignore: invalid_override_different_default_values_named
     Map<String, dynamic> tags: const {},
+    // ignore: invalid_override_different_default_values_named
     List<Reference> references: const [],
   }) =>
       super.specifyFirstUsefulState(tags: tags, references: references);
@@ -123,7 +125,9 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   void specifyStartupTiming(
     StartupTimingType specifier, {
+    // ignore: invalid_override_different_default_values_named
     Map<String, dynamic> tags: const {},
+    // ignore: invalid_override_different_default_values_named
     List<Reference> references: const [],
   }) =>
       super.specifyStartupTiming(specifier, tags: tags, references: references);
