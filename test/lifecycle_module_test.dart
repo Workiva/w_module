@@ -112,24 +112,25 @@ class TestLifecycleModule extends LifecycleModule {
       super.loadChildModule(newModule);
 
   @override
-  void specifyFirstUsefulState({
-    // ignore: invalid_override_different_default_values_named
-    Map<String, dynamic> tags: const {},
-    // ignore: invalid_override_different_default_values_named
-    List<Reference> references: const [],
-  }) =>
+  void specifyFirstUsefulState(
+          {
+          // ignore: invalid_override_different_default_values_named
+          Map<String, dynamic> tags: const {},
+          // ignore: invalid_override_different_default_values_named
+          List<Reference> references: const [],
+          DateTime trueStartTime}) =>
       super.specifyFirstUsefulState(tags: tags, references: references);
 
   // Overriding without re-applying the @protected annotation allows us to call
   // specifyStartupTiming in our tests below.
   @override
-  void specifyStartupTiming(
-    StartupTimingType specifier, {
-    // ignore: invalid_override_different_default_values_named
-    Map<String, dynamic> tags: const {},
-    // ignore: invalid_override_different_default_values_named
-    List<Reference> references: const [],
-  }) =>
+  void specifyStartupTiming(StartupTimingType specifier,
+          {
+          // ignore: invalid_override_different_default_values_named
+          Map<String, dynamic> tags: const {},
+          // ignore: invalid_override_different_default_values_named
+          List<Reference> references: const [],
+          DateTime trueStartTime}) =>
       super.specifyStartupTiming(specifier, tags: tags, references: references);
 
   @override
