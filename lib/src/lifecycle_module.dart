@@ -212,12 +212,27 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   void specifyFirstUsefulState({
     Map<String, dynamic> tags: const {},
     List<Reference> references: const [],
-    DateTime trueStartTime,
   }) {
     specifyStartupTiming(StartupTimingType.firstUseful,
-        tags: tags, references: references, trueStartTime: trueStartTime);
+        tags: tags, references: references);
+  }
 
-    _isFirstUsefulController.add(this);
+  /// Creates a span with `globalTracer` starting now
+  /// (or at an optional [startTime]).
+  ///
+  /// This span is intended to represent the time it takes for the module to
+  /// finish asynchronously loading any necessary data and entering a state which
+  /// is ready for user interaction.
+  ///
+  /// Any [tags] or [references] specified will be added to this span.
+  @protected
+  Span startFirstUsefulStateSpan({
+    Map<String, dynamic> tags: const {},
+    List<Reference> references: const [],
+    DateTime startTime,
+  }) {
+    return startStartupTimingSpan(StartupTimingType.firstUseful,
+        tags: tags, references: references, startTime: startTime);
   }
 
   /// Creates a span with `globalTracer` from the start of [load] until now.
@@ -230,15 +245,33 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     StartupTimingType specifier, {
     Map<String, dynamic> tags: const {},
     List<Reference> references: const [],
-    DateTime trueStartTime,
   }) {
-    // Start time for load was overridden in the case of deferred module rendering
-    DateTime startTime = trueStartTime ?? _startLoadTime;
-
     // Load didn't start
-    if (_loadContext == null || startTime == null) {
+    if (_startLoadTime == null) {
       throw new StateError(
           'Calling `specifyStartupTiming` before calling `load()`');
+    }
+    startStartupTimingSpan(specifier,
+            tags: tags, references: references, startTime: _startLoadTime)
+        ?.finish();
+  }
+
+  /// Creates a span with `globalTracer` starting now
+  /// (or at an optional [startTime].
+  ///
+  /// The [specifier] indicates the purpose of this span.
+  ///
+  /// Any [tags] or [references] specified will be added to this span.
+  Span startStartupTimingSpan(
+    StartupTimingType specifier, {
+    Map<String, dynamic> tags: const {},
+    List<Reference> references: const [],
+    DateTime startTime,
+  }) {
+    // Load didn't start
+    if (_loadContext == null) {
+      throw new StateError(
+          'Calling `startStartupTimingSpan` before calling `load()`');
     }
 
     final tracer = globalTracer();
@@ -246,19 +279,24 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       return null;
     }
 
-    _logger.finest(
-        'specifyStartupTiming for $name. It took ${new DateTime.now().difference(startTime).inSeconds} seconds for this module to be interactable.');
+    final span = tracer.startSpan(
+      '$name.${specifier.operationName}',
+      references: [tracer.followsFrom(_loadContext)]..addAll(references),
+      startTime: startTime,
+      tags: _defaultTags..addAll(tags),
+    );
 
-    tracer
-        .startSpan(
-          '$name.${specifier.operationName}',
-          references: [tracer.followsFrom(_loadContext)]..addAll(references),
-          startTime: startTime,
-          tags: _defaultTags..addAll(tags),
-        )
-        .finish();
+    switch (specifier) {
+      case StartupTimingType.firstUseful:
+        span.whenFinished.then((_) {
+          _isFirstUsefulController.add(this);
+          _logger.finest(
+              'firstUseful for $name. It took ${span.duration.inSeconds} seconds for this module to be interactable.');
+        });
+        break;
+    }
 
-    _startLoadTime = null;
+    return span;
   }
 
   /// Name of the module for identification in exceptions and debug messages.
