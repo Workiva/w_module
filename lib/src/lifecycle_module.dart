@@ -72,34 +72,36 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
   // Lifecycle event StreamControllers
   StreamController<LifecycleModule> _willLoadChildModuleController =
-      new StreamController<LifecycleModule>.broadcast();
+  new StreamController<LifecycleModule>.broadcast();
   StreamController<LifecycleModule> _didLoadChildModuleController =
-      new StreamController<LifecycleModule>.broadcast();
+  new StreamController<LifecycleModule>.broadcast();
 
   StreamController<LifecycleModule> _willLoadController =
-      new StreamController<LifecycleModule>.broadcast();
+  new StreamController<LifecycleModule>.broadcast();
   StreamController<LifecycleModule> _didLoadController =
-      new StreamController<LifecycleModule>.broadcast();
+  new StreamController<LifecycleModule>.broadcast();
+  StreamController<LifecycleModule> _isFirstUsefulController =
+  new StreamController<LifecycleModule>.broadcast();
 
   StreamController<LifecycleModule> _willSuspendController =
-      new StreamController<LifecycleModule>.broadcast();
+  new StreamController<LifecycleModule>.broadcast();
   StreamController<LifecycleModule> _didSuspendController =
-      new StreamController<LifecycleModule>.broadcast();
+  new StreamController<LifecycleModule>.broadcast();
 
   StreamController<LifecycleModule> _willResumeController =
-      new StreamController<LifecycleModule>.broadcast();
+  new StreamController<LifecycleModule>.broadcast();
   StreamController<LifecycleModule> _didResumeController =
-      new StreamController<LifecycleModule>.broadcast();
+  new StreamController<LifecycleModule>.broadcast();
 
   StreamController<LifecycleModule> _willUnloadChildModuleController =
-      new StreamController<LifecycleModule>.broadcast();
+  new StreamController<LifecycleModule>.broadcast();
   StreamController<LifecycleModule> _didUnloadChildModuleController =
-      new StreamController<LifecycleModule>.broadcast();
+  new StreamController<LifecycleModule>.broadcast();
 
   StreamController<LifecycleModule> _willUnloadController =
-      new StreamController<LifecycleModule>.broadcast();
+  new StreamController<LifecycleModule>.broadcast();
   StreamController<LifecycleModule> _didUnloadController =
-      new StreamController<LifecycleModule>.broadcast();
+  new StreamController<LifecycleModule>.broadcast();
 
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
@@ -108,6 +110,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     [
       _willLoadController,
       _didLoadController,
+      _isFirstUsefulController,
       _willLoadChildModuleController,
       _didLoadChildModuleController,
       _willSuspendController,
@@ -123,6 +126,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     <String, Stream>{
       'willLoad': willLoad,
       'didLoad': didLoad,
+      'isFirstUseful': isFirstUseful,
       'willLoadChildModule': willLoadChildModule,
       'didLoadChildModule': didLoadChildModule,
       'willSuspend': willSuspend,
@@ -158,6 +162,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// ```
   @protected
   Span get activeSpan => _activeSpan;
+
+  /// If this module has had an overridden name and therefor is being traced
+  bool get isTraced => name != _defaultName;
 
   /// Set internally by this module for the load span so it can be used as a
   /// `Reference` to other spans after the span is finished.
@@ -205,12 +212,18 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   void specifyFirstUsefulState({
     Map<String, dynamic> tags: const {},
     List<Reference> references: const [],
-  }) =>
-      specifyStartupTiming(
-        StartupTimingType.firstUseful,
-        tags: tags,
-        references: references,
-      );
+    DateTime trueStartTime,
+  }) {
+    specifyStartupTiming(
+      StartupTimingType.firstUseful,
+      tags: tags,
+      references: references,
+      trueStartTime: trueStartTime
+    );
+
+    _isFirstUsefulController.add(this);
+  }
+
 
   /// Creates a span with `globalTracer` from the start of [load] until now.
   ///
@@ -219,12 +232,16 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Any [tags] or [references] specified will be added to this span.
   @protected
   void specifyStartupTiming(
-    StartupTimingType specifier, {
-    Map<String, dynamic> tags: const {},
-    List<Reference> references: const [],
-  }) {
+      StartupTimingType specifier, {
+        Map<String, dynamic> tags: const {},
+        List<Reference> references: const [],
+        DateTime trueStartTime,
+      }) {
+    // Start time for load was overridden in the case of deferred module rendering
+    DateTime startTime = trueStartTime ?? _startLoadTime;
+
     // Load didn't start
-    if (_loadContext == null || _startLoadTime == null) {
+    if (_loadContext == null || startTime == null) {
       throw new StateError(
           'Calling `specifyStartupTiming` before calling `load()`');
     }
@@ -234,13 +251,15 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       return null;
     }
 
-    tracer
+    _logger.finest('specifyStartupTiming for $name. It took ${new DateTime.now().difference(startTime).inSeconds} seconds for this module to be interactable.');
+
+      tracer
         .startSpan(
-          '$name.${specifier.operationName}',
-          references: [tracer.followsFrom(_loadContext)]..addAll(references),
-          startTime: _startLoadTime,
-          tags: _defaultTags..addAll(tags),
-        )
+      '$name.${specifier.operationName}',
+      references: [tracer.followsFrom(_loadContext)]..addAll(references),
+      startTime: startTime,
+      tags: _defaultTags..addAll(tags),
+    )
         .finish();
 
     _startLoadTime = null;
@@ -251,9 +270,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   String get name => _defaultName;
 
   Map<String, dynamic> get _defaultTags => {
-        'span.kind': 'client',
-        'module.instance_id': _instanceId,
-      };
+    'span.kind': 'client',
+    'module.instance_id': _instanceId,
+  };
 
   /// Deprecated: the module name should be defined by overriding the getter in
   /// a subclass and it should not be mutable.
@@ -271,6 +290,12 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Any error or exception thrown during the [LifecycleModule]'s
   /// [onLoad] call will be emitted.
   Stream<LifecycleModule> get didLoad => _didLoadController.stream;
+
+  /// The [LifecycleModule] has been declared firstUseful
+  ///
+  /// Used for the parent module to know that its child is useful, as oftentimes
+  /// a parent can't be called "Useful" until all of its children are
+  Stream<LifecycleModule> get isFirstUseful => _isFirstUsefulController.stream;
 
   /// A child [LifecycleModule] was loaded.
   ///
@@ -436,7 +461,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           isTransitioning: isLoading,
           methodName: 'load',
           currentState:
-              isLoading ? LifecycleState.loading : LifecycleState.loaded);
+          isLoading ? LifecycleState.loading : LifecycleState.loaded);
     }
 
     if (!isInstantiated) {
@@ -512,7 +537,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       final childModuleDidUnloadSub = listenToStream(
           childModule.didUnload, _onChildModuleDidUnload,
           onError: (error, stackTrace) =>
-              _didUnloadChildModuleController.addError);
+          _didUnloadChildModuleController.addError);
 
       // The child module may not reach an unloaded state successfully, but
       // should always eventually be disposed. For this reason, we listen for
@@ -657,7 +682,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           isTransitioning: isResuming,
           methodName: 'resume',
           currentState:
-              isResuming ? LifecycleState.resuming : LifecycleState.loaded);
+          isResuming ? LifecycleState.resuming : LifecycleState.loaded);
     }
 
     if (!(isSuspended || isSuspending)) {
@@ -753,7 +778,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           isTransitioning: isUnloading,
           methodName: 'unload',
           currentState:
-              isUnloading ? LifecycleState.unloading : LifecycleState.unloaded);
+          isUnloading ? LifecycleState.unloading : LifecycleState.unloaded);
     }
 
     if (isOrWillBeDisposed) {
@@ -884,7 +909,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       // here explaining that disposal will still continue.
       _logger.warning(
           '.dispose() was called but Module "$name" threw an exception on '
-          'unload. The module will still be disposed.',
+              'unload. The module will still be disposed.',
           error,
           stackTrace);
     }
@@ -893,7 +918,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   Future<Null> _buildDisposedOrDisposingResponse(
       {@required String methodName}) {
     _logger.warning('.$methodName() was called after Module "$name" had '
-        // ignore: deprecated_member_use
+    // ignore: deprecated_member_use
         'already ${isDisposing ? 'started disposing' : 'disposed'}.');
     return new Future.error(new StateError(
         'Calling .$methodName() after disposal has started is not allowed.'));
@@ -902,20 +927,20 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Returns a new [Future] error with a constructed reason.
   Future<Null> _buildIllegalTransitionResponse(
       {LifecycleState targetState,
-      Iterable<LifecycleState> allowedStates,
-      String reason}) {
+        Iterable<LifecycleState> allowedStates,
+        String reason}) {
     reason = reason ??
         'Only a module in the '
-        '${allowedStates.map(_readableStateName).join(", ")} states can '
-        'transition to ${_readableStateName(targetState)}';
+            '${allowedStates.map(_readableStateName).join(", ")} states can '
+            'transition to ${_readableStateName(targetState)}';
     return new Future.error(new StateError(
         'Transitioning from $_state to $targetState is not allowed. $reason'));
   }
 
   Future<Null> _buildNoopResponse(
       {@required String methodName,
-      @required LifecycleState currentState,
-      @required isTransitioning}) {
+        @required LifecycleState currentState,
+        @required isTransitioning}) {
     _logger.warning('.$methodName() was called while Module "$name" is already '
         '${_readableStateName(currentState)}; this is a no-op. Check for any '
         'unnecessary calls to .$methodName().');
