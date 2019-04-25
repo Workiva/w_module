@@ -16,7 +16,7 @@ environment:
 dependencies:
   logging: ^0.11.0
   meta: ^1.0.0
-  opentracing: ^0.2.3
+  opentracing: ">=0.2.3 <2.0.0"
   platform_detect: ^1.1.0
   w_common: ^1.9.0
 

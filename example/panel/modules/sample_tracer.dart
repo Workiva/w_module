@@ -22,6 +22,7 @@ class SampleSpan implements Span {
 
   @override
   final DateTime startTime;
+
   DateTime _endTime;
 
   Completer<Span> _whenFinished = new Completer<Span>();
@@ -78,6 +79,9 @@ class SampleSpan implements Span {
 
   @override
   void setTag(String tagName, dynamic value) => tags[tagName] = value;
+
+  @override
+  set startTime(DateTime value) => startTime = value;
 
   @override
   Future<Span> get whenFinished => _whenFinished.future;
@@ -157,4 +161,10 @@ class SampleTracer implements AbstractTracer {
   Future<dynamic> flush() {
     return null;
   }
+
+  @override
+  ScopeManager scopeManager;
+
+  @override
+  Span get activeSpan => scopeManager?.active?.span;
 }

@@ -81,6 +81,9 @@ class TestSpan implements Span {
   void setTag(String tagName, dynamic value) => tags[tagName] = value;
 
   @override
+  set startTime(DateTime value) => startTime = value;
+
+  @override
   Future<Span> get whenFinished => _whenFinished.future;
 
   @override
@@ -162,4 +165,10 @@ class TestTracer implements AbstractTracer {
   Future<dynamic> flush() {
     return null;
   }
+
+  @override
+  ScopeManager scopeManager;
+
+  @override
+  Span get activeSpan => scopeManager?.active?.span;
 }
