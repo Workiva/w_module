@@ -20,13 +20,7 @@ class SampleSpan implements Span {
   @override
   SpanContext context;
 
-  final DateTime _startTime;
-
-  @override
-  DateTime get startTime {
-    return _startTime;
-  }
-
+  DateTime _startTime;
   DateTime _endTime;
 
   Completer<Span> _whenFinished = new Completer<Span>();
@@ -58,6 +52,9 @@ class SampleSpan implements Span {
 
   @override
   Duration get duration => _endTime?.difference(startTime);
+
+  @override
+  DateTime get startTime => _startTime;
 
   @override
   DateTime get endTime => _endTime;
