@@ -20,7 +20,7 @@ class SampleSpan implements Span {
   @override
   SpanContext context;
 
-  DateTime _startTime;
+  final DateTime _startTime;
   DateTime _endTime;
 
   Completer<Span> _whenFinished = new Completer<Span>();
