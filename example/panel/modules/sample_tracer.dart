@@ -20,8 +20,12 @@ class SampleSpan implements Span {
   @override
   SpanContext context;
 
+  final DateTime _startTime;
+
   @override
-  final DateTime startTime;
+  DateTime get startTime {
+    return _startTime;
+  }
 
   DateTime _endTime;
 
@@ -33,7 +37,7 @@ class SampleSpan implements Span {
     this.references,
     DateTime startTime,
     Map<String, dynamic> tags,
-  })  : this.startTime = startTime ?? new DateTime.now(),
+  })  : this._startTime = startTime ?? new DateTime.now(),
         this.tags = tags ?? {} {
     if (childOf != null) {
       references.add(new Reference.childOf(childOf));
