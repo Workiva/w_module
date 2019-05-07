@@ -247,8 +247,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   }
 
   /// Name of the module for identification in exceptions and debug messages.
+  /// Making this abstract so we can identify consumers that don't implement.
   // ignore: unnecessary_getters_setters
-  String get name => _defaultName;
+  String get name;
 
   Map<String, dynamic> get _defaultTags => {
         'span.kind': 'client',
