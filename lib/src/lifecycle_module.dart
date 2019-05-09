@@ -55,6 +55,7 @@ enum LifecycleState {
 /// unified lifecycle API.
 abstract class LifecycleModule extends SimpleModule with Disposable {
   static int _nextId = 0;
+
   // Used by tracing to tell apart multiple instances of the same module
   int _instanceId = _nextId++;
 
@@ -158,6 +159,15 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// ```
   @protected
   Span get activeSpan => _activeSpan;
+
+  /// The logger that will be used for uncaught exceptions and other events
+  /// the module implementer should find out about.
+  ///
+  /// Override this to provide a logger that is named appropriately for
+  /// your module implementation. An internal, w_module-scoped logger will
+  /// still be used for non-critical logging (like state changes).
+  @protected
+  Logger get logger => _logger;
 
   /// Set internally by this module for the load span so it can be used as a
   /// `Reference` to other spans after the span is finished.
@@ -528,7 +538,15 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         childModule._parentContext = _loadContext;
 
         await childModule.load();
-        await onDidLoadChildModule(childModule);
+        try {
+          await onDidLoadChildModule(childModule);
+        } catch (error, stackTrace) {
+          logger.severe(
+            'Exception during onDidLoadChildModule ($name)',
+            error,
+            stackTrace,
+          );
+        }
         _didLoadChildModuleController.add(childModule);
         completer.complete();
       } catch (error, stackTrace) {
@@ -545,6 +563,11 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         childModule._parentContext = null;
       }
     }).catchError((Object error, StackTrace stackTrace) {
+      logger.severe(
+        'Exception during onWillLoadChildModule ($name)',
+        error,
+        stackTrace,
+      );
       _willLoadChildModuleController.addError(error, stackTrace);
       completer.completeError(error, stackTrace);
     });
@@ -926,7 +949,15 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   Future<Null> _load() async {
     try {
       _willLoadController.add(this);
-      await onLoad();
+      try {
+        await onLoad();
+      } catch (error, stackTrace) {
+        logger.severe(
+          'Exception during onLoad ($name)',
+          error,
+          stackTrace,
+        );
+      }
       if (_state == LifecycleState.loading) {
         _state = LifecycleState.loaded;
         _transition = null;
@@ -951,7 +982,13 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       await onDidUnloadChildModule(module);
       _didUnloadChildModuleController.add(module);
     } catch (error, stackTrace) {
+      logger.severe(
+        'Exception during onDidUnloadChildModule ($name)',
+        error,
+        stackTrace,
+      );
       _didUnloadChildModuleController.addError(error, stackTrace);
+      return;
     }
   }
 
@@ -961,7 +998,13 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       await onWillUnloadChildModule(module);
       _willUnloadChildModuleController.add(module);
     } catch (error, stackTrace) {
+      logger.severe(
+        'Exception during onWillUnloadChildModule ($name)',
+        error,
+        stackTrace,
+      );
       _willUnloadChildModuleController.addError(error, stackTrace);
+      return;
     }
   }
 
@@ -984,7 +1027,15 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         }));
       }
       await Future.wait(childResumeFutures);
-      await onResume();
+      try {
+        await onResume();
+      } catch (error, stackTrace) {
+        logger.severe(
+          'Exception during onResume ($name)',
+          error,
+          stackTrace,
+        );
+      }
       if (_state == LifecycleState.resuming) {
         _state = LifecycleState.loaded;
         _transition = null;
@@ -1012,7 +1063,15 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         }));
       }
       await Future.wait(childSuspendFutures);
-      await onSuspend();
+      try {
+        await onSuspend();
+      } catch (error, stackTrace) {
+        logger.severe(
+          'Exception during onSuspend ($name)',
+          error,
+          stackTrace,
+        );
+      }
       if (_state == LifecycleState.suspending) {
         _state = LifecycleState.suspended;
         _transition = null;
@@ -1049,7 +1108,17 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           child._parentContext = null;
         });
       }));
-      await onUnload();
+
+      try {
+        await onUnload();
+      } catch (error, stackTrace) {
+        logger.severe(
+          'Exception during onUnload ($name)',
+          error,
+          stackTrace,
+        );
+      }
+
       if (_state == LifecycleState.unloading) {
         _state = LifecycleState.unloaded;
         _previousState = null;
