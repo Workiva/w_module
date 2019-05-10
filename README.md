@@ -197,6 +197,17 @@ sampleModule.events.valueChanged.listen((newValue) {
 });
 ```
 
+In order to automatically clean up subscriptions if the module is disposed, you can make use of `listenToStream` instead of the buit-in `listen`. See [the section on disposal](#disposal) for more details.
+
+
+```dart
+
+// module events consumption
+listenToStream(sampleModule.events.valueChanged, (newValue) {
+  ...
+});
+```
+
 If using `w_module` with `w_flux` internals, `events` should usually be dispatched by internal stores immediately
 prior to a corresponding trigger dispatch.  `events` should NOT be dispatched directly by UI components or in
 immediate response to actions.  This ensures that the internal unidirectional data flow is maintained and external
