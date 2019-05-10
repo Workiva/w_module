@@ -197,7 +197,7 @@ sampleModule.events.valueChanged.listen((newValue) {
 });
 ```
 
-In order to automatically clean up subscriptions if the module is disposed, you can make use of `listenToStream` instead of the buit-in `listen`. See [the section on disposal](#disposal) for more details.
+In order to automatically clean up subscriptions if the module is disposed, you can make use of `listenToStream` instead of the built-in `listen`. See [the section on disposal](#disposal) for more details.
 
 
 ```dart
