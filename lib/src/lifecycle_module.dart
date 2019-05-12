@@ -953,7 +953,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         await onLoad();
       } catch (error, stackTrace) {
         logger.severe(
-          'Exception during onLoad ($name)',
+          'Exception in onLoad ($name)',
           error,
           stackTrace,
         );
@@ -983,12 +983,11 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       _didUnloadChildModuleController.add(module);
     } catch (error, stackTrace) {
       logger.severe(
-        'Exception during onDidUnloadChildModule ($name)',
+        'Exception in onDidUnloadChildModule ($name)',
         error,
         stackTrace,
       );
       _didUnloadChildModuleController.addError(error, stackTrace);
-      return;
     }
   }
 
@@ -999,12 +998,11 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       _willUnloadChildModuleController.add(module);
     } catch (error, stackTrace) {
       logger.severe(
-        'Exception during onWillUnloadChildModule ($name)',
+        'Exception in onWillUnloadChildModule ($name)',
         error,
         stackTrace,
       );
       _willUnloadChildModuleController.addError(error, stackTrace);
-      return;
     }
   }
 
@@ -1031,7 +1029,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         await onResume();
       } catch (error, stackTrace) {
         logger.severe(
-          'Exception during onResume ($name)',
+          'Exception in onResume ($name)',
           error,
           stackTrace,
         );
@@ -1067,7 +1065,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         await onSuspend();
       } catch (error, stackTrace) {
         logger.severe(
-          'Exception during onSuspend ($name)',
+          'Exception in onSuspend ($name)',
           error,
           stackTrace,
         );
@@ -1094,6 +1092,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         _state = _previousState;
         _previousState = null;
         _transition = null;
+        // TODO: We throw, but we can't do anything useful with the exception
         // reject with shouldUnload messages
         throw new ModuleUnloadCanceledException(
             shouldUnloadResult.messagesAsString());
@@ -1113,7 +1112,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         await onUnload();
       } catch (error, stackTrace) {
         logger.severe(
-          'Exception during onUnload ($name)',
+          'Exception in onUnload ($name)',
           error,
           stackTrace,
         );
@@ -1128,6 +1127,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     } on ModuleUnloadCanceledException catch (error, _) {
       // In the event of a cancellation, rethrow the exception and allow the
       // caller (either unload() or onWillDispose()) to handle it.
+      // TODO: So we just rethrow it, which means it escapes the module
       rethrow;
     } catch (error, stackTrace) {
       // In the event of a failed unload (the module threw an exception but did
@@ -1136,6 +1136,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       // onWillDispose()) can handle it.
       _didUnloadController.addError(error, stackTrace);
       _activeSpan?.setTag('error', true);
+      // TODO: Should we just log severe here and not rethrow?
+      // TODO: We could do similarly with the other methods
       rethrow;
     } finally {
       _activeSpan?.finish();
