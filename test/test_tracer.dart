@@ -32,7 +32,8 @@ class TestSpan implements Span {
     List<Reference> references,
     DateTime startTime,
     Map<String, dynamic> tags,
-  })  : this.startTime = startTime ?? new DateTime.now(),
+  })
+      : this.startTime = startTime ?? new DateTime.now(),
         this.tags = tags ?? {},
         this.references = references ?? [] {
     if (childOf != null) {

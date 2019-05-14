@@ -528,7 +528,16 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         childModule._parentContext = _loadContext;
 
         await childModule.load();
-        await onDidLoadChildModule(childModule);
+        try {
+          await onDidLoadChildModule(childModule);
+        } catch (error, stackTrace) {
+          _logger.severe(
+            'Exception in onDidLoadChildModule ($name)',
+            error,
+            stackTrace,
+          );
+          rethrow;
+        }
         _didLoadChildModuleController.add(childModule);
         completer.complete();
       } catch (error, stackTrace) {
@@ -545,6 +554,11 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         childModule._parentContext = null;
       }
     }).catchError((Object error, StackTrace stackTrace) {
+      _logger.severe(
+        'Exception in onWillLoadChildModule ($name)',
+        error,
+        stackTrace,
+      );
       _willLoadChildModuleController.addError(error, stackTrace);
       completer.completeError(error, stackTrace);
     });
@@ -926,7 +940,16 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   Future<Null> _load() async {
     try {
       _willLoadController.add(this);
-      await onLoad();
+      try {
+        await onLoad();
+      } catch (error, stackTrace) {
+        _logger.severe(
+          'Exception in onLoad ($name)',
+          error,
+          stackTrace,
+        );
+        rethrow;
+      }
       if (_state == LifecycleState.loading) {
         _state = LifecycleState.loaded;
         _transition = null;
@@ -948,7 +971,16 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Handles a child [LifecycleModule]'s [didUnload] event.
   Future<Null> _onChildModuleDidUnload(LifecycleModule module) async {
     try {
-      await onDidUnloadChildModule(module);
+      try {
+        await onDidUnloadChildModule(module);
+      } catch (error, stackTrace) {
+        _logger.severe(
+          'Exception in onDidUnloadChildModule ($name)',
+          error,
+          stackTrace,
+        );
+        rethrow;
+      }
       _didUnloadChildModuleController.add(module);
     } catch (error, stackTrace) {
       _didUnloadChildModuleController.addError(error, stackTrace);
@@ -958,7 +990,16 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Handles a child [LifecycleModule]'s [willUnload] event.
   Future<Null> _onChildModuleWillUnload(LifecycleModule module) async {
     try {
-      await onWillUnloadChildModule(module);
+      try {
+        await onWillUnloadChildModule(module);
+      } catch (error, stackTrace) {
+        _logger.severe(
+          'Exception in onWillUnloadChildModule ($name)',
+          error,
+          stackTrace,
+        );
+        rethrow;
+      }
       _willUnloadChildModuleController.add(module);
     } catch (error, stackTrace) {
       _willUnloadChildModuleController.addError(error, stackTrace);
@@ -984,7 +1025,16 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         }));
       }
       await Future.wait(childResumeFutures);
-      await onResume();
+      try {
+        await onResume();
+      } catch (error, stackTrace) {
+        _logger.severe(
+          'Exception in onResume ($name)',
+          error,
+          stackTrace,
+        );
+        rethrow;
+      }
       if (_state == LifecycleState.resuming) {
         _state = LifecycleState.loaded;
         _transition = null;
@@ -1012,7 +1062,16 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         }));
       }
       await Future.wait(childSuspendFutures);
-      await onSuspend();
+      try {
+        await onSuspend();
+      } catch (error, stackTrace) {
+        _logger.severe(
+          'Exception in onSuspend ($name)',
+          error,
+          stackTrace,
+        );
+        rethrow;
+      }
       if (_state == LifecycleState.suspending) {
         _state = LifecycleState.suspended;
         _transition = null;
@@ -1049,7 +1108,12 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           child._parentContext = null;
         });
       }));
-      await onUnload();
+      try {
+        await onUnload();
+      } catch (error, stackTrace) {
+        _logger.severe('Exception in onUnload ($name)', error, stackTrace);
+        rethrow;
+      }
       if (_state == LifecycleState.unloading) {
         _state = LifecycleState.unloaded;
         _previousState = null;
