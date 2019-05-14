@@ -1608,9 +1608,8 @@ void runTests(bool runSpanTests) {
                     Logger.root.onRecord,
                     emitsThrough(logRecord(
                         level: Level.WARNING,
-                        message:
-                            contains('.dispose() was called but Module "${module
-                                    .name}" canceled'))),
+                        message: contains(
+                            '.dispose() was called but Module "${module.name}" canceled'))),
                   );
                   expectInLifecycleState(module, state);
                   await module.dispose();
@@ -1673,9 +1672,8 @@ void runTests(bool runSpanTests) {
                     Logger.root.onRecord,
                     emitsThrough(logRecord(
                       level: Level.WARNING,
-                      message:
-                          contains('.dispose() was called but Module "${module
-                              .name}" threw'),
+                      message: contains(
+                          '.dispose() was called but Module "${module.name}" threw'),
                     )),
                   );
                   expectInLifecycleState(module, state);
@@ -2578,8 +2576,8 @@ void runTests(bool runSpanTests) {
           .onSpanFinish
           .where((span) => !span.operationName.startsWith('child'))
           .listen((span) {
-        fail('Only the child module should have spans. Found: ${span
-            .tags['module.name']}');
+        fail(
+            'Only the child module should have spans. Found: ${span.tags['module.name']}');
       }));
 
       await parentModule.load();

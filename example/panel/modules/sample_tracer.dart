@@ -33,8 +33,7 @@ class SampleSpan implements Span {
     this.references,
     DateTime startTime,
     Map<String, dynamic> tags,
-  })
-      : this.startTime = startTime ?? new DateTime.now(),
+  })  : this.startTime = startTime ?? new DateTime.now(),
         this.tags = tags ?? {} {
     if (childOf != null) {
       references.add(new Reference.childOf(childOf));
