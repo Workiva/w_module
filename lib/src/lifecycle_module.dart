@@ -16,6 +16,7 @@ library w_module.src.lifecycle_module;
 
 import 'dart:async';
 
+import 'dart:math';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart' show mustCallSuper, protected, required;
 import 'package:opentracing/opentracing.dart';
@@ -315,6 +316,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Any error or exception thrown during the child [LifecycleModule]'s
   /// [unload] call will be emitted.
   ///
+  /// TODO: Update these docs based on the refactor
   /// Any error or exception thrown during the [LifecycleModule]'s
   /// [onUnload] call will be emitted.
   Stream<LifecycleModule> get didUnload => _didUnloadController.stream;
@@ -408,6 +410,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// In short, calling [dispose] forces the disposal of this module regardless
   /// of its current state and regardless of its ability to unload successfully.
   ///
+  /// // TODO: This paragraph may need updating
   /// If the modules unload is canceled or if an error is thrown during a
   /// lifecycle handler like onUnload as a part of this disposal process, they
   /// will still be available via their corresponding lifecycle event streams
@@ -430,6 +433,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// and the method is a noop. If the module is in any other state, a
   /// StateError is thrown.
   ///
+  /// TODO: Need to change this
   /// If an [Exception] is thrown during the call to [onLoad] it will be emitted
   /// on the [didLoad] lifecycle stream. The returned [Future] will also resolve
   /// with this exception.
@@ -542,7 +546,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           await onDidLoadChildModule(childModule);
         } catch (error, stackTrace) {
           logger.severe(
-            'Exception during onDidLoadChildModule ($name)',
+            'Exception in onDidLoadChildModule ($name)',
             error,
             stackTrace,
           );
@@ -564,7 +568,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       }
     }).catchError((Object error, StackTrace stackTrace) {
       logger.severe(
-        'Exception during onWillLoadChildModule ($name)',
+        'Exception in onWillLoadChildModule ($name)',
         error,
         stackTrace,
       );
@@ -1063,6 +1067,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       await Future.wait(childSuspendFutures);
       try {
         await onSuspend();
+        if (new Random().nextDouble() < 0.05) {
+          throw new Exception('FOOBAR');
+        }
       } catch (error, stackTrace) {
         logger.severe(
           'Exception in onSuspend ($name)',
