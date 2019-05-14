@@ -524,8 +524,14 @@ void runTests(bool runSpanTests) {
           module.onLoadError = testError;
         });
 
-        test('should return that error',
-            () => expect(module.load(), throwsA(same(module.onLoadError))));
+        test('should return and log that error', () {
+          expect(
+              Logger.root.onRecord,
+              emitsThrough(
+                logRecord(level: Level.SEVERE, message: contains('onLoad')),
+              ));
+          expect(module.load(), throwsA(same(module.onLoadError)));
+        });
 
         test('should add that error to didLoad stream', () {
           module.didLoad.listen((LifecycleModule _) {},
@@ -710,8 +716,14 @@ void runTests(bool runSpanTests) {
           module.onUnloadError = testError;
         });
 
-        test('should return that error',
-            () => expect(module.unload, throwsA(same(testError))));
+        test('should return and log that error', () {
+          expect(
+              Logger.root.onRecord,
+              emitsThrough(
+                logRecord(level: Level.SEVERE, message: contains('onUnload')),
+              ));
+          expect(module.unload, throwsA(same(testError)));
+        });
 
         test('should add that error to didUnload stream', () {
           module.didUnload.listen((LifecycleModule _) {},
@@ -985,8 +997,14 @@ void runTests(bool runSpanTests) {
           module.onSuspendError = testError;
         });
 
-        test('should return that error',
-            () => expect(module.suspend(), throwsA(same(testError))));
+        test('should return and log that error', () {
+          expect(
+              Logger.root.onRecord,
+              emitsThrough(
+                logRecord(level: Level.SEVERE, message: contains('onSuspend')),
+              ));
+          expect(module.suspend(), throwsA(same(testError)));
+        });
 
         test('should add that error to didSuspend stream', () {
           module.didSuspend.listen((LifecycleModule _) {},
@@ -1263,8 +1281,14 @@ void runTests(bool runSpanTests) {
           module.onResumeError = testError;
         });
 
-        test('should return that error',
-            () => expect(module.resume(), throwsA(same(module.onResumeError))));
+        test('should return and log that error', () {
+          expect(
+              Logger.root.onRecord,
+              emitsThrough(
+                logRecord(level: Level.SEVERE, message: contains('onResume')),
+              ));
+          expect(module.resume(), throwsA(same(module.onResumeError)));
+        });
 
         test('should add that error to didResume stream', () {
           module.didResume.listen((LifecycleModule _) {},
@@ -1581,11 +1605,12 @@ void runTests(bool runSpanTests) {
                     'should warn that the unload was canceled but that disposal will continue',
                     () async {
                   expect(
-                      Logger.root.onRecord,
-                      emitsThrough(logRecord(
-                          level: Level.WARNING,
-                          message: contains(
-                              '.dispose() was called but Module "${module.name}" canceled'))));
+                    Logger.root.onRecord,
+                    emitsThrough(logRecord(
+                        level: Level.WARNING,
+                        message: contains(
+                            '.dispose() was called but Module "${module.name}" canceled'))),
+                  );
                   expectInLifecycleState(module, state);
                   await module.dispose();
                 });
@@ -1644,11 +1669,13 @@ void runTests(bool runSpanTests) {
                     'should warn that the unload failed but that disposal will continue',
                     () async {
                   expect(
-                      Logger.root.onRecord,
-                      emitsThrough(logRecord(
-                          level: Level.WARNING,
-                          message: contains(
-                              '.dispose() was called but Module "${module.name}" threw'))));
+                    Logger.root.onRecord,
+                    emitsThrough(logRecord(
+                      level: Level.WARNING,
+                      message: contains(
+                          '.dispose() was called but Module "${module.name}" threw'),
+                    )),
+                  );
                   expectInLifecycleState(module, state);
                   await module.dispose();
                 });
@@ -1809,10 +1836,17 @@ void runTests(bool runSpanTests) {
           parentModule.onDidLoadChildModuleError = testError;
         });
 
-        test(
-            'should return the parent error',
-            () => expect(parentModule.loadChildModule(childModule),
-                throwsA(same(parentModule.onDidLoadChildModuleError))));
+        test('should return and log the parent error', () {
+          expect(
+              Logger.root.onRecord,
+              emitsThrough(logRecord(
+                  level: Level.SEVERE,
+                  message: contains(
+                    'onDidLoadChildModule',
+                  ))));
+          expect(parentModule.loadChildModule(childModule),
+              throwsA(same(parentModule.onDidLoadChildModuleError)));
+        });
 
         test('should add that error to didLoadChildModule stream', () {
           parentModule.didLoadChildModule.listen((LifecycleModule _) {},
@@ -1830,10 +1864,20 @@ void runTests(bool runSpanTests) {
           parentModule.onWillLoadChildModuleError = testError;
         });
 
-        test(
-            'should return the parent error',
-            () => expect(parentModule.loadChildModule(childModule),
-                throwsA(same(parentModule.onWillLoadChildModuleError))));
+        test('should return and log the parent error', () {
+          expect(
+            Logger.root.onRecord,
+            emitsThrough(logRecord(
+                level: Level.SEVERE,
+                message: contains(
+                  'onWillLoadChildModule',
+                ))),
+          );
+          expect(
+            parentModule.loadChildModule(childModule),
+            throwsA(same(parentModule.onWillLoadChildModuleError)),
+          );
+        });
 
         test('should add that error to willLoadChildModule stream', () {
           parentModule.willLoadChildModule.listen((LifecycleModule _) {},
@@ -2378,6 +2422,21 @@ void runTests(bool runSpanTests) {
           parentModule.onWillUnloadChildModuleError = testError;
         });
 
+        test('should log the parent error', () {
+          //
+          expect(
+            Logger.root.onRecord,
+            emitsThrough(logRecord(
+              level: Level.SEVERE,
+              message: contains('onWillUnloadChildModule'),
+            )),
+          );
+          expect(
+            parentModule.unload(),
+            completion(isNull),
+          );
+        });
+
         test('should add that error to willUnloadChildModule stream', () {
           parentModule.willUnloadChildModule.listen((LifecycleModule _) {},
               onError: expectAsync2((Error error, StackTrace stackTrace) {
@@ -2392,6 +2451,21 @@ void runTests(bool runSpanTests) {
         setUp(() async {
           await parentModule.loadChildModule(childModule);
           parentModule.onDidUnloadChildModuleError = testError;
+        });
+
+        test('should log the parent error', () {
+          //
+          expect(
+            Logger.root.onRecord,
+            emitsThrough(logRecord(
+              level: Level.SEVERE,
+              message: contains('onDidUnloadChildModule'),
+            )),
+          );
+          expect(
+            parentModule.unload(),
+            completion(isNull),
+          );
         });
 
         test('should add that error to didUnloadChildModule stream', () {
