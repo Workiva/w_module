@@ -32,6 +32,9 @@ const String shouldUnloadError = 'Mock shouldUnload false message';
 class MockStreamSubscription extends Mock implements StreamSubscription<Null> {}
 
 class UnnamedModule extends LifecycleModule {
+  @override
+  final String name = 'UnnamedModule';
+
   // This module does not override the name getter
   // so lifecycle methods should not create spans
 
@@ -58,7 +61,7 @@ class TestLifecycleModule extends LifecycleModule {
   Error onWillUnloadChildModuleError;
 
   @override
-  final String name;
+  final String name = 'TestLifecycleModule';
 
   // mock data to be used for test validation
   List<String> eventList;
