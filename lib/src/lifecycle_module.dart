@@ -890,8 +890,11 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     } on ModuleUnloadCanceledException {
       // The unload was canceled, but disposal cannot be canceled. Log a warning
       // indicating this and continue with disposal.
-      _logger.warning('.dispose() was called but Module "$name" canceled its '
-          'unload. The module will still be disposed.');
+      _logger.warning(
+          '.dispose() was called but Module "$name" canceled its '
+          'unload. The module will still be disposed.',
+          null,
+          StackTrace.current);
     } catch (error, stackTrace) {
       // An unexpected exception was thrown during unload. It will be emitted
       // as an error on the didUnload stream, but we will also log a warning
@@ -930,9 +933,12 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       {@required String methodName,
       @required LifecycleState currentState,
       @required isTransitioning}) {
-    _logger.warning('.$methodName() was called while Module "$name" is already '
+    _logger.warning(
+        '.$methodName() was called while Module "$name" is already '
         '${_readableStateName(currentState)}; this is a no-op. Check for any '
-        'unnecessary calls to .$methodName().');
+        'unnecessary calls to .$methodName().',
+        null,
+        StackTrace.current);
 
     return _transition?.future ?? new Future.value(null);
   }
@@ -964,8 +970,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// A utility to logging LifecycleModule lifecycle events
   void _logLifecycleEvents(
       String logLabel, Stream<dynamic> lifecycleEventStream) {
-    listenToStream(lifecycleEventStream, (_) => _logger.finest(logLabel),
-        onError: (error) => _logger.warning('$logLabel error: $error'));
+    listenToStream(lifecycleEventStream,
+        (_) => _logger.finest(logLabel, null, StackTrace.current),
+        onError: (error, stackTrace) =>
+            _logger.warning('$logLabel error: $error', error, stackTrace));
   }
 
   /// Handles a child [LifecycleModule]'s [didUnload] event.
