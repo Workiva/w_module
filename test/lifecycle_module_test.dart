@@ -46,6 +46,9 @@ class UnnamedModule extends LifecycleModule {
 }
 
 class TestLifecycleModule extends LifecycleModule {
+  @override
+  final String name = 'TestLifecycleModule';
+
   Iterable<StreamSubscription<LifecycleModule>> _eventListStreamSubscriptions;
 
   Duration onLoadDelay;
