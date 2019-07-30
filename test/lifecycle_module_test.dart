@@ -32,9 +32,6 @@ const String shouldUnloadError = 'Mock shouldUnload false message';
 class MockStreamSubscription extends Mock implements StreamSubscription<Null> {}
 
 class UnnamedModule extends LifecycleModule {
-  @override
-  final String name = 'UnnamedModule';
-
   // This module does not override the name getter
   // so lifecycle methods should not create spans
 
