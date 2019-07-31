@@ -16,7 +16,10 @@
 import 'package:test/test.dart';
 import 'package:w_module/w_module.dart';
 
-class TestModule extends Module {}
+class TestModule extends Module {
+  @override
+  final String name = 'TestModule';
+}
 
 void main() {
   group('Module', () {

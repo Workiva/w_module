@@ -91,4 +91,7 @@ class LifecycleEchoComponents implements ModuleComponents {
       ]);
 }
 
-class LifecycleEchoChildModule extends Module {}
+class LifecycleEchoChildModule extends Module {
+  @override
+  final String name = 'LifecycleEchoChildModule';
+}
