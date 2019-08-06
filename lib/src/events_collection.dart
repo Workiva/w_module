@@ -37,6 +37,9 @@ import 'package:w_module/src/event.dart';
 ///       }
 ///     }
 class EventsCollection extends Disposable {
+  @override
+  String get disposableTypeName => 'EventsCollection';
+
   /// The key that every [Event] instance included as a part of this
   /// [EventsCollection] should be tied to.
   ///
