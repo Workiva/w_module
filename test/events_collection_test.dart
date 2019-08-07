@@ -19,6 +19,9 @@ import 'package:w_module/w_module.dart';
 final _key = new DispatchKey('test');
 
 class TestEvents extends EventsCollection {
+  @override
+  String get disposableTypeName => 'TestEvents';
+
   final Event<String> eventA = new Event<String>(_key);
   final Event<String> eventB = new Event<String>(_key);
 

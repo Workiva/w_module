@@ -6,6 +6,7 @@
 build
 packages
 pubspec.lock
+.dart_tool/
 
 # docs
 /doc/api/

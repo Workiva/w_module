@@ -923,8 +923,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       String reason}) {
     reason = reason ??
         'Only a module in the '
-        '${allowedStates.map(_readableStateName).join(", ")} states can '
-        'transition to ${_readableStateName(targetState)}';
+            '${allowedStates.map(_readableStateName).join(", ")} states can '
+            'transition to ${_readableStateName(targetState)}';
     return new Future.error(new StateError(
         'Transitioning from $_state to $targetState is not allowed. $reason'));
   }
