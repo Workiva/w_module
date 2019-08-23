@@ -15,6 +15,7 @@
 library tool.dev;
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:dart_dev/dart_dev.dart' show dev, config;
 
@@ -31,6 +32,9 @@ Future<Null> main(List<String> args) async {
   ];
   config.copyLicense.directories = directories;
   config.format.paths = directories;
+
+  config.test
+    ..platforms = Platform.version.startsWith('2') ? ['chrome'] : ['vm'];
 
   await dev(args);
 }

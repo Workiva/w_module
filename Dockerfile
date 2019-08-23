@@ -23,10 +23,9 @@ ARG GIT_HEAD_URL
 ARG GIT_MERGE_HEAD
 ARG GIT_MERGE_BRANCH
 
-
 WORKDIR /build/
 ADD . /build/
-ENV CODECOV_TOKEN='bQ4MgjJ0G2Y73v8JNX6L7yMK9679nbYB'
+
 RUN echo "Starting the script sections"
 RUN eval "$(ssh-agent -s)" && ssh-add /root/.ssh/id_rsa
 # Use pub from Dart 2 to initially resolve dependencies since it is much more efficient.
@@ -34,9 +33,7 @@ COPY --from=dart2 /usr/lib/dart /usr/lib/dart2
 RUN echo "Running Dart 2 pub get.." && \
 	_PUB_TEST_SDK_VERSION=1.24.3 timeout 5m /usr/lib/dart2/bin/pub get --no-precompile
 RUN pub get
-RUN pub run dart_dev dart1-only -- coverage --no-html
-RUN curl https://codecov.workiva.net/bash > ./codecov.sh
-RUN chmod a+x ./codecov.sh
-RUN ./codecov.sh -u https://codecov.workiva.net -t $CODECOV_TOKEN -r Workiva/w_module -f coverage/coverage.lcov
+RUN pub run dart_dev coverage --no-html
+ARG BUILD_ARTIFACTS_CODECOV=/build/coverage/coverage.lcov
 
 FROM scratch
