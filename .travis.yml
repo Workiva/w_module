@@ -9,6 +9,6 @@ cache:
     - $HOME/.pub-cache
 script:
   - pub get
-  - pub run dart_dev dart2-only -- format --check
+  - pub run dart_dev format --check
   - pub run dart_dev analyze
-  - pub run dart_dev test
+  - pub run dart_dev test --release
