@@ -66,7 +66,7 @@ class DataLoadAsyncComponents implements ModuleComponents {
 }
 
 class DataLoadAsyncActions {
-  final Action loadData = new Action();
+  final Action<Null> loadData = new Action();
 }
 
 DispatchKey _dispatchKey = new DispatchKey('DataLoadAsync');

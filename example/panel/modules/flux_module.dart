@@ -49,7 +49,7 @@ class FluxComponents implements ModuleComponents {
 }
 
 class FluxActions {
-  final Action changeBackgroundColor = new Action();
+  final Action<Null> changeBackgroundColor = new Action();
 }
 
 class FluxStore extends Store {
@@ -57,7 +57,7 @@ class FluxStore extends Store {
   String _backgroundColor = 'gray';
 
   FluxStore(this._actions) {
-    triggerOnAction(_actions.changeBackgroundColor, _changeBackgroundColor);
+    triggerOnActionV2(_actions.changeBackgroundColor, _changeBackgroundColor);
   }
 
   String get backgroundColor => _backgroundColor;
@@ -85,7 +85,7 @@ class _MyFluxComponent extends FluxComponent<FluxActions, FluxStore> {
       'This module uses a flux pattern to change its background color.',
       react.button({
         'style': {'padding': '10px', 'margin': '10px'},
-        'onClick': actions.changeBackgroundColor
+        'onClick': (_) => actions.changeBackgroundColor()
       }, 'Random Background Color')
     ]);
   }

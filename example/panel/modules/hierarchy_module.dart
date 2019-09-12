@@ -94,8 +94,8 @@ class HierarchyStore extends Store {
   List<Module> _childModules = [];
 
   HierarchyStore(this._actions) {
-    triggerOnAction(_actions.addChildModule, _addChildModule);
-    triggerOnAction(_actions.removeChildModule, _removeChildModule);
+    triggerOnActionV2(_actions.addChildModule, _addChildModule);
+    triggerOnActionV2(_actions.removeChildModule, _removeChildModule);
   }
 
   List<Module> get childModules => _childModules;
