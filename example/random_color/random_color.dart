@@ -19,6 +19,7 @@ import 'dart:html' as html;
 import 'dart:math';
 
 import 'package:react/react.dart' as react;
+import 'package:over_react/over_react.dart';
 import 'package:react/react_dom.dart' as react_dom;
 import 'package:react/react_client.dart' as react_client;
 
@@ -32,7 +33,7 @@ Future<Null> main() async {
 
   // render the module's UI component
   react_client.setClientConfiguration();
-  react_dom.render(randomColorModule.components.content(),
+  react_dom.render(ErrorBoundary()(randomColorModule.components.content()),
       html.querySelector('#content-container'));
 
   // exercise the module's API via some simple button clicks
