@@ -7,5 +7,5 @@ class StartupTimingType {
 
   /// Specifies that the module finished loading necessary data and is ready for user interaction.
   static const StartupTimingType firstUseful =
-      const StartupTimingType._('entered_first_useful_state');
+      StartupTimingType._('entered_first_useful_state');
 }
