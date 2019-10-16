@@ -29,9 +29,9 @@ class RejectModule extends Module {
   RejectComponents _components;
 
   RejectModule() {
-    _actions = new RejectActions();
-    _stores = new RejectStore(_actions);
-    _components = new RejectComponents(_actions, _stores);
+    _actions = RejectActions();
+    _stores = RejectStore(_actions);
+    _components = RejectComponents(_actions, _stores);
   }
 
   @override
@@ -41,9 +41,9 @@ class RejectModule extends Module {
   @protected
   ShouldUnloadResult onShouldUnload() {
     if (_stores.shouldUnload) {
-      return new ShouldUnloadResult();
+      return ShouldUnloadResult();
     }
-    return new ShouldUnloadResult(false, '$name won\'t let you leave!');
+    return ShouldUnloadResult(false, '$name won\'t let you leave!');
   }
 }
 
@@ -58,7 +58,7 @@ class RejectComponents implements ModuleComponents {
 }
 
 class RejectActions {
-  final Action<Null> toggleShouldUnload = new Action();
+  final Action<Null> toggleShouldUnload = Action();
 }
 
 class RejectStore extends Store {
@@ -80,7 +80,7 @@ class RejectStore extends Store {
 }
 
 // ignore: non_constant_identifier_names
-var RejectComponent = react.registerComponent(() => new _RejectComponent());
+var RejectComponent = react.registerComponent(() => _RejectComponent());
 
 class _RejectComponent extends FluxComponent<RejectActions, RejectStore> {
   @override

@@ -32,10 +32,10 @@ class DataLoadAsyncModule extends Module {
   DataLoadAsyncStore _store;
 
   DataLoadAsyncModule() {
-    _actions = new DataLoadAsyncActions();
-    _events = new DataLoadAsyncEvents();
-    _store = new DataLoadAsyncStore(_actions, _events);
-    _components = new DataLoadAsyncComponents(_actions, _store);
+    _actions = DataLoadAsyncActions();
+    _events = DataLoadAsyncEvents();
+    _store = DataLoadAsyncStore(_actions, _events);
+    _components = DataLoadAsyncComponents(_actions, _store);
 
     <Disposable>[_events, _store].forEach(manageDisposable);
   }
@@ -50,7 +50,7 @@ class DataLoadAsyncModule extends Module {
     listenToStream(_events.didLoadData.take(1),
         (_) => specifyStartupTiming(StartupTimingType.firstUseful));
     _actions.loadData();
-    return new Future.value();
+    return Future.value();
   }
 }
 
@@ -66,15 +66,15 @@ class DataLoadAsyncComponents implements ModuleComponents {
 }
 
 class DataLoadAsyncActions {
-  final Action<Null> loadData = new Action();
+  final Action<Null> loadData = Action();
 }
 
-DispatchKey _dispatchKey = new DispatchKey('DataLoadAsync');
+DispatchKey _dispatchKey = DispatchKey('DataLoadAsync');
 
 class DataLoadAsyncEvents extends EventsCollection {
-  final Event didLoadData = new Event(_dispatchKey);
+  final Event didLoadData = Event(_dispatchKey);
   DataLoadAsyncEvents() : super(_dispatchKey) {
-    manageEvent(new Event(_dispatchKey));
+    manageEvent(Event(_dispatchKey));
   }
 }
 
@@ -99,7 +99,7 @@ class DataLoadAsyncStore extends Store {
     trigger();
 
     // start async load of data (fake it with a Future)
-    await new Future.delayed(new Duration(seconds: 1));
+    await Future.delayed(Duration(seconds: 1));
 
     // trigger on return of final data
     _data = ['Aaron', 'Dustin', 'Evan', 'Jay', 'Max', 'Trent'];
@@ -111,7 +111,7 @@ class DataLoadAsyncStore extends Store {
 
 // ignore: non_constant_identifier_names
 var DataLoadAsyncComponent =
-    react.registerComponent(() => new _DataLoadAsyncComponent());
+    react.registerComponent(() => _DataLoadAsyncComponent());
 
 class _DataLoadAsyncComponent
     extends FluxComponent<DataLoadAsyncActions, DataLoadAsyncStore> {

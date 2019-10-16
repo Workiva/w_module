@@ -32,12 +32,12 @@ Future<Null> main() async {
   Element container = querySelector('#panel-container');
   react_client.setClientConfiguration();
 
-  final tracer = new SampleTracer();
+  final tracer = SampleTracer();
   initGlobalTracer(tracer);
   assert(globalTracer() == tracer);
 
   // instantiate the core app module and wait for it to complete loading
-  PanelModule panelModule = new PanelModule();
+  PanelModule panelModule = PanelModule();
   await panelModule.load();
 
   // block browser tab / window close if necessary

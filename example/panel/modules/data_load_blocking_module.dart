@@ -30,7 +30,7 @@ class DataLoadBlockingModule extends Module {
 
   DataLoadBlockingModule() {
     data = [];
-    _components = new DataLoadBlockingComponents(this);
+    _components = DataLoadBlockingComponents(this);
   }
 
   @override
@@ -40,7 +40,7 @@ class DataLoadBlockingModule extends Module {
   @protected
   Future<Null> onLoad() async {
     // perform async load of data (fake it with a Future)
-    await new Future.delayed(new Duration(seconds: 1));
+    await Future.delayed(Duration(seconds: 1));
     data = ['Grover', 'Hoffman', 'Lessard', 'Peterson', 'Udey', 'Weible'];
   }
 }

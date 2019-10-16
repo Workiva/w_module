@@ -24,7 +24,7 @@ void main() {
     TestModule simpleModule;
 
     setUp(() {
-      simpleModule = new TestModule();
+      simpleModule = TestModule();
     });
 
     test('should return null from api getter by default', () {

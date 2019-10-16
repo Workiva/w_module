@@ -28,7 +28,7 @@ import 'package:w_module/w_module.dart';
 
 Future<Null> main() async {
   // instantiate the module and wait for it to load
-  RandomColorModule randomColorModule = new RandomColorModule();
+  RandomColorModule randomColorModule = RandomColorModule();
   await randomColorModule.load();
 
   // render the module's UI component
@@ -58,7 +58,7 @@ Future<Null> main() async {
   });
 }
 
-DispatchKey randomColorModuleDispatchKey = new DispatchKey('randomColor');
+DispatchKey randomColorModuleDispatchKey = DispatchKey('randomColor');
 
 class RandomColorModule extends Module {
   @override
@@ -71,12 +71,11 @@ class RandomColorModule extends Module {
   RandomColorStore _stores;
 
   RandomColorModule() {
-    _actions = new RandomColorActions();
-    _events = new RandomColorEvents();
-    _stores =
-        new RandomColorStore(_actions, _events, randomColorModuleDispatchKey);
-    _components = new RandomColorComponents(_actions, _stores);
-    _api = new RandomColorApi(_actions, _stores);
+    _actions = RandomColorActions();
+    _events = RandomColorEvents();
+    _stores = RandomColorStore(_actions, _events, randomColorModuleDispatchKey);
+    _components = RandomColorComponents(_actions, _stores);
+    _api = RandomColorApi(_actions, _stores);
   }
 
   @override
@@ -107,7 +106,7 @@ class RandomColorApi {
 }
 
 class RandomColorEvents {
-  final Event<String> colorChanged = new Event(randomColorModuleDispatchKey);
+  final Event<String> colorChanged = Event(randomColorModuleDispatchKey);
 }
 
 class RandomColorComponents implements ModuleComponents {
@@ -122,8 +121,8 @@ class RandomColorComponents implements ModuleComponents {
 }
 
 class RandomColorActions {
-  final Action<Null> changeBackgroundColor = new Action();
-  final Action<String> setBackgroundColor = new Action();
+  final Action<Null> changeBackgroundColor = Action();
+  final Action<String> setBackgroundColor = Action();
 }
 
 class RandomColorStore extends Store {
@@ -146,7 +145,7 @@ class RandomColorStore extends Store {
   void _changeBackgroundColor(_) {
     // generate a random hex color string
     _backgroundColor =
-        '#' + (new Random().nextDouble() * 16777215).floor().toRadixString(16);
+        '#' + (Random().nextDouble() * 16777215).floor().toRadixString(16);
     _events.colorChanged(_backgroundColor, _dispatchKey);
     trigger();
   }
@@ -161,7 +160,7 @@ class RandomColorStore extends Store {
 
 // ignore: non_constant_identifier_names
 var RandomColorComponent =
-    react.registerComponent(() => new _RandomColorComponent());
+    react.registerComponent(() => _RandomColorComponent());
 
 class _RandomColorComponent
     extends FluxComponent<RandomColorActions, RandomColorStore> {

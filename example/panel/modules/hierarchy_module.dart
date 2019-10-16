@@ -39,9 +39,9 @@ class HierarchyModule extends Module {
   HierarchyStore _stores;
 
   HierarchyModule() {
-    _actions = new HierarchyActions();
-    _stores = new HierarchyStore(_actions);
-    _components = new HierarchyComponents(_actions, _stores);
+    _actions = HierarchyActions();
+    _stores = HierarchyStore(_actions);
+    _components = HierarchyComponents(_actions, _stores);
   }
 
   @override
@@ -55,13 +55,13 @@ class HierarchyModule extends Module {
     // completes loading (not recommended)
 
     List<LifecycleModule> allOfThem = [
-      new BasicModule(),
-      new FluxModule(),
-      new RejectModule(),
-      new DataLoadAsyncModule(),
-      new DataLoadBlockingModule(),
-      new DeferredModule(),
-      new LifecycleEchoModule()
+      BasicModule(),
+      FluxModule(),
+      RejectModule(),
+      DataLoadAsyncModule(),
+      DataLoadBlockingModule(),
+      DeferredModule(),
+      LifecycleEchoModule()
     ];
 
     allOfThem.forEach((module) {
@@ -85,8 +85,8 @@ class HierarchyComponents implements ModuleComponents {
 }
 
 class HierarchyActions {
-  final Action<Module> addChildModule = new Action<Module>();
-  final Action<Module> removeChildModule = new Action<Module>();
+  final Action<Module> addChildModule = Action<Module>();
+  final Action<Module> removeChildModule = Action<Module>();
 }
 
 class HierarchyStore extends Store {
@@ -120,8 +120,7 @@ class HierarchyStore extends Store {
 }
 
 // ignore: non_constant_identifier_names
-var HierarchyComponent =
-    react.registerComponent(() => new _HierarchyComponent());
+var HierarchyComponent = react.registerComponent(() => _HierarchyComponent());
 
 class _HierarchyComponent
     extends FluxComponent<HierarchyActions, HierarchyStore> {

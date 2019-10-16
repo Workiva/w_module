@@ -7,13 +7,13 @@ import 'package:matcher/matcher.dart';
 Matcher logRecord({Level level, Matcher message, Matcher loggerName}) {
   var matchers = [];
   if (level != null) {
-    matchers.add(new _LogLevelMatcher(level));
+    matchers.add(_LogLevelMatcher(level));
   }
   if (message != null) {
-    matchers.add(new _LogMessageMatcher(message));
+    matchers.add(_LogMessageMatcher(message));
   }
   if (loggerName != null) {
-    matchers.add(new _LoggerNameMatcher(loggerName));
+    matchers.add(_LoggerNameMatcher(loggerName));
   }
 
   return allOf(matchers);

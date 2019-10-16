@@ -159,7 +159,7 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   @protected
   Future<Null> onWillUnloadChildModule(LifecycleModule module) async {
-    await new Future.value(null);
+    await Future.value(null);
     if (onWillUnloadChildModuleError != null) {
       throw onWillUnloadChildModuleError;
     }
@@ -178,7 +178,7 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   @protected
   Future<Null> onLoad() async {
-    await new Future.delayed(onLoadDelay ?? const Duration(milliseconds: 1));
+    await Future.delayed(onLoadDelay ?? const Duration(milliseconds: 1));
     if (onLoadError != null) {
       throw onLoadError;
     }
@@ -194,16 +194,16 @@ class TestLifecycleModule extends LifecycleModule {
   ShouldUnloadResult onShouldUnload() {
     eventList.add('onShouldUnload');
     if (mockShouldUnload) {
-      return new ShouldUnloadResult();
+      return ShouldUnloadResult();
     } else {
-      return new ShouldUnloadResult(false, shouldUnloadError);
+      return ShouldUnloadResult(false, shouldUnloadError);
     }
   }
 
   @override
   @protected
   Future<Null> onUnload() async {
-    await new Future.delayed(new Duration(milliseconds: 1));
+    await Future.delayed(Duration(milliseconds: 1));
     if (onUnloadError != null) {
       throw onUnloadError;
     }
@@ -217,7 +217,7 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   @protected
   Future<Null> onSuspend() async {
-    await new Future.delayed(new Duration(milliseconds: 1));
+    await Future.delayed(Duration(milliseconds: 1));
     if (onSuspendError != null) {
       throw onSuspendError;
     }
@@ -231,7 +231,7 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   @protected
   Future<Null> onResume() async {
-    await new Future.delayed(new Duration(milliseconds: 1));
+    await Future.delayed(Duration(milliseconds: 1));
     if (onResumeError != null) {
       throw onResumeError;
     }
@@ -245,7 +245,7 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   @protected
   Future<Null> onDispose() async {
-    await new Future.delayed(new Duration(milliseconds: 1));
+    await Future.delayed(Duration(milliseconds: 1));
     if (onDisposeError != null) {
       throw onDisposeError;
     }
@@ -292,7 +292,7 @@ void expectInLifecycleState(LifecycleModule module, LifecycleState state) {
 
 Future<Null> gotoState(LifecycleModule module, LifecycleState state) async {
   // wait for next event loop. fixes sync-async in Dart 2
-  await new Future.value(null);
+  await Future.value(null);
   if (state == LifecycleState.instantiated) {
     return;
   }
@@ -342,7 +342,7 @@ Future<Null> executeStateTransition(
   }
 }
 
-final StateError testError = new StateError('You should have expected this');
+final StateError testError = StateError('You should have expected this');
 
 void main() {
   Logger.root.level = Level.ALL;
@@ -351,7 +351,7 @@ void main() {
     group('with globalTracer', () {
       TestTracer tracer;
       setUp(() {
-        tracer = new TestTracer();
+        tracer = TestTracer();
         initGlobalTracer(tracer);
         assert(globalTracer() == tracer);
       });
@@ -378,7 +378,7 @@ TestTracer getTestTracer() {
 
 void runTests(bool runSpanTests) {
   test('Calling `specifyStartupTiming` without calling `load()` throws', () {
-    final module = new TestLifecycleModule();
+    final module = TestLifecycleModule();
 
     expect(
       () => module.specifyStartupTiming(StartupTimingType.firstUseful),
@@ -391,7 +391,7 @@ void runTests(bool runSpanTests) {
     List<StreamSubscription> subs = [];
 
     setUp(() {
-      module = new TestLifecycleModule();
+      module = TestLifecycleModule();
     });
 
     tearDown(() async {
@@ -454,7 +454,7 @@ void runTests(bool runSpanTests) {
           Span parentSpan;
 
           setUp(() async {
-            final Completer<DateTime> startTimeCompleter = new Completer();
+            final Completer<DateTime> startTimeCompleter = Completer();
 
             subs.add(getTestTracer()
                 .onSpanFinish
@@ -561,7 +561,7 @@ void runTests(bool runSpanTests) {
 
         test('should not repeatedly emit that error for subsequent transitions',
             () async {
-          Completer done = new Completer();
+          Completer done = Completer();
           // ignore: unawaited_futures
           done.future.then(expectAsync1((_) {}));
 
@@ -577,7 +577,7 @@ void runTests(bool runSpanTests) {
         });
 
         test('can still be disposed', () {
-          final completer = new Completer();
+          final completer = Completer();
           completer.future.then(expectAsync1((_) {}));
 
           module.didLoad.listen((_) {}, onError: (_) async {
@@ -741,7 +741,7 @@ void runTests(bool runSpanTests) {
         });
 
         test('can still be disposed', () {
-          final completer = new Completer();
+          final completer = Completer();
           completer.future.then(expectAsync1((_) {}));
 
           module.didUnload.listen((_) {}, onError: (_) async {
@@ -955,8 +955,8 @@ void runTests(bool runSpanTests) {
             () async {
           await gotoState(module, LifecycleState.suspended);
 
-          Completer<Span> suspendCompleter = new Completer();
-          Completer<Span> resumeCompleter = new Completer();
+          Completer<Span> suspendCompleter = Completer();
+          Completer<Span> resumeCompleter = Completer();
 
           // We go to suspend first so we can call resume
           // So we need to ignore the first suspend's span to get the correct timestamps
@@ -981,7 +981,7 @@ void runTests(bool runSpanTests) {
 
           // ignore: unawaited_futures
           module.resume();
-          await new Future(() {}); // wait for resume to start but not end
+          await Future(() {}); // wait for resume to start but not end
           expect(module.isResuming, isTrue);
 
           await module.suspend();
@@ -1038,7 +1038,7 @@ void runTests(bool runSpanTests) {
 
         test('should not repeatedly emit that error for subsequent transitions',
             () async {
-          Completer done = new Completer();
+          Completer done = Completer();
           // ignore: unawaited_futures
           done.future.then(expectAsync1((_) {}));
 
@@ -1054,7 +1054,7 @@ void runTests(bool runSpanTests) {
         });
 
         test('can still be disposed', () {
-          final completer = new Completer();
+          final completer = Completer();
           completer.future.then(expectAsync1((_) {}));
 
           module.didSuspend.listen((_) {}, onError: (_) async {
@@ -1198,7 +1198,7 @@ void runTests(bool runSpanTests) {
 
         module.onSuspendError = testError;
         module.suspend(); // fails
-        await new Future(() {});
+        await Future(() {});
         expect(module.isSuspending, isTrue);
 
         var error;
@@ -1245,8 +1245,8 @@ void runTests(bool runSpanTests) {
             () async {
           await gotoState(module, LifecycleState.loaded);
 
-          Completer<Span> suspendCompleter = new Completer();
-          Completer<Span> resumeCompleter = new Completer();
+          Completer<Span> suspendCompleter = Completer();
+          Completer<Span> resumeCompleter = Completer();
 
           subs.add(getTestTracer().onSpanFinish.listen(expectAsync1((span) {
                 if (span.operationName == 'TestLifecycleModule.suspend') {
@@ -1265,7 +1265,7 @@ void runTests(bool runSpanTests) {
 
           // ignore: unawaited_futures
           module.suspend();
-          await new Future(() {}); // wait for suspend to start but not end
+          await Future(() {}); // wait for suspend to start but not end
           expect(module.isSuspending, isTrue);
 
           await module.resume();
@@ -1321,7 +1321,7 @@ void runTests(bool runSpanTests) {
 
         test('should not repeatedly emit that error for subsequent transitions',
             () async {
-          Completer done = new Completer();
+          Completer done = Completer();
           // ignore: unawaited_futures
           done.future.then(expectAsync1((_) {}));
 
@@ -1337,7 +1337,7 @@ void runTests(bool runSpanTests) {
         });
 
         test('can still be disposed', () {
-          final completer = new Completer();
+          final completer = Completer();
           completer.future.then(expectAsync1((_) {}));
 
           module.didResume.listen((_) {}, onError: (_) async {
@@ -1442,7 +1442,7 @@ void runTests(bool runSpanTests) {
 
       test('should be a no-op if already disposing', () async {
         var future = module.dispose();
-        await new Future(() {});
+        await Future(() {});
         expect(module.isOrWillBeDisposed, isTrue);
         expect(module.isDisposed, isFalse);
         await Future.wait([future, module.dispose()]);
@@ -1451,13 +1451,13 @@ void runTests(bool runSpanTests) {
 
       test('should render all API methods unusable as soon as it is requested',
           () async {
-        final completer = new Completer<Null>();
+        final completer = Completer<Null>();
         // ignore: unawaited_futures
         module.awaitBeforeDispose(completer.future);
 
         // ignore: unawaited_futures
         module.dispose();
-        await new Future(() {});
+        await Future(() {});
         expect(module.isOrWillBeDisposed, isTrue);
         expect(module.isDisposed, isFalse);
 
@@ -1502,7 +1502,7 @@ void runTests(bool runSpanTests) {
 
               setUp(() async {
                 if (withChild) {
-                  childModule = new TestLifecycleModule(name: 'child');
+                  childModule = TestLifecycleModule(name: 'child');
                   await module.loadChildModule(childModule);
                 }
                 if (state == LifecycleState.unloading) {
@@ -1701,7 +1701,7 @@ void runTests(bool runSpanTests) {
           LifecycleState.resuming, ['willResume', 'onResume', 'didResume']);
       testDisposalFromLoadedState(LifecycleState.unloading);
     });
-  }, timeout: new Timeout(new Duration(seconds: 2)));
+  }, timeout: Timeout(Duration(seconds: 2)));
 
   group('with children', () {
     TestLifecycleModule childModule;
@@ -1710,8 +1710,8 @@ void runTests(bool runSpanTests) {
     List<StreamSubscription> subs = [];
 
     setUp(() async {
-      parentModule = new TestLifecycleModule(name: 'parent');
-      childModule = new TestLifecycleModule(name: 'child');
+      parentModule = TestLifecycleModule(name: 'parent');
+      childModule = TestLifecycleModule(name: 'child');
 
       if (runSpanTests) {
         subs.add(getTestTracer()
@@ -1910,12 +1910,12 @@ void runTests(bool runSpanTests) {
     });
 
     test('childModules returns an iterable of loaded child modules', () async {
-      var childModuleB = new TestLifecycleModule();
+      var childModuleB = TestLifecycleModule();
       await parentModule.loadChildModule(childModule);
       await parentModule.loadChildModule(childModuleB);
-      await new Future(() {});
-      expect(parentModule.childModules,
-          new isInstanceOf<Iterable<LifecycleModule>>());
+      await Future(() {});
+      expect(
+          parentModule.childModules, isInstanceOf<Iterable<LifecycleModule>>());
       expect(parentModule.childModules.toList(),
           equals([childModule, childModuleB]));
 
@@ -1954,7 +1954,7 @@ void runTests(bool runSpanTests) {
 
       if (runSpanTests) {
         test('child module suspends should record spans', () async {
-          Completer<Span> childSpanCompleter = new Completer();
+          Completer<Span> childSpanCompleter = Completer();
 
           subs.add(getTestTracer()
               .onSpanFinish
@@ -1972,7 +1972,7 @@ void runTests(bool runSpanTests) {
               equals(['willSuspend', 'onSuspend', 'didSuspend']));
 
           final span = await childSpanCompleter.future;
-          await new Future(() {}); // wait for parent to finish suspending
+          await Future(() {}); // wait for parent to finish suspending
 
           expect(parentSuspendContext?.spanId, isNotNull);
           expect(span.parentContext.spanId, parentSuspendContext.spanId);
@@ -1986,13 +1986,13 @@ void runTests(bool runSpanTests) {
         parentModule.onSuspendError = testError;
         // ignore: unawaited_future
         parentModule.suspend(); // fails
-        await new Future(() {}); // wait for suspend to start but not end
+        await Future(() {}); // wait for suspend to start but not end
         expect(parentModule.resume(), throwsA(same(testError)));
       });
 
       if (runSpanTests) {
         test('child module suspends should record spans', () async {
-          Completer<Span> childSpanCompleter = new Completer();
+          Completer<Span> childSpanCompleter = Completer();
 
           subs.add(getTestTracer()
               .onSpanFinish
@@ -2008,7 +2008,7 @@ void runTests(bool runSpanTests) {
               equals(['willSuspend', 'onSuspend', 'didSuspend']));
 
           final span = await childSpanCompleter.future;
-          await new Future(() {}); // wait for parent to finish suspending
+          await Future(() {}); // wait for parent to finish suspending
 
           expect(parentSuspendContext?.spanId, isNotNull);
           expect(span.parentContext.spanId, parentSuspendContext.spanId);
@@ -2034,7 +2034,7 @@ void runTests(bool runSpanTests) {
 
         if (runSpanTests) {
           test('should add `error` span tag and `followsFrom` ref', () async {
-            Completer<Span> childSpanCompleter = new Completer();
+            Completer<Span> childSpanCompleter = Completer();
 
             subs.add(getTestTracer()
                 .onSpanFinish
@@ -2045,7 +2045,7 @@ void runTests(bool runSpanTests) {
                 throwsA(same(childModule.onSuspendError)));
 
             final span = await childSpanCompleter.future;
-            await new Future(() {}); // wait for parent to finish suspending
+            await Future(() {}); // wait for parent to finish suspending
 
             expect(parentSuspendContext?.spanId, isNotNull);
             expect(span.parentContext.spanId, parentSuspendContext.spanId);
@@ -2054,7 +2054,7 @@ void runTests(bool runSpanTests) {
         }
 
         test('should still suspend other children', () async {
-          var secondChildModule = new TestLifecycleModule();
+          var secondChildModule = TestLifecycleModule();
           await parentModule.loadChildModule(secondChildModule);
           try {
             await parentModule.suspend();
@@ -2097,7 +2097,7 @@ void runTests(bool runSpanTests) {
 
       if (runSpanTests) {
         test('child module resumes should record spans', () async {
-          Completer<Span> childSpanCompleter = new Completer();
+          Completer<Span> childSpanCompleter = Completer();
 
           subs.add(getTestTracer()
               .onSpanFinish
@@ -2113,7 +2113,7 @@ void runTests(bool runSpanTests) {
               equals(['willResume', 'onResume', 'didResume']));
 
           final span = await childSpanCompleter.future;
-          await new Future(() {}); // wait for parent to finish resuming
+          await Future(() {}); // wait for parent to finish resuming
 
           expect(parentResumeContext?.spanId, isNotNull);
           expect(span.parentContext.spanId, parentResumeContext.spanId);
@@ -2139,7 +2139,7 @@ void runTests(bool runSpanTests) {
 
         if (runSpanTests) {
           test('should add `error` span tag and `followsFrom` ref', () async {
-            Completer<Span> childSpanCompleter = new Completer();
+            Completer<Span> childSpanCompleter = Completer();
 
             subs.add(getTestTracer()
                 .onSpanFinish
@@ -2150,7 +2150,7 @@ void runTests(bool runSpanTests) {
                 throwsA(same(childModule.onResumeError)));
 
             final span = await childSpanCompleter.future;
-            await new Future(() {}); // wait for parent to finish resuming
+            await Future(() {}); // wait for parent to finish resuming
 
             expect(parentResumeContext?.spanId, isNotNull);
             expect(span.parentContext.spanId, parentResumeContext.spanId);
@@ -2159,7 +2159,7 @@ void runTests(bool runSpanTests) {
         }
 
         test('should still resume other children', () async {
-          var secondChildModule = new TestLifecycleModule();
+          var secondChildModule = TestLifecycleModule();
           await parentModule.loadChildModule(secondChildModule);
           try {
             await parentModule.resume();
@@ -2221,7 +2221,7 @@ void runTests(bool runSpanTests) {
         test('should record a span on unload', () async {
           await parentModule.loadChildModule(childModule);
 
-          Completer<Span> childSpanCompleter = new Completer();
+          Completer<Span> childSpanCompleter = Completer();
 
           subs.add(getTestTracer()
               .onSpanFinish
@@ -2231,7 +2231,7 @@ void runTests(bool runSpanTests) {
           await parentModule.unload();
 
           final span = await childSpanCompleter.future;
-          await new Future(() {}); // wait for parent to finish unloading
+          await Future(() {}); // wait for parent to finish unloading
 
           expect(parentUnloadContext?.spanId, isNotNull);
           expect(span.parentContext.spanId, parentUnloadContext.spanId);
@@ -2408,7 +2408,7 @@ void runTests(bool runSpanTests) {
         });
 
         test('should still unload other children', () async {
-          var secondChildModule = new TestLifecycleModule();
+          var secondChildModule = TestLifecycleModule();
           await parentModule.loadChildModule(secondChildModule);
           parentModule.didUnload.listen((LifecycleModule _) {},
               onError: expectAsync2((Error error, StackTrace stackTrace) {
@@ -2502,7 +2502,7 @@ void runTests(bool runSpanTests) {
             'didUnload',
             'onDispose',
           ]));
-      await new Future(() {});
+      await Future(() {});
       expect(
           parentModule.eventList,
           equals([
@@ -2567,7 +2567,7 @@ void runTests(bool runSpanTests) {
       expect(parentModule.eventList, equals(['onShouldUnload']));
       expect(childModule.eventList, equals(['onShouldUnload']));
     });
-  }, timeout: new Timeout(new Duration(seconds: 2)));
+  }, timeout: Timeout(Duration(seconds: 2)));
 
   group('without name with children', () {
     TestLifecycleModule childModule;
@@ -2575,8 +2575,8 @@ void runTests(bool runSpanTests) {
     List<StreamSubscription> subs = [];
 
     setUp(() async {
-      parentModule = new UnnamedModule();
-      childModule = new TestLifecycleModule(name: 'child');
+      parentModule = UnnamedModule();
+      childModule = TestLifecycleModule(name: 'child');
 
       subs.add(getTestTracer()
           .onSpanFinish
@@ -2705,31 +2705,31 @@ void runTests(bool runSpanTests) {
         await parentModule.unload();
       });
     }
-  }, timeout: new Timeout(new Duration(seconds: 2)));
+  }, timeout: Timeout(Duration(seconds: 2)));
 
   group('shouldUnloadResult', () {
     test('should default to a successful result with a blank message list',
         () async {
-      ShouldUnloadResult result = new ShouldUnloadResult();
+      ShouldUnloadResult result = ShouldUnloadResult();
       expect(result.shouldUnload, equals(true));
       expect(result.messages, equals([]));
     });
 
     test('should support optional initial result and message', () async {
-      ShouldUnloadResult result = new ShouldUnloadResult(false, 'mock message');
+      ShouldUnloadResult result = ShouldUnloadResult(false, 'mock message');
       expect(result.shouldUnload, equals(false));
       expect(result.messages, equals(['mock message']));
     });
 
     test('should return the boolean result on call', () async {
-      ShouldUnloadResult result = new ShouldUnloadResult();
+      ShouldUnloadResult result = ShouldUnloadResult();
       expect(result(), equals(true));
     });
 
     test(
         'should return a newline delimited string of all messages in the list via messagesAsString',
         () async {
-      ShouldUnloadResult result = new ShouldUnloadResult(false, 'mock message');
+      ShouldUnloadResult result = ShouldUnloadResult(false, 'mock message');
       result.messages.add('mock message 2');
       expect(result.messagesAsString(), equals('mock message\nmock message 2'));
     });
@@ -2739,7 +2739,7 @@ void runTests(bool runSpanTests) {
     group('with an unnamed module', () {
       UnnamedModule module;
       setUp(() {
-        module = new UnnamedModule();
+        module = UnnamedModule();
       });
 
       tearDown(() async {
@@ -2757,7 +2757,7 @@ void runTests(bool runSpanTests) {
         await module.resume();
         await module.unload();
         // Wait some time after transitions are over to be sure no spans are created
-        await new Future.delayed(new Duration(milliseconds: 10));
+        await Future.delayed(Duration(milliseconds: 10));
       });
     });
   }

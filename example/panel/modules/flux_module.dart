@@ -29,9 +29,9 @@ class FluxModule extends Module {
   FluxStore _stores;
 
   FluxModule() {
-    _actions = new FluxActions();
-    _stores = new FluxStore(_actions);
-    _components = new FluxComponents(_actions, _stores);
+    _actions = FluxActions();
+    _stores = FluxStore(_actions);
+    _components = FluxComponents(_actions, _stores);
   }
 
   @override
@@ -49,7 +49,7 @@ class FluxComponents implements ModuleComponents {
 }
 
 class FluxActions {
-  final Action<Null> changeBackgroundColor = new Action();
+  final Action<Null> changeBackgroundColor = Action();
 }
 
 class FluxStore extends Store {
@@ -65,12 +65,12 @@ class FluxStore extends Store {
   void _changeBackgroundColor(_) {
     // generate a random hex color string
     _backgroundColor =
-        '#' + (new Random().nextDouble() * 16777215).floor().toRadixString(16);
+        '#' + (Random().nextDouble() * 16777215).floor().toRadixString(16);
   }
 }
 
 // ignore: non_constant_identifier_names
-var MyFluxComponent = react.registerComponent(() => new _MyFluxComponent());
+var MyFluxComponent = react.registerComponent(() => _MyFluxComponent());
 
 class _MyFluxComponent extends FluxComponent<FluxActions, FluxStore> {
   @override
