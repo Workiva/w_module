@@ -70,7 +70,7 @@ class TestLifecycleModule extends LifecycleModule {
   List<String> eventList;
   bool mockShouldUnload;
 
-  TestLifecycleModule({this.name: 'TestLifecycleModule'}) {
+  TestLifecycleModule({this.name = 'TestLifecycleModule'}) {
     // init test validation data
     eventList = [];
     mockShouldUnload = true;
@@ -120,9 +120,9 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   void specifyFirstUsefulState({
     // ignore: invalid_override_different_default_values_named
-    Map<String, dynamic> tags: const {},
+    Map<String, dynamic> tags = const {},
     // ignore: invalid_override_different_default_values_named
-    List<Reference> references: const [],
+    List<Reference> references = const [],
   }) =>
       super.specifyFirstUsefulState(tags: tags, references: references);
 
@@ -132,9 +132,9 @@ class TestLifecycleModule extends LifecycleModule {
   void specifyStartupTiming(
     StartupTimingType specifier, {
     // ignore: invalid_override_different_default_values_named
-    Map<String, dynamic> tags: const {},
+    Map<String, dynamic> tags = const {},
     // ignore: invalid_override_different_default_values_named
-    List<Reference> references: const [],
+    List<Reference> references = const [],
   }) =>
       super.specifyStartupTiming(specifier, tags: tags, references: references);
 
