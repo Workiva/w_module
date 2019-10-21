@@ -81,9 +81,6 @@ class SampleSpan implements Span {
   void setTag(String tagName, dynamic value) => tags[tagName] = value;
 
   @override
-  set startTime(DateTime value) => startTime = value;
-
-  @override
   Future<Span> get whenFinished => _whenFinished.future;
 
   @override
