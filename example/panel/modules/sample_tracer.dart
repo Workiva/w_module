@@ -21,7 +21,7 @@ class SampleSpan implements Span {
   SpanContext context;
 
   @override
-  final DateTime startTime;
+  DateTime startTime;
 
   DateTime _endTime;
 

@@ -21,7 +21,7 @@ class TestSpan implements Span {
   SpanContext context;
 
   @override
-  final DateTime startTime;
+  DateTime startTime;
   DateTime _endTime;
 
   Completer<Span> _whenFinished = Completer<Span>();
@@ -79,9 +79,6 @@ class TestSpan implements Span {
 
   @override
   void setTag(String tagName, dynamic value) => tags[tagName] = value;
-
-  @override
-  set startTime(DateTime value) => startTime = value;
 
   @override
   Future<Span> get whenFinished => _whenFinished.future;
