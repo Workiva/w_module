@@ -1914,8 +1914,7 @@ void runTests(bool runSpanTests) {
       await parentModule.loadChildModule(childModule);
       await parentModule.loadChildModule(childModuleB);
       await Future(() {});
-      expect(
-          parentModule.childModules, isInstanceOf<Iterable<LifecycleModule>>());
+      expect(parentModule.childModules, isA<Iterable<LifecycleModule>>());
       expect(parentModule.childModules.toList(),
           equals([childModule, childModuleB]));
 
