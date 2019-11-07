@@ -24,8 +24,8 @@ void main() {
     DispatchKey key;
 
     setUp(() {
-      key = new DispatchKey('test');
-      event = new Event<String>(key);
+      key = DispatchKey('test');
+      event = Event<String>(key);
     });
 
     test('should inherit from Stream', () {
@@ -34,7 +34,7 @@ void main() {
 
     test('should provide means to listen to the stream it was created from',
         () async {
-      Completer completer = new Completer();
+      Completer completer = Completer();
 
       event.listen((payload) {
         expect(payload, equals('trigger'));
@@ -46,7 +46,7 @@ void main() {
     });
 
     test('should support other stream methods', () async {
-      Completer completer = new Completer();
+      Completer completer = Completer();
 
       // The point of this test is to exercise the `where` method which is made available
       // on an action by extending stream and overriding `listen`
@@ -61,11 +61,11 @@ void main() {
     });
 
     test('should only allow dispatch with correct key', () async {
-      Completer completer = new Completer();
+      Completer completer = Completer();
 
       event.listen((payload) {
         if (payload == 'bad')
-          throw new Exception(
+          throw Exception(
               'Should not be able to dispatch events without the correct key.');
         if (payload == 'good') {
           completer.complete();
@@ -73,7 +73,7 @@ void main() {
       });
 
       // Create a new dispatch key that should not work for this event.
-      DispatchKey incorrectKey = new DispatchKey('incorrect');
+      DispatchKey incorrectKey = DispatchKey('incorrect');
 
       expect(() {
         event('bad', incorrectKey);
@@ -91,7 +91,7 @@ void main() {
 
     test('should only allow closing with correct key', () async {
       // Create a new dispatch key that should not work for this event.
-      DispatchKey incorrectKey = new DispatchKey('incorrect');
+      DispatchKey incorrectKey = DispatchKey('incorrect');
 
       expect(event.close(incorrectKey), throwsArgumentError);
     });

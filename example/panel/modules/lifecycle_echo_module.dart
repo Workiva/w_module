@@ -43,7 +43,7 @@ class LifecycleEchoModule extends Module {
     didLoadChildModule.listen((_) {
       print('$name: didLoadChildModule');
     });
-    _components = new LifecycleEchoComponents();
+    _components = LifecycleEchoComponents();
   }
 
   @override
@@ -59,22 +59,22 @@ class LifecycleEchoModule extends Module {
   @protected
   Future<Null> onLoad() async {
     print('$name: onLoad');
-    await loadChildModule(new LifecycleEchoChildModule());
-    await new Future.delayed(new Duration(seconds: 1));
+    await loadChildModule(LifecycleEchoChildModule());
+    await Future.delayed(Duration(seconds: 1));
   }
 
   @override
   @protected
   ShouldUnloadResult onShouldUnload() {
     print('$name: onShouldUnload');
-    return new ShouldUnloadResult();
+    return ShouldUnloadResult();
   }
 
   @override
   @protected
   Future<Null> onUnload() async {
     print('$name: onUnload');
-    await new Future.delayed(new Duration(seconds: 1));
+    await Future.delayed(Duration(seconds: 1));
   }
 }
 

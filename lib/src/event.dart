@@ -29,8 +29,7 @@ class Event<T> extends Stream<T> {
 
   /// The underlying StreamController that drives the dispatching of and
   /// listening for events.
-  final StreamController<T> _streamController =
-      new StreamController<T>.broadcast();
+  final StreamController<T> _streamController = StreamController<T>.broadcast();
 
   /// Create an Event and associate it with [key].
   Event(DispatchKey key) : _key = key;
@@ -48,7 +47,7 @@ class Event<T> extends Stream<T> {
   /// has finished closing.
   Future<Null> close(DispatchKey key) async {
     if (key != _key) {
-      throw new ArgumentError(
+      throw ArgumentError(
           'Event.close() expected the "${_key.name}" key but received the '
           '"${key.name}" key.');
     }
@@ -66,7 +65,7 @@ class Event<T> extends Stream<T> {
   /// [key] is the correct key with which this Event was constructed.
   void call(T payload, DispatchKey key) {
     if (key != _key) {
-      throw new ArgumentError(
+      throw ArgumentError(
           'Event dispatch expected the "${_key.name}" key but received the '
           '"${key.name}" key.');
     }

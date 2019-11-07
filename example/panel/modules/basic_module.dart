@@ -24,7 +24,7 @@ class BasicModule extends Module {
   BasicModuleComponents _components;
 
   BasicModule() {
-    _components = new BasicModuleComponents();
+    _components = BasicModuleComponents();
   }
 
   @override

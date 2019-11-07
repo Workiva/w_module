@@ -21,10 +21,10 @@ class TestSpan implements Span {
   SpanContext context;
 
   @override
-  final DateTime startTime;
+  DateTime startTime;
   DateTime _endTime;
 
-  Completer<Span> _whenFinished = new Completer<Span>();
+  Completer<Span> _whenFinished = Completer<Span>();
 
   TestSpan(
     this.operationName, {
@@ -32,20 +32,20 @@ class TestSpan implements Span {
     List<Reference> references,
     DateTime startTime,
     Map<String, dynamic> tags,
-  })  : this.startTime = startTime ?? new DateTime.now(),
+  })  : this.startTime = startTime ?? DateTime.now(),
         this.tags = tags ?? {},
         this.references = references ?? [] {
     if (childOf != null) {
-      references.add(new Reference.childOf(childOf));
+      references.add(Reference.childOf(childOf));
     }
     setTag('span.kind', 'client');
 
     final parent = parentContext;
     if (parent != null) {
-      this.context = new SpanContext(spanId: _id, traceId: parent.traceId);
+      this.context = SpanContext(spanId: _id, traceId: parent.traceId);
       this.context.baggage.addAll(parent.baggage);
     } else {
-      this.context = new SpanContext(spanId: _id, traceId: _id);
+      this.context = SpanContext(spanId: _id, traceId: _id);
     }
   }
 
@@ -64,14 +64,14 @@ class TestSpan implements Span {
       return;
     }
 
-    _endTime = finishTime ?? new DateTime.now();
+    _endTime = finishTime ?? DateTime.now();
     _whenFinished.complete(this);
     _whenFinished = null;
   }
 
   @override
   void log(String event, {dynamic payload, DateTime timestamp}) =>
-      logData.add(new LogData(timestamp ?? new DateTime.now(), event, payload));
+      logData.add(LogData(timestamp ?? DateTime.now(), event, payload));
 
   @override
   SpanContext get parentContext =>
@@ -81,14 +81,11 @@ class TestSpan implements Span {
   void setTag(String tagName, dynamic value) => tags[tagName] = value;
 
   @override
-  set startTime(DateTime value) => startTime = value;
-
-  @override
   Future<Span> get whenFinished => _whenFinished.future;
 
   @override
   String toString() {
-    final sb = new StringBuffer('SampleSpan(');
+    final sb = StringBuffer('SampleSpan(');
     sb
       ..writeln('traceId: ${context.traceId}')
       ..writeln('spanId: ${context.spanId}')
@@ -121,7 +118,7 @@ class TestSpan implements Span {
 class TestTracer implements AbstractTracer {
   // There should only ever be one of these
   // ignore: close_sinks
-  StreamController<Span> _finishController = new StreamController.broadcast();
+  StreamController<Span> _finishController = StreamController.broadcast();
 
   Stream<Span> get onSpanFinish => _finishController.stream;
 
@@ -133,7 +130,7 @@ class TestTracer implements AbstractTracer {
     DateTime startTime,
     Map<String, dynamic> tags,
   }) {
-    return new TestSpan(
+    return TestSpan(
       operationName,
       childOf: childOf,
       references: references,
@@ -143,21 +140,20 @@ class TestTracer implements AbstractTracer {
   }
 
   @override
-  Reference childOf(SpanContext context) => new Reference.childOf(context);
+  Reference childOf(SpanContext context) => Reference.childOf(context);
 
   @override
-  Reference followsFrom(SpanContext context) =>
-      new Reference.followsFrom(context);
+  Reference followsFrom(SpanContext context) => Reference.followsFrom(context);
 
   @override
   SpanContext extract(String format, dynamic carrier) {
-    throw new UnimplementedError(
+    throw UnimplementedError(
         'Sample tracer for example purposes does not support advanced tracing behavior.');
   }
 
   @override
   void inject(SpanContext spanContext, String format, dynamic carrier) {
-    throw new UnimplementedError(
+    throw UnimplementedError(
         'Sample tracer for example purposes does not support advanced tracing behavior.');
   }
 

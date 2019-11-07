@@ -33,7 +33,7 @@ class DeferredModule extends Module {
   DeferredComponents _components;
 
   DeferredModule() {
-    _components = new DeferredComponents(this);
+    _components = DeferredComponents(this);
   }
 
   @override
@@ -43,8 +43,7 @@ class DeferredModule extends Module {
   @protected
   Future<Null> onLoad() async {
     await heavy_lifter_with_data.loadLibrary();
-    data =
-        new heavy_lifter_with_data.RealLifter(HeavyLifterDivision.heavyweight);
+    data = heavy_lifter_with_data.RealLifter(HeavyLifterDivision.heavyweight);
   }
 }
 

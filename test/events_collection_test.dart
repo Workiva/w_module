@@ -16,14 +16,14 @@
 import 'package:test/test.dart';
 import 'package:w_module/w_module.dart';
 
-final _key = new DispatchKey('test');
+final _key = DispatchKey('test');
 
 class TestEvents extends EventsCollection {
   @override
   String get disposableTypeName => 'TestEvents';
 
-  final Event<String> eventA = new Event<String>(_key);
-  final Event<String> eventB = new Event<String>(_key);
+  final Event<String> eventA = Event<String>(_key);
+  final Event<String> eventB = Event<String>(_key);
 
   TestEvents() : super(_key) {
     [
@@ -37,7 +37,7 @@ void main() {
   group('EventsCollection', () {
     test('manageEvent() should close Events when the collection is disposed',
         () async {
-      final eventsCollection = new TestEvents();
+      final eventsCollection = TestEvents();
       expect(eventsCollection.eventA.isClosed, isFalse);
       expect(eventsCollection.eventB.isClosed, isFalse);
       await eventsCollection.dispose();

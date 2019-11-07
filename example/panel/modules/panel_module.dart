@@ -40,9 +40,9 @@ class PanelModule extends Module {
   PanelStore _stores;
 
   PanelModule() {
-    _actions = new PanelActions();
-    _stores = new PanelStore(_actions, this);
-    _components = new PanelComponents(_actions, _stores);
+    _actions = PanelActions();
+    _stores = PanelStore(_actions, this);
+    _components = PanelComponents(_actions, _stores);
   }
 
   @override
@@ -52,7 +52,7 @@ class PanelModule extends Module {
   @protected
   Future<Null> onLoad() {
     _actions.changeToPanel(0);
-    return new Future.value();
+    return Future.value();
   }
 
   Future addModule(LifecycleModule newModule) {
@@ -71,7 +71,7 @@ class PanelComponents implements ModuleComponents {
 }
 
 class PanelActions {
-  final Action<num> changeToPanel = new Action<num>();
+  final Action<num> changeToPanel = Action<num>();
 }
 
 class PanelStore extends Store {
@@ -114,23 +114,23 @@ class PanelStore extends Store {
 
     // load the new panel
     if (_panelIndex == 0) {
-      _panelModule = new BasicModule();
+      _panelModule = BasicModule();
     } else if (_panelIndex == 1) {
-      _panelModule = new FluxModule();
+      _panelModule = FluxModule();
     } else if (_panelIndex == 2) {
-      _panelModule = new RejectModule();
+      _panelModule = RejectModule();
     } else if (_panelIndex == 3) {
-      _panelModule = new DataLoadAsyncModule();
+      _panelModule = DataLoadAsyncModule();
     } else if (_panelIndex == 4) {
-      _panelModule = new DataLoadBlockingModule();
+      _panelModule = DataLoadBlockingModule();
     } else if (_panelIndex == 5) {
-      _panelModule = new DeferredModule();
+      _panelModule = DeferredModule();
     } else if (_panelIndex == 6) {
-      _panelModule = new LifecycleEchoModule();
+      _panelModule = LifecycleEchoModule();
     } else if (_panelIndex == 7) {
-      _panelModule = new HierarchyModule();
+      _panelModule = HierarchyModule();
     } else if (_panelIndex == 8) {
-      _panelModule = new PanelModule();
+      _panelModule = PanelModule();
     }
     await _parentModule.addModule(_panelModule);
     _isRenderable = true;
@@ -138,7 +138,7 @@ class PanelStore extends Store {
 }
 
 // ignore: non_constant_identifier_names
-var PanelComponent = react.registerComponent(() => new _PanelComponent());
+var PanelComponent = react.registerComponent(() => _PanelComponent());
 
 class _PanelComponent extends FluxComponent<PanelActions, PanelStore> {
   @override

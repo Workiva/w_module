@@ -1,14 +1,28 @@
 language: dart
-dart:
-  - stable
+
 sudo: required
 addons:
   chrome: stable
 cache:
   directories:
     - $HOME/.pub-cache
-script:
-  - pub get
-  - pub run dart_dev format --check
-  - pub run dart_dev analyze
-  - pub run dart_dev test --release
+jobs:
+  include:
+    - dart: 2.4.1
+      name: "SDK: 2.4.1"
+      script:
+        - pub run dart_dev analyze
+        - pub run dart_dev test --release
+    - dart: stable
+      name: "SDK: stable"
+      script:
+        - pub run dart_dev format --check
+        - pub run dart_dev analyze
+        - pub run dart_dev test
+        - pub run dart_dev test --release
+    - dart: dev
+      name: "SDK: dev"
+      script:
+        - pub run dart_dev analyze
+        - pub run dart_dev test --release
+ 
