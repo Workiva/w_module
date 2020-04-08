@@ -499,7 +499,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     if (isUnloaded || isUnloading) {
       var stateLabel = isUnloaded ? 'unloaded' : 'unloading';
       return Future.error(
-          StateError('Cannot load child module when module is $stateLabel'));
+          StateError('Cannot load child module when module is $stateLabel'),
+          StackTrace.current);
     }
 
     final completer = Completer<Null>();
@@ -912,8 +913,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     _logger.warning('.$methodName() was called after Module "$name" had '
         // ignore: deprecated_member_use
         'already ${isDisposing ? 'started disposing' : 'disposed'}.');
-    return Future.error(StateError(
-        'Calling .$methodName() after disposal has started is not allowed.'));
+    return Future.error(
+        StateError(
+            'Calling .$methodName() after disposal has started is not allowed.'),
+        StackTrace.current);
   }
 
   /// Returns a new [Future] error with a constructed reason.
@@ -925,8 +928,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         'Only a module in the '
             '${allowedStates.map(_readableStateName).join(", ")} states can '
             'transition to ${_readableStateName(targetState)}';
-    return Future.error(StateError(
-        'Transitioning from $_state to $targetState is not allowed. $reason'));
+    return Future.error(
+        StateError(
+            'Transitioning from $_state to $targetState is not allowed. $reason'),
+        StackTrace.current);
   }
 
   Future<Null> _buildNoopResponse(
