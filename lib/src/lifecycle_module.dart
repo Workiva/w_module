@@ -17,7 +17,8 @@ library w_module.src.lifecycle_module;
 import 'dart:async';
 
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart' show mustCallSuper, protected, required;
+import 'package:meta/meta.dart'
+    show alwaysThrows, mustCallSuper, protected, required;
 import 'package:opentracing/opentracing.dart';
 import 'package:w_common/disposable.dart';
 
@@ -487,23 +488,22 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Attempting to load a child module after a module has been unloaded will
   /// throw a [StateError].
   @protected
-  Future<Null> loadChildModule(LifecycleModule childModule) {
+  Future<Null> loadChildModule(LifecycleModule childModule) async {
     if (isOrWillBeDisposed) {
       return _buildDisposedOrDisposingResponse(methodName: 'loadChildModule');
     }
 
     if (_childModules.contains(childModule)) {
-      return Future.value(null);
+      return null;
     }
 
     if (isUnloaded || isUnloading) {
       var stateLabel = isUnloaded ? 'unloaded' : 'unloading';
-      return Future.error(
-          StateError('Cannot load child module when module is $stateLabel'));
+      throw StateError('Cannot load child module when module is $stateLabel');
     }
 
-    final completer = Completer<Null>();
-    onWillLoadChildModule(childModule).then((LifecycleModule _) async {
+    try {
+      await onWillLoadChildModule(childModule);
       _willLoadChildModuleController.add(childModule);
 
       final childModuleWillUnloadSub = listenToStream(
@@ -539,7 +539,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           rethrow;
         }
         _didLoadChildModuleController.add(childModule);
-        completer.complete();
       } catch (error, stackTrace) {
         // If the child module failed to load, we can dispose of it and cleanup
         // any state/subscriptions related to it.
@@ -549,21 +548,19 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         await childModuleDidUnloadSub.cancel();
 
         _didLoadChildModuleController.addError(error, stackTrace);
-        completer.completeError(error, stackTrace);
+        rethrow;
       } finally {
         childModule._parentContext = null;
       }
-    }).catchError((Object error, StackTrace stackTrace) {
+    } catch (error, stackTrace) {
       _logger.severe(
         'Exception in onWillLoadChildModule ($name)',
         error,
         stackTrace,
       );
       _willLoadChildModuleController.addError(error, stackTrace);
-      completer.completeError(error, stackTrace);
-    });
-
-    return completer.future;
+      rethrow;
+    }
   }
 
   /// Public method to suspend the module.
@@ -907,26 +904,28 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     }
   }
 
+  @alwaysThrows
   Future<Null> _buildDisposedOrDisposingResponse(
-      {@required String methodName}) {
+      {@required String methodName}) async {
     _logger.warning('.$methodName() was called after Module "$name" had '
         // ignore: deprecated_member_use
         'already ${isDisposing ? 'started disposing' : 'disposed'}.');
-    return Future.error(StateError(
-        'Calling .$methodName() after disposal has started is not allowed.'));
+    throw StateError(
+        'Calling .$methodName() after disposal has started is not allowed.');
   }
 
   /// Returns a new [Future] error with a constructed reason.
+  @alwaysThrows
   Future<Null> _buildIllegalTransitionResponse(
       {LifecycleState targetState,
       Iterable<LifecycleState> allowedStates,
-      String reason}) {
+      String reason}) async {
     reason = reason ??
         'Only a module in the '
             '${allowedStates.map(_readableStateName).join(", ")} states can '
             'transition to ${_readableStateName(targetState)}';
-    return Future.error(StateError(
-        'Transitioning from $_state to $targetState is not allowed. $reason'));
+    throw StateError(
+        'Transitioning from $_state to $targetState is not allowed. $reason');
   }
 
   Future<Null> _buildNoopResponse(
