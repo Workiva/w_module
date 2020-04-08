@@ -504,54 +504,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     try {
       await onWillLoadChildModule(childModule);
-      _willLoadChildModuleController.add(childModule);
-
-      final childModuleWillUnloadSub = listenToStream(
-          childModule.willUnload, _onChildModuleWillUnload,
-          onError: _willUnloadChildModuleController.addError);
-      final childModuleDidUnloadSub = listenToStream(
-          childModule.didUnload, _onChildModuleDidUnload,
-          onError: (error, stackTrace) =>
-              _didUnloadChildModuleController.addError);
-
-      // The child module may not reach an unloaded state successfully, but
-      // should always eventually be disposed. For this reason, we listen for
-      // its disposal before removing it from the list of child modules.
-      // ignore: unawaited_futures
-      childModule.didDispose.then((_) {
-        _childModules.remove(childModule);
-      });
-
-      try {
-        manageDisposable(childModule);
-        _childModules.add(childModule);
-        childModule._parentContext = _loadContext;
-
-        await childModule.load();
-        try {
-          await onDidLoadChildModule(childModule);
-        } catch (error, stackTrace) {
-          _logger.severe(
-            'Exception in onDidLoadChildModule ($name)',
-            error,
-            stackTrace,
-          );
-          rethrow;
-        }
-        _didLoadChildModuleController.add(childModule);
-      } catch (error, stackTrace) {
-        // If the child module failed to load, we can dispose of it and cleanup
-        // any state/subscriptions related to it.
-        _childModules.remove(childModule);
-        await childModule.dispose();
-        await childModuleWillUnloadSub.cancel();
-        await childModuleDidUnloadSub.cancel();
-
-        _didLoadChildModuleController.addError(error, stackTrace);
-        rethrow;
-      } finally {
-        childModule._parentContext = null;
-      }
     } catch (error, stackTrace) {
       _logger.severe(
         'Exception in onWillLoadChildModule ($name)',
@@ -560,6 +512,54 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       );
       _willLoadChildModuleController.addError(error, stackTrace);
       rethrow;
+    }
+    _willLoadChildModuleController.add(childModule);
+
+    final childModuleWillUnloadSub = listenToStream(
+        childModule.willUnload, _onChildModuleWillUnload,
+        onError: _willUnloadChildModuleController.addError);
+    final childModuleDidUnloadSub = listenToStream(
+        childModule.didUnload, _onChildModuleDidUnload,
+        onError: (error, stackTrace) =>
+            _didUnloadChildModuleController.addError);
+
+    // The child module may not reach an unloaded state successfully, but
+    // should always eventually be disposed. For this reason, we listen for
+    // its disposal before removing it from the list of child modules.
+    // ignore: unawaited_futures
+    childModule.didDispose.then((_) {
+      _childModules.remove(childModule);
+    });
+
+    try {
+      manageDisposable(childModule);
+      _childModules.add(childModule);
+      childModule._parentContext = _loadContext;
+
+      await childModule.load();
+      try {
+        await onDidLoadChildModule(childModule);
+      } catch (error, stackTrace) {
+        _logger.severe(
+          'Exception in onDidLoadChildModule ($name)',
+          error,
+          stackTrace,
+        );
+        rethrow;
+      }
+      _didLoadChildModuleController.add(childModule);
+    } catch (error, stackTrace) {
+      // If the child module failed to load, we can dispose of it and cleanup
+      // any state/subscriptions related to it.
+      _childModules.remove(childModule);
+      await childModule.dispose();
+      await childModuleWillUnloadSub.cancel();
+      await childModuleDidUnloadSub.cancel();
+
+      _didLoadChildModuleController.addError(error, stackTrace);
+      rethrow;
+    } finally {
+      childModule._parentContext = null;
     }
   }
 
