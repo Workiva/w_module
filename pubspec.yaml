@@ -32,3 +32,13 @@ dev_dependencies:
   react: ^5.1.0
   test: ^1.9.1
   w_flux: ^2.10.4
+
+dependency_overrides:
+  over_react:
+    git:
+      url: https://github.com/Workiva/over_react.git
+      ref: 4.0.0-wip
+  react:
+    git:
+      url: https://github.com/cleandart/react-dart.git
+      ref: testing-react-17-rc
