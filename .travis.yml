@@ -8,11 +8,6 @@ cache:
     - $HOME/.pub-cache
 jobs:
   include:
-    - dart: 2.4.1
-      name: "SDK: 2.4.1"
-      script:
-        - pub run dart_dev analyze
-        - pub run dart_dev test --release
     - dart: stable
       name: "SDK: stable"
       script:
@@ -25,4 +20,3 @@ jobs:
       script:
         - pub run dart_dev analyze
         - pub run dart_dev test --release
- 
