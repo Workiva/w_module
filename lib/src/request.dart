@@ -29,6 +29,8 @@ class Request<T, S> {
   /// Create an Event and associate it with [key].
   Request(DispatchKey key) : _key = key;
 
+  bool get hasListener => _onData != null;
+
   void listen(S onData(T event)) {
     _onData = onData;
   }
@@ -40,6 +42,9 @@ class Request<T, S> {
       throw ArgumentError(
           'Event dispatch expected the "${_key.name}" key but received the '
           '"${key.name}" key.');
+    }
+    if (_onData == null) {
+      throw StateError('the request has not been listened to');
     }
     return _onData(payload);
   }
