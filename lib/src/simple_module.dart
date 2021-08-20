@@ -70,6 +70,8 @@ abstract class SimpleModule {
   /// unidirectional data flow is maintained and external [events] represent
   /// confirmed internal state changes.
   Object get events => null;
+
+  Object get requests => null;
 }
 
 /// Standard [ModuleComponents] class. If a module implements a custom class
