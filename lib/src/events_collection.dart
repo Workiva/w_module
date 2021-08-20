@@ -14,6 +14,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:w_common/disposable.dart';
+import 'package:w_module/src/dispatch_key.dart';
 
 import 'package:w_module/src/event.dart';
 
