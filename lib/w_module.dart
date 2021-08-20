@@ -21,6 +21,8 @@
 /// facilitates dynamic loading / unloading of modules.
 library w_module;
 
+export 'package:w_module/src/request.dart';
+export 'package:w_module/src/requests_collection.dart';
 export 'package:w_module/src/event.dart';
 export 'package:w_module/src/events_collection.dart';
 export 'package:w_module/src/lifecycle_module.dart' hide LifecycleState;

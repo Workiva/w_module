@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-library w_module.src.event;
+library w_module.src.request;
 
 import 'package:w_module/src/dispatch_key.dart';
 
