@@ -938,7 +938,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       {@required String methodName,
       @required LifecycleState currentState,
       @required isTransitioning}) {
-    _logger.warning(
+    _logger.config(
         '.$methodName() was called while Module "$name" is already '
         '${_readableStateName(currentState)}; this is a no-op. Check for any '
         'unnecessary calls to .$methodName().',
