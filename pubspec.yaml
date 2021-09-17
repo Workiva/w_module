@@ -7,6 +7,11 @@ environment:
   sdk: ">=2.11.0 <3.0.0"
 
 dependencies:
+  react_material_ui:
+    hosted:
+      name: react_material_ui
+      url: https://pub.workiva.org
+    version: ^0.3.0
   logging: ^0.11.3+2
   meta: ^1.2.2
   opentracing: ^1.0.1
