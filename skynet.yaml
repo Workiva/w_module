@@ -1,0 +1,13 @@
+name: w_module-unit-tests
+description: Unit tests
+contact: 'Frontend Frameworks Architecture / #support-frontend-architecture'
+image: drydock.workiva.net/workiva/dart_unit_test_image:1
+size: large
+timeout: 600
+
+artifacts: /testing/w_module/test-reports
+test-reports: /testing/w_module/test-reports
+
+scripts:
+  - cd /testing/w_module/
+  - ./run_tests.sh
