@@ -632,17 +632,15 @@ void runTests(bool runSpanTests) {
         expect(
             Logger.root.onRecord,
             emits(
-                logRecord(level: Level.WARNING, message: contains('loading'))));
+                logRecord(level: Level.CONFIG, message: contains('loading'))));
 
         await module.load();
       });
 
       test('should warn if it was already loaded', () async {
         await module.load();
-        expect(
-            Logger.root.onRecord,
-            emits(
-                logRecord(level: Level.WARNING, message: contains('loaded'))));
+        expect(Logger.root.onRecord,
+            emits(logRecord(level: Level.CONFIG, message: contains('loaded'))));
 
         await module.load();
       });
@@ -823,7 +821,7 @@ void runTests(bool runSpanTests) {
         expect(
             Logger.root.onRecord,
             emits(logRecord(
-                level: Level.WARNING, message: contains('unloading'))));
+                level: Level.CONFIG, message: contains('unloading'))));
         await module.unload();
       });
 
@@ -831,8 +829,8 @@ void runTests(bool runSpanTests) {
         await gotoState(module, LifecycleState.unloaded);
         expect(
             Logger.root.onRecord,
-            emits(logRecord(
-                level: Level.WARNING, message: contains('unloaded'))));
+            emits(
+                logRecord(level: Level.CONFIG, message: contains('unloaded'))));
         await module.unload();
       });
 
@@ -1124,7 +1122,7 @@ void runTests(bool runSpanTests) {
         expect(
             Logger.root.onRecord,
             emits(logRecord(
-                level: Level.WARNING, message: contains('suspending'))));
+                level: Level.CONFIG, message: contains('suspending'))));
 
         await module.suspend();
       });
@@ -1134,7 +1132,7 @@ void runTests(bool runSpanTests) {
         expect(
             Logger.root.onRecord,
             emits(logRecord(
-                level: Level.WARNING, message: contains('suspended'))));
+                level: Level.CONFIG, message: contains('suspended'))));
 
         await module.suspend();
       });
@@ -1409,18 +1407,16 @@ void runTests(bool runSpanTests) {
 
         expect(
             Logger.root.onRecord,
-            emits(logRecord(
-                level: Level.WARNING, message: contains('resuming'))));
+            emits(
+                logRecord(level: Level.CONFIG, message: contains('resuming'))));
 
         await module.resume();
       });
 
       test('should warn if it is already loaded', () async {
         await gotoState(module, LifecycleState.loaded);
-        expect(
-            Logger.root.onRecord,
-            emits(
-                logRecord(level: Level.WARNING, message: contains('loaded'))));
+        expect(Logger.root.onRecord,
+            emits(logRecord(level: Level.CONFIG, message: contains('loaded'))));
 
         await module.resume();
       });
