@@ -34,8 +34,12 @@ jobs:
         run: dart analyze
         if: always() && steps.install.outcome == 'success'
 
-      - name: Run tests
+      - name: Run tests with ddc
         run: dart test
+        if: always() && steps.install.outcome == 'success'
+
+      - name: Run tests with dart2js
+        run: dart test --release
         if: always() && steps.install.outcome == 'success'
 
   format:
