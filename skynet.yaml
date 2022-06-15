@@ -10,4 +10,4 @@ run:
   on-pull-request: true
 
 scripts:
-  - echo "No tests currently set"
+  - echo "Tests run in github workflows"
