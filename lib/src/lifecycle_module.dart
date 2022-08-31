@@ -912,7 +912,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       {@required String methodName}) {
     _logger.warning('.$methodName() was called after Module "$name" had '
         // ignore: deprecated_member_use
-        'already ${isDisposing ? 'started disposing' : 'disposed'}.');
+        'already ${isOrWillBeDisposed ? 'started disposing' : 'disposed'}.');
     return Future.error(
         StateError(
             'Calling .$methodName() after disposal has started is not allowed.'),
