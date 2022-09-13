@@ -51,7 +51,7 @@ aggregate classes simplifies consumption and improves the discoverability of the
 ```dart
 // bare bones module definition
 
-DispatchKey sampleDispatchKey = new DispatchKey('sampleModule');
+DispatchKey sampleDispatchKey = DispatchKey('sampleModule');
 
 class SampleModule extends Module {
 
@@ -67,9 +67,9 @@ class SampleModule extends Module {
   SampleComponents get components => _components;
 
   SampleModule() {
-    _api = new SampleApi();
-    _events = new SampleEvents(sampleDispatchKey);
-    _components = new SampleComponents();
+    _api = SampleApi();
+    _events = SampleEvents(sampleDispatchKey);
+    _components = SampleComponents();
   }
 }
 ```
@@ -80,7 +80,7 @@ access to the module's `actions` and `stores`.
 ```dart
 // module definition with w_flux internals
 
-DispatchKey sampleDispatchKey = new DispatchKey('sampleModule');
+DispatchKey sampleDispatchKey = DispatchKey('sampleModule');
 
 class SampleModule extends Module {
 
@@ -99,11 +99,11 @@ class SampleModule extends Module {
   SampleComponents get components => _components;
 
   SampleModule() {
-    _actions = new SampleActions();
-    _events = new SampleEvents();
-    _store = new SampleStore(_actions, _events, sampleDispatchKey);
-    _components = new SampleComponents(_actions, _store);
-    _api = new SampleApi(_actions, _store);
+    _actions = SampleActions();
+    _events = SampleEvents();
+    _store = SampleStore(_actions, _events, sampleDispatchKey);
+    _components = SampleComponents(_actions, _store);
+    _api = SampleApi(_actions, _store);
   }
 }
 ```
@@ -176,10 +176,10 @@ Keeping the dispatch key private in the `Module` internals effectively prevents 
 ```dart
 // module events definition
 
-DispatchKey sampleDispatchKey = new DispatchKey('sampleModule');
+DispatchKey sampleDispatchKey = DispatchKey('sampleModule');
 
 class SampleEvents {
-  final Event<String> valueChanged = new Event(sampleDispatchKey);
+  final Event<String> valueChanged = Event(sampleDispatchKey);
 }
 ```
 
@@ -246,11 +246,11 @@ with an additional `manageEvent()` method. Colocating related events in an
 the `EventsCollection` instance.
 
 ```dart
-final key = new DispatchKey('example');
+final key = DispatchKey('example');
 
 class ExampleEvents extends EventsCollection {
-  final Event<String> eventA = new Event<String>(key);
-  final Event<String> eventB = new Event<String>(key);
+  final Event<String> eventA = Event<String>(key);
+  final Event<String> eventB = Event<String>(key);
 
   ExampleEvents() : super(key) {
     [
@@ -261,7 +261,7 @@ class ExampleEvents extends EventsCollection {
 }
 
 main() async {
-  final eventsCollection = new EventsCollection();
+  final eventsCollection = EventsCollection();
   await eventsCollection.dispose();
   // All Events on the collection should now be closed.
 }
