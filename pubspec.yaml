@@ -10,7 +10,7 @@ dependencies:
   logging: '>=0.11.3+2 <2.0.0'
   meta: ^1.2.2
   opentracing: ^1.0.1
-  w_common: '>=1.20.1 <3.0.0'
+  w_common: '^2.0.0'
 
 dev_dependencies:
   build_runner: ^2.1.2
