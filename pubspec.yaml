@@ -21,7 +21,7 @@ dev_dependencies:
   dart_style: ^2.1.1
   dependency_validator: ^3.2.2
   matcher: ^0.12.10
-  mockito: ^4.1.1
+  mockito: ^5.0.0
   over_react: ^4.4.0
   platform_detect: ^1.4.2
   react: ^6.1.6
