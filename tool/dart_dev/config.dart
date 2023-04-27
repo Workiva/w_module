@@ -17,6 +17,5 @@ import 'package:dart_dev/dart_dev.dart';
 final config = {
   ...coreConfig,
   'analyze': AnalyzeTool()..useDartAnalyze = true,
-  'format': FormatTool()..formatter = Formatter.dartFormat,
-  'serve': WebdevServeTool()..webdevArgs = ['example:8080']
+  'format': FormatTool()..formatter = Formatter.dartFormat
 };
