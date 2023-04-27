@@ -17,5 +17,6 @@ import 'package:dart_dev/dart_dev.dart';
 final config = {
   ...coreConfig,
   'analyze': AnalyzeTool()..useDartAnalyze = true,
-  'format': FormatTool()..formatter = Formatter.dartFormat
+  'format': FormatTool()..formatter = Formatter.dartFormat,
+  'test': TestTool()..testArgs = ['--platform=chrome'],
 };
