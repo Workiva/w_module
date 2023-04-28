@@ -18,5 +18,5 @@ final config = {
   ...coreConfig,
   'analyze': AnalyzeTool()..useDartAnalyze = true,
   'format': FormatTool()..formatter = Formatter.dartFormat,
-  'serve': WebdevServeTool()..webdevArgs = ['example:8080']
+  'test': TestTool()..testArgs = ['--platform=chrome'],
 };
