@@ -51,14 +51,21 @@ enum LifecycleState {
   unloaded
 }
 
+/// Contains "original" module API for backwards compatibility.
+abstract class LifecycleModule extends _LifecycleModule<LifecycleModule>
+    with SimpleModule {}
+
+/// Only contains lifecycle-related methods and properties.
+abstract class LifecycleModuleV2 extends _LifecycleModule<LifecycleModuleV2> {}
+
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
-abstract class LifecycleModule extends SimpleModule with Disposable {
+abstract class _LifecycleModule<T extends _LifecycleModule<T>> with Disposable {
   static int _nextId = 0;
   // Used by tracing to tell apart multiple instances of the same module
   int _instanceId = _nextId++;
 
-  List<LifecycleModule> _childModules = [];
+  List<T> _childModules = [];
   Logger _logger;
   String _defaultName;
   LifecycleState _previousState;
@@ -71,38 +78,30 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   DateTime _startLoadTime;
 
   // Lifecycle event StreamControllers
-  StreamController<LifecycleModule> _willLoadChildModuleController =
-      StreamController<LifecycleModule>.broadcast();
-  StreamController<LifecycleModule> _didLoadChildModuleController =
-      StreamController<LifecycleModule>.broadcast();
+  StreamController<T> _willLoadChildModuleController =
+      StreamController<T>.broadcast();
+  StreamController<T> _didLoadChildModuleController =
+      StreamController<T>.broadcast();
 
-  StreamController<LifecycleModule> _willLoadController =
-      StreamController<LifecycleModule>.broadcast();
-  StreamController<LifecycleModule> _didLoadController =
-      StreamController<LifecycleModule>.broadcast();
+  StreamController<T> _willLoadController = StreamController<T>.broadcast();
+  StreamController<T> _didLoadController = StreamController<T>.broadcast();
 
-  StreamController<LifecycleModule> _willSuspendController =
-      StreamController<LifecycleModule>.broadcast();
-  StreamController<LifecycleModule> _didSuspendController =
-      StreamController<LifecycleModule>.broadcast();
+  StreamController<T> _willSuspendController = StreamController<T>.broadcast();
+  StreamController<T> _didSuspendController = StreamController<T>.broadcast();
 
-  StreamController<LifecycleModule> _willResumeController =
-      StreamController<LifecycleModule>.broadcast();
-  StreamController<LifecycleModule> _didResumeController =
-      StreamController<LifecycleModule>.broadcast();
+  StreamController<T> _willResumeController = StreamController<T>.broadcast();
+  StreamController<T> _didResumeController = StreamController<T>.broadcast();
 
-  StreamController<LifecycleModule> _willUnloadChildModuleController =
-      StreamController<LifecycleModule>.broadcast();
-  StreamController<LifecycleModule> _didUnloadChildModuleController =
-      StreamController<LifecycleModule>.broadcast();
+  StreamController<T> _willUnloadChildModuleController =
+      StreamController<T>.broadcast();
+  StreamController<T> _didUnloadChildModuleController =
+      StreamController<T>.broadcast();
 
-  StreamController<LifecycleModule> _willUnloadController =
-      StreamController<LifecycleModule>.broadcast();
-  StreamController<LifecycleModule> _didUnloadController =
-      StreamController<LifecycleModule>.broadcast();
+  StreamController<T> _willUnloadController = StreamController<T>.broadcast();
+  StreamController<T> _didUnloadController = StreamController<T>.broadcast();
 
   // constructor necessary to init load / unload state stream
-  LifecycleModule() {
+  _LifecycleModule() {
     _logger = Logger('w_module.LifecycleModule:$name');
 
     [
@@ -264,13 +263,13 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   }
 
   /// List of child components so that lifecycle can iterate over them as needed
-  Iterable<LifecycleModule> get childModules => _childModules.toList();
+  Iterable<T> get childModules => _childModules.toList();
 
   /// The [LifecycleModule] was loaded.
   ///
   /// Any error or exception thrown during the [LifecycleModule]'s
   /// [onLoad] call will be emitted.
-  Stream<LifecycleModule> get didLoad => _didLoadController.stream;
+  Stream<T> get didLoad => _didLoadController.stream;
 
   /// A child [LifecycleModule] was loaded.
   ///
@@ -279,8 +278,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   ///
   /// Any error or exception thrown during the parent [LifecycleModule]'s
   /// [onDidLoadChildModule] call will be emitted.
-  Stream<LifecycleModule> get didLoadChildModule =>
-      _didLoadChildModuleController.stream;
+  Stream<T> get didLoadChildModule => _didLoadChildModuleController.stream;
 
   /// The [LifecycleModule] was resumed.
   ///
@@ -289,7 +287,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   ///
   /// Any error or exception thrown during the [LifecycleModule]'s
   /// [onResume] call will be emitted.
-  Stream<LifecycleModule> get didResume => _didResumeController.stream;
+  Stream<T> get didResume => _didResumeController.stream;
 
   /// The [LifecycleModule] was suspended.
   ///
@@ -298,7 +296,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   ///
   /// Any error or exception thrown during the [LifecycleModule]'s
   /// [onSuspend] call will be emitted.
-  Stream<LifecycleModule> get didSuspend => _didSuspendController.stream;
+  Stream<T> get didSuspend => _didSuspendController.stream;
 
   /// The [LifecycleModule] was unloaded.
   ///
@@ -307,7 +305,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   ///
   /// Any error or exception thrown during the [LifecycleModule]'s
   /// [onUnload] call will be emitted.
-  Stream<LifecycleModule> get didUnload => _didUnloadController.stream;
+  Stream<T> get didUnload => _didUnloadController.stream;
 
   /// A child [LifecycleModule] was unloaded.
   ///
@@ -316,34 +314,32 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   ///
   /// Any error or exception thrown during the parent [LifecycleModule]'s
   /// [onDidUnloadChildModule] call will be emitted.
-  Stream<LifecycleModule> get didUnloadChildModule =>
-      _didUnloadChildModuleController.stream;
+  Stream<T> get didUnloadChildModule => _didUnloadChildModuleController.stream;
 
   /// A child [LifecycleModule] is about to be loaded.
   ///
   /// Any error or exception thrown during the parent [LifecycleModule]'s
   /// [onDidLoadChildModule] call will be emitted.
-  Stream<LifecycleModule> get willLoadChildModule =>
-      _willLoadChildModuleController.stream;
+  Stream<T> get willLoadChildModule => _willLoadChildModuleController.stream;
 
   /// A child [LifecycleModule] is about to be unloaded.
   ///
   /// Any error or exception thrown during the parent [LifecycleModule]'s
   /// [onDidUnloadChildModule] call will be emitted.
-  Stream<LifecycleModule> get willUnloadChildModule =>
+  Stream<T> get willUnloadChildModule =>
       _willUnloadChildModuleController.stream;
 
   /// The [LifecycleModule] is about to be resumed.
-  Stream<LifecycleModule> get willResume => _willResumeController.stream;
+  Stream<T> get willResume => _willResumeController.stream;
 
   /// The [LifecycleModule] is about to be unloaded.
-  Stream<LifecycleModule> get willUnload => _willUnloadController.stream;
+  Stream<T> get willUnload => _willUnloadController.stream;
 
   /// The [LifecycleModule] is about to be loaded.
-  Stream<LifecycleModule> get willLoad => _willLoadController.stream;
+  Stream<T> get willLoad => _willLoadController.stream;
 
   /// The [LifecycleModule] is about to be suspended.
-  Stream<LifecycleModule> get willSuspend => _willSuspendController.stream;
+  Stream<T> get willSuspend => _willSuspendController.stream;
 
   /// Whether the module is currently instantiated.
   bool get isInstantiated => _state == LifecycleState.instantiated;
@@ -487,7 +483,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Attempting to load a child module after a module has been unloaded will
   /// throw a [StateError].
   @protected
-  Future<Null> loadChildModule(LifecycleModule childModule) {
+  Future<Null> loadChildModule(T childModule) {
     if (isOrWillBeDisposed) {
       return _buildDisposedOrDisposingResponse(methodName: 'loadChildModule');
     }
@@ -504,7 +500,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     }
 
     final completer = Completer<Null>();
-    onWillLoadChildModule(childModule).then((LifecycleModule _) async {
+    onWillLoadChildModule(childModule).then((T _) async {
       _willLoadChildModuleController.add(childModule);
 
       final childModuleWillUnloadSub = listenToStream(
@@ -819,19 +815,19 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
   /// Custom logic to be executed when a child module is to be loaded.
   @protected
-  Future<Null> onWillLoadChildModule(LifecycleModule module) async {}
+  Future<Null> onWillLoadChildModule(T module) async {}
 
   /// Custom logic to be executed when a child module has been loaded.
   @protected
-  Future<Null> onDidLoadChildModule(LifecycleModule module) async {}
+  Future<Null> onDidLoadChildModule(T module) async {}
 
   /// Custom logic to be executed when a child module is to be unloaded.
   @protected
-  Future<Null> onWillUnloadChildModule(LifecycleModule module) async {}
+  Future<Null> onWillUnloadChildModule(T module) async {}
 
   /// Custom logic to be executed when a child module has been unloaded.
   @protected
-  Future<Null> onDidUnloadChildModule(LifecycleModule module) async {}
+  Future<Null> onDidUnloadChildModule(T module) async {}
 
   /// Custom logic to be executed during suspend.
   ///
@@ -981,7 +977,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   }
 
   /// Handles a child [LifecycleModule]'s [didUnload] event.
-  Future<Null> _onChildModuleDidUnload(LifecycleModule module) async {
+  Future<Null> _onChildModuleDidUnload(T module) async {
     try {
       try {
         await onDidUnloadChildModule(module);
@@ -1000,7 +996,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   }
 
   /// Handles a child [LifecycleModule]'s [willUnload] event.
-  Future<Null> _onChildModuleWillUnload(LifecycleModule module) async {
+  Future<Null> _onChildModuleWillUnload(T module) async {
     try {
       try {
         await onWillUnloadChildModule(module);
