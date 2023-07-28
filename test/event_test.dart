@@ -20,8 +20,8 @@ import 'package:w_module/w_module.dart';
 
 void main() {
   group('Event', () {
-    Event<String> event;
-    DispatchKey key;
+    late Event<String> event;
+    late DispatchKey key;
 
     setUp(() {
       key = DispatchKey('test');

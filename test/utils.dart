@@ -4,7 +4,7 @@ import 'package:matcher/matcher.dart';
 /// Provides a Matcher for [LogRecord].
 ///
 /// The [Matcher] only considers provided optional parameters.
-Matcher logRecord({Level level, Matcher message, Matcher loggerName}) {
+Matcher logRecord({Level? level, Matcher? message, Matcher? loggerName}) {
   var matchers = [];
   if (level != null) {
     matchers.add(_LogLevelMatcher(level));

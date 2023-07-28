@@ -55,8 +55,8 @@ class Event<T> extends Stream<T> {
   }
 
   @override
-  StreamSubscription<T> listen(void onData(T event),
-      {Function onError, void onDone(), bool cancelOnError}) {
+  StreamSubscription<T> listen(void onData(T event)?,
+      {Function? onError, void onDone()?, bool? cancelOnError}) {
     return _streamController.stream.listen(onData,
         onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
@@ -79,6 +79,6 @@ class Event<T> extends Stream<T> {
 ///
 /// One key can be used for multiple events.
 class DispatchKey {
-  String name;
+  String? name;
   DispatchKey([this.name]);
 }

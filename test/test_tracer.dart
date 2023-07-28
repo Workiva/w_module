@@ -18,25 +18,25 @@ class TestSpan implements Span {
   final String operationName;
 
   @override
-  SpanContext context;
+  late SpanContext context;
 
   @override
-  DateTime startTime;
-  DateTime _endTime;
+  DateTime? startTime;
+  DateTime? _endTime;
 
-  Completer<Span> _whenFinished = Completer<Span>();
+  Completer<Span>? _whenFinished = Completer<Span>();
 
   TestSpan(
     this.operationName, {
-    SpanContext childOf,
-    List<Reference> references,
-    DateTime startTime,
-    Map<String, dynamic> tags,
+    SpanContext? childOf,
+    List<Reference>? references,
+    DateTime? startTime,
+    Map<String, dynamic>? tags,
   })  : this.startTime = startTime ?? DateTime.now(),
         this.tags = tags ?? {},
         this.references = references ?? [] {
     if (childOf != null) {
-      references.add(Reference.childOf(childOf));
+      references!.add(Reference.childOf(childOf));
     }
     setTag('span.kind', 'client');
 
@@ -53,35 +53,35 @@ class TestSpan implements Span {
   void addTags(Map<String, dynamic> newTags) => tags.addAll(newTags);
 
   @override
-  Duration get duration => _endTime?.difference(startTime);
+  Duration? get duration => _endTime?.difference(startTime!);
 
   @override
-  DateTime get endTime => _endTime;
+  DateTime? get endTime => _endTime;
 
   @override
-  void finish({DateTime finishTime}) {
+  void finish({DateTime? finishTime}) {
     if (_whenFinished == null) {
       return;
     }
 
     _endTime = finishTime ?? DateTime.now();
-    _whenFinished.complete(this);
+    _whenFinished!.complete(this);
     _whenFinished = null;
   }
 
   @override
-  void log(String event, {dynamic payload, DateTime timestamp}) =>
+  void log(String event, {dynamic payload, DateTime? timestamp}) =>
       logData.add(LogData(timestamp ?? DateTime.now(), event, payload));
 
   @override
-  SpanContext get parentContext =>
+  SpanContext? get parentContext =>
       references.isEmpty ? null : references.first.referencedContext;
 
   @override
   void setTag(String tagName, dynamic value) => tags[tagName] = value;
 
   @override
-  Future<Span> get whenFinished => _whenFinished.future;
+  Future<Span> get whenFinished => _whenFinished!.future;
 
   @override
   String toString() {
@@ -125,10 +125,10 @@ class TestTracer implements AbstractTracer {
   @override
   TestSpan startSpan(
     String operationName, {
-    SpanContext childOf,
-    List<Reference> references,
-    DateTime startTime,
-    Map<String, dynamic> tags,
+    SpanContext? childOf,
+    List<Reference>? references,
+    DateTime? startTime,
+    Map<String, dynamic>? tags,
   }) {
     return TestSpan(
       operationName,
@@ -159,12 +159,12 @@ class TestTracer implements AbstractTracer {
 
   @override
   Future<dynamic> flush() {
-    return null;
+    return Future.value(null);
   }
 
   @override
-  ScopeManager scopeManager;
+  ScopeManager? scopeManager;
 
   @override
-  Span get activeSpan => scopeManager?.active?.span;
+  Span? get activeSpan => scopeManager?.active?.span;
 }

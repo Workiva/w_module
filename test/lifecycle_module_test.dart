@@ -41,7 +41,7 @@ class UnnamedModule extends LifecycleModule {
   // Overriding without re-applying the @protected annotation allows us to call
   // loadChildModule in our tests below.
   @override
-  Future<Null> loadChildModule(LifecycleModule newModule) =>
+  Future<Null> loadChildModule(LifecycleModule? newModule) =>
       super.loadChildModule(newModule);
 }
 
@@ -49,26 +49,27 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   String get disposableTypeName => 'TestLifecycleModule';
 
-  Iterable<StreamSubscription<LifecycleModule>> _eventListStreamSubscriptions;
+  late Iterable<StreamSubscription<LifecycleModule?>>
+      _eventListStreamSubscriptions;
 
-  Duration onLoadDelay;
+  Duration? onLoadDelay;
 
-  Error onDidLoadChildModuleError;
-  Error onDidUnloadChildModuleError;
-  Error onDisposeError;
-  Error onLoadError;
-  Error onResumeError;
-  Error onSuspendError;
-  Error onUnloadError;
-  Error onWillLoadChildModuleError;
-  Error onWillUnloadChildModuleError;
+  Error? onDidLoadChildModuleError;
+  Error? onDidUnloadChildModuleError;
+  Error? onDisposeError;
+  Error? onLoadError;
+  Error? onResumeError;
+  Error? onSuspendError;
+  Error? onUnloadError;
+  Error? onWillLoadChildModuleError;
+  Error? onWillUnloadChildModuleError;
 
   @override
   final String name;
 
   // mock data to be used for test validation
-  List<String> eventList;
-  bool mockShouldUnload;
+  List<String>? eventList;
+  late bool mockShouldUnload;
 
   TestLifecycleModule({this.name = 'TestLifecycleModule'}) {
     // init test validation data
@@ -76,7 +77,7 @@ class TestLifecycleModule extends LifecycleModule {
     mockShouldUnload = true;
 
     var getEventListAdder =
-        (String label) => (LifecycleModule _) => eventList.add(label);
+        (String label) => (LifecycleModule? _) => eventList?.add(label);
     var onErrorHandler = (Object error) {};
 
     _eventListStreamSubscriptions = [
@@ -109,20 +110,20 @@ class TestLifecycleModule extends LifecycleModule {
   // Overriding without re-applying the @protected annotation allows us to call
   // activeSpan in our tests below.
   @override
-  Span get activeSpan => super.activeSpan;
+  Span? get activeSpan => super.activeSpan;
 
   // Overriding without re-applying the @protected annotation allows us to call
   // loadChildModule in our tests below.
   @override
-  Future<Null> loadChildModule(LifecycleModule newModule) =>
+  Future<Null> loadChildModule(LifecycleModule? newModule) =>
       super.loadChildModule(newModule);
 
   @override
   void specifyFirstUsefulState({
     // ignore: invalid_override_different_default_values_named
-    Map<String, dynamic> tags = const {},
+    Map<String, dynamic>? tags = const {},
     // ignore: invalid_override_different_default_values_named
-    List<Reference> references = const [],
+    List<Reference>? references = const [],
   }) =>
       super.specifyFirstUsefulState(tags: tags, references: references);
 
@@ -132,28 +133,28 @@ class TestLifecycleModule extends LifecycleModule {
   void specifyStartupTiming(
     StartupTimingType specifier, {
     // ignore: invalid_override_different_default_values_named
-    Map<String, dynamic> tags = const {},
+    Map<String, dynamic>? tags = const {},
     // ignore: invalid_override_different_default_values_named
-    List<Reference> references = const [],
+    List<Reference>? references = const [],
   }) =>
       super.specifyStartupTiming(specifier, tags: tags, references: references);
 
   @override
   @protected
-  Future<Null> onWillLoadChildModule(LifecycleModule module) async {
+  Future<Null> onWillLoadChildModule(LifecycleModule? module) async {
     if (onWillLoadChildModuleError != null) {
-      throw onWillLoadChildModuleError;
+      throw onWillLoadChildModuleError!;
     }
-    eventList.add('onWillLoadChildModule');
+    eventList?.add('onWillLoadChildModule');
   }
 
   @override
   @protected
-  Future<Null> onDidLoadChildModule(LifecycleModule module) async {
+  Future<Null> onDidLoadChildModule(LifecycleModule? module) async {
     if (onDidLoadChildModuleError != null) {
-      throw onDidLoadChildModuleError;
+      throw onDidLoadChildModuleError!;
     }
-    eventList.add('onDidLoadChildModule');
+    eventList?.add('onDidLoadChildModule');
   }
 
   @override
@@ -161,18 +162,18 @@ class TestLifecycleModule extends LifecycleModule {
   Future<Null> onWillUnloadChildModule(LifecycleModule module) async {
     await Future.value(null);
     if (onWillUnloadChildModuleError != null) {
-      throw onWillUnloadChildModuleError;
+      throw onWillUnloadChildModuleError!;
     }
-    eventList.add('onWillUnloadChildModule');
+    eventList?.add('onWillUnloadChildModule');
   }
 
   @override
   @protected
   Future<Null> onDidUnloadChildModule(LifecycleModule module) async {
     if (onDidUnloadChildModuleError != null) {
-      throw onDidUnloadChildModuleError;
+      throw onDidUnloadChildModuleError!;
     }
-    eventList.add('onDidUnloadChildModule');
+    eventList?.add('onDidUnloadChildModule');
   }
 
   @override
@@ -180,19 +181,19 @@ class TestLifecycleModule extends LifecycleModule {
   Future<Null> onLoad() async {
     await Future.delayed(onLoadDelay ?? const Duration(milliseconds: 1));
     if (onLoadError != null) {
-      throw onLoadError;
+      throw onLoadError!;
     }
     if (activeSpan != null) {
-      expect(activeSpan.operationName, '$name.load');
-      activeSpan.setTag('custom.load.tag', 'somevalue');
+      expect(activeSpan!.operationName, '$name.load');
+      activeSpan!.setTag('custom.load.tag', 'somevalue');
     }
-    eventList.add('onLoad');
+    eventList?.add('onLoad');
   }
 
   @override
   @protected
   ShouldUnloadResult onShouldUnload() {
-    eventList.add('onShouldUnload');
+    eventList?.add('onShouldUnload');
     if (mockShouldUnload) {
       return ShouldUnloadResult();
     } else {
@@ -205,13 +206,13 @@ class TestLifecycleModule extends LifecycleModule {
   Future<Null> onUnload() async {
     await Future.delayed(Duration(milliseconds: 1));
     if (onUnloadError != null) {
-      throw onUnloadError;
+      throw onUnloadError!;
     }
     if (activeSpan != null) {
-      expect(activeSpan.operationName, '$name.unload');
-      activeSpan.setTag('custom.unload.tag', 'somevalue');
+      expect(activeSpan!.operationName, '$name.unload');
+      activeSpan!.setTag('custom.unload.tag', 'somevalue');
     }
-    eventList.add('onUnload');
+    eventList?.add('onUnload');
   }
 
   @override
@@ -219,13 +220,13 @@ class TestLifecycleModule extends LifecycleModule {
   Future<Null> onSuspend() async {
     await Future.delayed(Duration(milliseconds: 1));
     if (onSuspendError != null) {
-      throw onSuspendError;
+      throw onSuspendError!;
     }
     if (activeSpan != null) {
-      expect(activeSpan.operationName, '$name.suspend');
-      activeSpan.setTag('custom.suspend.tag', 'somevalue');
+      expect(activeSpan!.operationName, '$name.suspend');
+      activeSpan!.setTag('custom.suspend.tag', 'somevalue');
     }
-    eventList.add('onSuspend');
+    eventList?.add('onSuspend');
   }
 
   @override
@@ -233,13 +234,13 @@ class TestLifecycleModule extends LifecycleModule {
   Future<Null> onResume() async {
     await Future.delayed(Duration(milliseconds: 1));
     if (onResumeError != null) {
-      throw onResumeError;
+      throw onResumeError!;
     }
     if (activeSpan != null) {
-      expect(activeSpan.operationName, '$name.resume');
-      activeSpan.setTag('custom.resume.tag', 'somevalue');
+      expect(activeSpan!.operationName, '$name.resume');
+      activeSpan!.setTag('custom.resume.tag', 'somevalue');
     }
-    eventList.add('onResume');
+    eventList?.add('onResume');
   }
 
   @override
@@ -247,9 +248,9 @@ class TestLifecycleModule extends LifecycleModule {
   Future<Null> onDispose() async {
     await Future.delayed(Duration(milliseconds: 1));
     if (onDisposeError != null) {
-      throw onDisposeError;
+      throw onDisposeError!;
     }
-    eventList.add('onDispose');
+    eventList?.add('onDispose');
   }
 
   /// Cancels subscriptions to the [TestLifecycleModule] lifecycle events.
@@ -372,7 +373,7 @@ void main() {
 /// Returns the `globalTracer()` typecasted as a `TestTracer` or `null`.
 TestTracer getTestTracer() {
   // Type cast here or return null
-  TestTracer tracer = globalTracer();
+  TestTracer tracer = globalTracer() as TestTracer;
   return tracer;
 }
 
@@ -387,7 +388,7 @@ void runTests(bool runSpanTests) {
   });
 
   group('without children', () {
-    TestLifecycleModule module;
+    late TestLifecycleModule module;
     List<StreamSubscription> subs = [];
 
     setUp(() {
@@ -442,16 +443,16 @@ void runTests(bool runSpanTests) {
         test('should record a span', () async {
           subs.add(getTestTracer().onSpanFinish.listen(expectAsync1((span) {
             expect(span.operationName, 'TestLifecycleModule.load');
-            expect(span.tags['custom.load.tag'], 'somevalue');
-            expect(span.tags['error'], isNull);
+            expect(span.tags!['custom.load.tag'], 'somevalue');
+            expect(span.tags!['error'], isNull);
           })));
 
           await module.load();
         });
 
         group('should record user specified timing', () {
-          DateTime startTime;
-          Span parentSpan;
+          DateTime? startTime;
+          late Span parentSpan;
 
           setUp(() async {
             final Completer<DateTime> startTimeCompleter = Completer();
@@ -478,7 +479,7 @@ void runTests(bool runSpanTests) {
           void specifyTimingTest(
             StartupTimingType specifier,
             void specifyDelegate(
-                {Map<String, String> tags, List<Reference> references}),
+                {Map<String, String>? tags, List<Reference>? references}),
           ) {
             subs.add(getTestTracer()
                 .onSpanFinish
@@ -488,8 +489,8 @@ void runTests(bool runSpanTests) {
                 .listen(expectAsync1((span) {
               expect(span.startTime, startTime);
               expect(span.tags, containsPair('custom.tag', 'custom value'));
-              expect(span.references.length, 2);
-              expect(span.references.map((ref) => ref.referencedContext),
+              expect(span.references!.length, 2);
+              expect(span.references!.map((ref) => ref.referencedContext),
                   contains(parentSpan.context));
             })));
 
@@ -552,7 +553,7 @@ void runTests(bool runSpanTests) {
           test('should add the `error` span tag', () async {
             subs.add(getTestTracer().onSpanFinish.listen(expectAsync1((span) {
               expect(span.operationName, 'TestLifecycleModule.load');
-              expect(span.tags['error'], true);
+              expect(span.tags!['error'], true);
             })));
 
             expect(module.load(), throwsA(same(module.onLoadError)));
@@ -666,7 +667,7 @@ void runTests(bool runSpanTests) {
       test('should dispatch events and call onShouldUnload and onUnload',
           () async {
         await gotoState(module, LifecycleState.loaded);
-        module.eventList.clear();
+        module.eventList?.clear();
 
         await module.unload();
         expect(module.eventList, equals(expectedUnloadEvents));
@@ -674,7 +675,7 @@ void runTests(bool runSpanTests) {
 
       test('should unload after loading completes', () async {
         await gotoState(module, LifecycleState.loading);
-        module.eventList.clear();
+        module.eventList?.clear();
         await module.unload();
         expect(module.eventList,
             ['willLoad', 'onLoad', 'didLoad']..addAll(expectedUnloadEvents));
@@ -682,7 +683,7 @@ void runTests(bool runSpanTests) {
 
       test('should unload after suspending completes', () async {
         await gotoState(module, LifecycleState.suspending);
-        module.eventList.clear();
+        module.eventList?.clear();
         await module.unload();
         expect(
             module.eventList,
@@ -692,7 +693,7 @@ void runTests(bool runSpanTests) {
 
       test('should unload after resuming completes', () async {
         await gotoState(module, LifecycleState.resuming);
-        module.eventList.clear();
+        module.eventList?.clear();
         await module.unload();
         expect(
             module.eventList,
@@ -715,7 +716,7 @@ void runTests(bool runSpanTests) {
       group('with an onUnload that throws', () {
         setUp(() async {
           await gotoState(module, LifecycleState.loaded);
-          module.eventList.clear();
+          module.eventList?.clear();
 
           module.onUnloadError = testError;
         });
@@ -777,7 +778,7 @@ void runTests(bool runSpanTests) {
 
       test('should support unloading from suspended state', () async {
         await gotoState(module, LifecycleState.suspended);
-        module.eventList.clear();
+        module.eventList?.clear();
         expect(module.isSuspended, isTrue);
         expectInLifecycleState(module, LifecycleState.suspended);
 
@@ -808,7 +809,7 @@ void runTests(bool runSpanTests) {
 
       test('should only unload once if it is already unloading', () async {
         await module.load();
-        module.eventList.clear();
+        module.eventList?.clear();
         var future = module.unload();
         expect(module.isUnloaded, isFalse);
         await Future.wait([module.unload(), future]);
@@ -837,7 +838,7 @@ void runTests(bool runSpanTests) {
       test('should throw an exception if shouldUnload completes false',
           () async {
         await module.load();
-        module.eventList.clear();
+        module.eventList?.clear();
         module.mockShouldUnload = false;
         var error;
         try {
@@ -854,7 +855,7 @@ void runTests(bool runSpanTests) {
       test('should succeed on second attempt if shouldUnload completes true',
           () async {
         await module.load();
-        module.eventList.clear();
+        module.eventList?.clear();
         module.mockShouldUnload = false;
         var error;
         try {
@@ -876,7 +877,7 @@ void runTests(bool runSpanTests) {
         module.willUnload.listen(expectAsync1((_) {}, count: 0));
         module.didUnload.listen(expectAsync1((_) {}, count: 0));
         await module.load();
-        module.eventList.clear();
+        module.eventList?.clear();
         module.mockShouldUnload = false;
         try {
           await module.unload();
@@ -893,14 +894,14 @@ void runTests(bool runSpanTests) {
 
       test('should dispatch suspend events and call onSuspend', () async {
         await gotoState(module, LifecycleState.loaded);
-        module.eventList.clear();
+        module.eventList?.clear();
         await module.suspend();
         expect(module.eventList, equals(expectedSuspendEvents));
       });
 
       test('should suspend after loading completes', () async {
         await gotoState(module, LifecycleState.loading);
-        module.eventList.clear();
+        module.eventList?.clear();
         await module.suspend();
         expect(module.eventList,
             ['willLoad', 'onLoad', 'didLoad']..addAll(expectedSuspendEvents));
@@ -908,7 +909,7 @@ void runTests(bool runSpanTests) {
 
       test('should suspend after resuming completes', () async {
         await gotoState(module, LifecycleState.resuming);
-        module.eventList.clear();
+        module.eventList?.clear();
         await module.suspend();
         expect(
             module.eventList,
@@ -936,7 +937,7 @@ void runTests(bool runSpanTests) {
               .where(
                   (span) => span.operationName == 'TestLifecycleModule.suspend')
               .listen(expectAsync1((span) {
-            expect(span.tags['custom.suspend.tag'], 'somevalue');
+            expect(span.tags!['custom.suspend.tag'], 'somevalue');
           })));
 
           await module.suspend();
@@ -962,14 +963,14 @@ void runTests(bool runSpanTests) {
 
           subs.add(getTestTracer().onSpanFinish.listen(expectAsync1((span) {
                 if (span.operationName == 'TestLifecycleModule.suspend') {
-                  expect(span.tags['custom.suspend.tag'], 'somevalue');
+                  expect(span.tags!['custom.suspend.tag'], 'somevalue');
                   if (foundFirstSuspend) {
                     suspendCompleter.complete(span);
                   } else {
                     foundFirstSuspend = true;
                   }
                 } else if (span.operationName == 'TestLifecycleModule.resume') {
-                  expect(span.tags['custom.resume.tag'], 'somevalue');
+                  expect(span.tags!['custom.resume.tag'], 'somevalue');
                   resumeCompleter.complete(span);
                 } else {
                   fail(
@@ -987,11 +988,11 @@ void runTests(bool runSpanTests) {
           final suspendSpan = await suspendCompleter.future;
           final resumeSpan = await resumeCompleter.future;
 
-          final resumeEnd = resumeSpan.startTime.add(resumeSpan.duration);
+          final resumeEnd = resumeSpan.startTime!.add(resumeSpan.duration!);
 
           // checks that resume ended before or at the same time the suspend started
-          expect(
-              resumeEnd.compareTo(suspendSpan.startTime), lessThanOrEqualTo(0));
+          expect(resumeEnd.compareTo(suspendSpan.startTime!),
+              lessThanOrEqualTo(0));
         });
       }
 
@@ -1027,7 +1028,7 @@ void runTests(bool runSpanTests) {
                 .where((span) =>
                     span.operationName == 'TestLifecycleModule.suspend')
                 .listen(expectAsync1((span) {
-              expect(span.tags['error'], true);
+              expect(span.tags!['error'], true);
             })));
 
             expect(module.suspend(), throwsA(same(module.onSuspendError)));
@@ -1109,7 +1110,7 @@ void runTests(bool runSpanTests) {
 
       test('should only suspend once if it is already suspending', () async {
         await module.load();
-        module.eventList.clear();
+        module.eventList?.clear();
         var future = module.suspend();
         expect(module.isSuspended, isFalse);
         await Future.wait([future, module.suspend()]);
@@ -1149,14 +1150,14 @@ void runTests(bool runSpanTests) {
 
       test('should dispatch resume events and call onResume', () async {
         await gotoState(module, LifecycleState.suspended);
-        module.eventList.clear();
+        module.eventList?.clear();
         await module.resume();
         expect(module.eventList, equals(expectedResumeEvents));
       });
 
       test('should resume after suspending completes', () async {
         await gotoState(module, LifecycleState.suspending);
-        module.eventList.clear();
+        module.eventList?.clear();
         await module.resume();
         expect(
             module.eventList,
@@ -1185,7 +1186,7 @@ void runTests(bool runSpanTests) {
               .where(
                   (span) => span.operationName == 'TestLifecycleModule.resume')
               .listen(expectAsync1((span) {
-            expect(span.tags['custom.resume.tag'], 'somevalue');
+            expect(span.tags!['custom.resume.tag'], 'somevalue');
           })));
 
           await module.resume();
@@ -1226,7 +1227,7 @@ void runTests(bool runSpanTests) {
               .where(
                   (span) => span.operationName == 'TestLifecycleModule.resume')
               .listen(expectAsync1((span) {
-            expect(span.tags['custom.resume.tag'], 'somevalue');
+            expect(span.tags!['custom.resume.tag'], 'somevalue');
           })));
 
           await module.resume();
@@ -1248,10 +1249,10 @@ void runTests(bool runSpanTests) {
 
           subs.add(getTestTracer().onSpanFinish.listen(expectAsync1((span) {
                 if (span.operationName == 'TestLifecycleModule.suspend') {
-                  expect(span.tags['custom.suspend.tag'], 'somevalue');
+                  expect(span.tags!['custom.suspend.tag'], 'somevalue');
                   suspendCompleter.complete(span);
                 } else if (span.operationName == 'TestLifecycleModule.resume') {
-                  expect(span.tags['custom.resume.tag'], 'somevalue');
+                  expect(span.tags!['custom.resume.tag'], 'somevalue');
                   resumeCompleter.complete(span);
                 } else if (span.operationName == 'TestLifecycleModule.load') {
                   // Do nothing; this is just to handle the third expected span
@@ -1271,11 +1272,11 @@ void runTests(bool runSpanTests) {
           final suspendSpan = await suspendCompleter.future;
           final resumeSpan = await resumeCompleter.future;
 
-          final suspendEnd = suspendSpan.startTime.add(suspendSpan.duration);
+          final suspendEnd = suspendSpan.startTime!.add(suspendSpan.duration!);
 
           // checks that suspend ended before or at the same time the resume started
-          expect(
-              suspendEnd.compareTo(resumeSpan.startTime), lessThanOrEqualTo(0));
+          expect(suspendEnd.compareTo(resumeSpan.startTime!),
+              lessThanOrEqualTo(0));
         });
       }
 
@@ -1310,7 +1311,7 @@ void runTests(bool runSpanTests) {
                 .where((span) =>
                     span.operationName == 'TestLifecycleModule.resume')
                 .listen(expectAsync1((span) {
-              expect(span.tags['error'], true);
+              expect(span.tags!['error'], true);
             })));
 
             expect(module.resume(), throwsA(same(module.onResumeError)));
@@ -1391,7 +1392,7 @@ void runTests(bool runSpanTests) {
 
       test('should only resume once if it is already resuming', () async {
         await gotoState(module, LifecycleState.suspended);
-        module.eventList.clear();
+        module.eventList?.clear();
         var future = module.resume();
         expect(module.isResuming, isTrue);
         await Future.wait([module.resume(), future]);
@@ -1459,7 +1460,7 @@ void runTests(bool runSpanTests) {
 
         final invalidAfterDisposalMatcher = allOf(
           throwsStateError,
-          throwsA(predicate((e) => e.toString().contains('dispos'))),
+          throwsA(predicate((dynamic e) => e.toString().contains('dispos'))),
         );
 
         expect(module.load(), invalidAfterDisposalMatcher);
@@ -1472,7 +1473,7 @@ void runTests(bool runSpanTests) {
       group('from instantiated state', () {
         setUp(() async {
           await gotoState(module, LifecycleState.instantiated);
-          module.eventList.clear();
+          module.eventList?.clear();
         });
 
         test('should go straight to disposal', () async {
@@ -1489,7 +1490,7 @@ void runTests(bool runSpanTests) {
 
       void testDisposalFromLoadedState(LifecycleState state,
           [List<String> expectedPreUnloadStates = const []]) {
-        TestLifecycleModule childModule;
+        TestLifecycleModule? childModule;
 
         for (final withChild in [false, true]) {
           group('(withChild=$withChild)', () {
@@ -1520,13 +1521,13 @@ void runTests(bool runSpanTests) {
                   // Clear out the event list again when the load completes so that
                   // those events don't affect the test expectations.
                   // ignore: unawaited_futures
-                  module.didLoad.first.then((_) => module.eventList.clear());
+                  module.didLoad.first.then((_) => module.eventList?.clear());
                 } else {
                   await gotoState(module, state);
                 }
-                module.eventList.clear();
+                module.eventList?.clear();
                 if (withChild) {
-                  childModule.eventList.clear();
+                  childModule!.eventList?.clear();
                 }
               });
 
@@ -1559,9 +1560,9 @@ void runTests(bool runSpanTests) {
                 expect(module.eventList, equals(expectedParentModuleEvents));
 
                 if (withChild) {
-                  expect(childModule.isDisposed, isTrue);
+                  expect(childModule!.isDisposed, isTrue);
                   expect(
-                      childModule.eventList,
+                      childModule!.eventList,
                       containsAllInOrder([]
                         ..addAll([
                           'onShouldUnload',
@@ -1577,7 +1578,7 @@ void runTests(bool runSpanTests) {
               group('with onShouldUnload=false', () {
                 setUp(() {
                   withChild
-                      ? childModule.mockShouldUnload = false
+                      ? childModule!.mockShouldUnload = false
                       : module.mockShouldUnload = false;
                 });
 
@@ -1594,9 +1595,9 @@ void runTests(bool runSpanTests) {
                         ..addAll(expectedDisposalStates)));
 
                   if (withChild) {
-                    expect(childModule.isDisposed, isTrue);
+                    expect(childModule!.isDisposed, isTrue);
                     expect(
-                        childModule.eventList,
+                        childModule!.eventList,
                         containsAllInOrder([]
                           ..addAll(['onShouldUnload', 'onShouldUnload'])
                           ..addAll(expectedDisposalStates)));
@@ -1621,7 +1622,7 @@ void runTests(bool runSpanTests) {
               group('with an onUnload that throws', () {
                 setUp(() {
                   withChild
-                      ? childModule.onUnloadError = testError
+                      ? childModule!.onUnloadError = testError
                       : module.onUnloadError = testError;
                 });
 
@@ -1629,7 +1630,7 @@ void runTests(bool runSpanTests) {
                   expect(module.didUnload.first, throwsA(same(testError)));
                   if (withChild) {
                     expect(
-                        childModule.didUnload.first, throwsA(same(testError)));
+                        childModule!.didUnload.first, throwsA(same(testError)));
                   }
                   expectInLifecycleState(module, state);
                   await module.dispose();
@@ -1654,9 +1655,9 @@ void runTests(bool runSpanTests) {
                   expect(module.eventList, equals(expectedParentModuleEvents));
 
                   if (withChild) {
-                    expect(childModule.isDisposed, isTrue);
+                    expect(childModule!.isDisposed, isTrue);
                     expect(
-                        childModule.eventList,
+                        childModule!.eventList,
                         containsAllInOrder([]
                           ..addAll([
                             'onShouldUnload',
@@ -1700,9 +1701,9 @@ void runTests(bool runSpanTests) {
   }, timeout: Timeout(Duration(seconds: 2)));
 
   group('with children', () {
-    TestLifecycleModule childModule;
-    TestLifecycleModule parentModule;
-    SpanContext parentSpanContext;
+    late TestLifecycleModule childModule;
+    late TestLifecycleModule parentModule;
+    SpanContext? parentSpanContext;
     List<StreamSubscription> subs = [];
 
     setUp(() async {
@@ -1735,7 +1736,7 @@ void runTests(bool runSpanTests) {
 
     group('loadChildModule', () {
       test('loads a child module', () async {
-        parentModule.eventList.clear();
+        parentModule.eventList?.clear();
         await parentModule.loadChildModule(childModule);
         expect(
             parentModule.eventList,
@@ -1788,8 +1789,8 @@ void runTests(bool runSpanTests) {
               .onSpanFinish
               .where((span) => span.operationName == 'child.load')
               .listen(expectAsync1((span) {
-            expect(span.parentContext.spanId, parentSpanContext.spanId);
-            expect(span.tags['custom.load.tag'], 'somevalue');
+            expect(span.parentContext!.spanId, parentSpanContext!.spanId);
+            expect(span.tags!['custom.load.tag'], 'somevalue');
           })));
 
           await parentModule.loadChildModule(childModule);
@@ -1807,7 +1808,7 @@ void runTests(bool runSpanTests) {
                 throwsA(same(childModule.onLoadError))));
 
         test('should add that error to didLoadChildModule stream', () {
-          parentModule.didLoadChildModule.listen((LifecycleModule _) {},
+          parentModule.didLoadChildModule.listen((LifecycleModule? _) {},
               onError: expectAsync2((Error error, StackTrace stackTrace) {
             expect(error, same(childModule.onLoadError));
             expect(stackTrace, isNotNull);
@@ -1823,8 +1824,8 @@ void runTests(bool runSpanTests) {
                 .onSpanFinish
                 .where((span) => span.operationName == 'child.load')
                 .listen(expectAsync1((span) {
-              expect(span.parentContext.spanId, parentSpanContext.spanId);
-              expect(span.tags['error'], true);
+              expect(span.parentContext!.spanId, parentSpanContext!.spanId);
+              expect(span.tags!['error'], true);
             })));
 
             expect(parentModule.loadChildModule(childModule),
@@ -1851,7 +1852,7 @@ void runTests(bool runSpanTests) {
         });
 
         test('should add that error to didLoadChildModule stream', () {
-          parentModule.didLoadChildModule.listen((LifecycleModule _) {},
+          parentModule.didLoadChildModule.listen((LifecycleModule? _) {},
               onError: expectAsync2((Error error, StackTrace stackTrace) {
             expect(error, same(parentModule.onDidLoadChildModuleError));
             expect(stackTrace, isNotNull);
@@ -1882,7 +1883,7 @@ void runTests(bool runSpanTests) {
         });
 
         test('should add that error to willLoadChildModule stream', () {
-          parentModule.willLoadChildModule.listen((LifecycleModule _) {},
+          parentModule.willLoadChildModule.listen((LifecycleModule? _) {},
               onError: expectAsync2((Error error, StackTrace stackTrace) {
             expect(error, same(parentModule.onWillLoadChildModuleError));
             expect(stackTrace, isNotNull);
@@ -1918,7 +1919,7 @@ void runTests(bool runSpanTests) {
     });
 
     group('suspend', () {
-      SpanContext parentSuspendContext;
+      SpanContext? parentSuspendContext;
 
       setUp(() async {
         if (runSpanTests) {
@@ -1938,8 +1939,8 @@ void runTests(bool runSpanTests) {
       });
 
       test('should suspend child modules', () async {
-        parentModule.eventList.clear();
-        childModule.eventList.clear();
+        parentModule.eventList?.clear();
+        childModule.eventList?.clear();
         await parentModule.suspend();
         expect(parentModule.eventList,
             equals(['willSuspend', 'onSuspend', 'didSuspend']));
@@ -1958,8 +1959,8 @@ void runTests(bool runSpanTests) {
             childSpanCompleter.complete(span);
           })));
 
-          parentModule.eventList.clear();
-          childModule.eventList.clear();
+          parentModule.eventList?.clear();
+          childModule.eventList?.clear();
           await parentModule.suspend();
           expect(parentModule.eventList,
               equals(['willSuspend', 'onSuspend', 'didSuspend']));
@@ -1970,8 +1971,8 @@ void runTests(bool runSpanTests) {
           await Future(() {}); // wait for parent to finish suspending
 
           expect(parentSuspendContext?.spanId, isNotNull);
-          expect(span.parentContext.spanId, parentSuspendContext.spanId);
-          expect(span.tags['custom.suspend.tag'], 'somevalue');
+          expect(span.parentContext!.spanId, parentSuspendContext!.spanId);
+          expect(span.tags!['custom.suspend.tag'], 'somevalue');
         });
       }
 
@@ -1994,8 +1995,8 @@ void runTests(bool runSpanTests) {
               .where((span) => span.operationName == 'child.suspend')
               .listen(expectAsync1(childSpanCompleter.complete)));
 
-          parentModule.eventList.clear();
-          childModule.eventList.clear();
+          parentModule.eventList?.clear();
+          childModule.eventList?.clear();
           await parentModule.suspend();
           expect(parentModule.eventList,
               equals(['willSuspend', 'onSuspend', 'didSuspend']));
@@ -2006,8 +2007,8 @@ void runTests(bool runSpanTests) {
           await Future(() {}); // wait for parent to finish suspending
 
           expect(parentSuspendContext?.spanId, isNotNull);
-          expect(span.parentContext.spanId, parentSuspendContext.spanId);
-          expect(span.tags['custom.suspend.tag'], 'somevalue');
+          expect(span.parentContext!.spanId, parentSuspendContext!.spanId);
+          expect(span.tags!['custom.suspend.tag'], 'somevalue');
         });
       }
 
@@ -2043,8 +2044,8 @@ void runTests(bool runSpanTests) {
             await Future(() {}); // wait for parent to finish suspending
 
             expect(parentSuspendContext?.spanId, isNotNull);
-            expect(span.parentContext.spanId, parentSuspendContext.spanId);
-            expect(span.tags['error'], true);
+            expect(span.parentContext!.spanId, parentSuspendContext!.spanId);
+            expect(span.tags!['error'], true);
           });
         }
 
@@ -2060,7 +2061,7 @@ void runTests(bool runSpanTests) {
     });
 
     group('resume', () {
-      SpanContext parentResumeContext;
+      SpanContext? parentResumeContext;
 
       setUp(() async {
         if (runSpanTests) {
@@ -2081,8 +2082,8 @@ void runTests(bool runSpanTests) {
       });
 
       test('should resume child modules', () async {
-        parentModule.eventList.clear();
-        childModule.eventList.clear();
+        parentModule.eventList?.clear();
+        childModule.eventList?.clear();
         await parentModule.resume();
         expect(parentModule.eventList,
             equals(['willResume', 'onResume', 'didResume']));
@@ -2099,8 +2100,8 @@ void runTests(bool runSpanTests) {
               .where((span) => span.operationName == 'child.resume')
               .listen(expectAsync1(childSpanCompleter.complete)));
 
-          parentModule.eventList.clear();
-          childModule.eventList.clear();
+          parentModule.eventList?.clear();
+          childModule.eventList?.clear();
           await parentModule.resume();
           expect(parentModule.eventList,
               equals(['willResume', 'onResume', 'didResume']));
@@ -2111,8 +2112,8 @@ void runTests(bool runSpanTests) {
           await Future(() {}); // wait for parent to finish resuming
 
           expect(parentResumeContext?.spanId, isNotNull);
-          expect(span.parentContext.spanId, parentResumeContext.spanId);
-          expect(span.tags['custom.resume.tag'], 'somevalue');
+          expect(span.parentContext!.spanId, parentResumeContext!.spanId);
+          expect(span.tags!['custom.resume.tag'], 'somevalue');
         });
       }
 
@@ -2148,8 +2149,8 @@ void runTests(bool runSpanTests) {
             await Future(() {}); // wait for parent to finish resuming
 
             expect(parentResumeContext?.spanId, isNotNull);
-            expect(span.parentContext.spanId, parentResumeContext.spanId);
-            expect(span.tags['error'], true);
+            expect(span.parentContext!.spanId, parentResumeContext!.spanId);
+            expect(span.tags!['error'], true);
           });
         }
 
@@ -2165,7 +2166,7 @@ void runTests(bool runSpanTests) {
     });
 
     group('unload', () {
-      SpanContext parentUnloadContext;
+      SpanContext? parentUnloadContext;
 
       setUp(() async {
         if (runSpanTests) {
@@ -2184,8 +2185,8 @@ void runTests(bool runSpanTests) {
 
       test('should unload child modules', () async {
         await parentModule.loadChildModule(childModule);
-        parentModule.eventList.clear();
-        childModule.eventList.clear();
+        parentModule.eventList?.clear();
+        childModule.eventList?.clear();
         await parentModule.unload();
         expect(
             parentModule.eventList,
@@ -2229,8 +2230,8 @@ void runTests(bool runSpanTests) {
           await Future(() {}); // wait for parent to finish unloading
 
           expect(parentUnloadContext?.spanId, isNotNull);
-          expect(span.parentContext.spanId, parentUnloadContext.spanId);
-          expect(span.tags['custom.unload.tag'], 'somevalue');
+          expect(span.parentContext!.spanId, parentUnloadContext!.spanId);
+          expect(span.tags!['custom.unload.tag'], 'somevalue');
         });
 
         test('activeSpan should be null when unload is finished', () async {
@@ -2281,8 +2282,8 @@ void runTests(bool runSpanTests) {
 
       group('should wait for in-progress child module loads', () {
         test('', () async {
-          parentModule.eventList.clear();
-          childModule.eventList.clear();
+          parentModule.eventList?.clear();
+          childModule.eventList?.clear();
           childModule.onLoadDelay = const Duration(milliseconds: 50);
           // ignore: unawaited_futures
           parentModule.loadChildModule(childModule);
@@ -2321,28 +2322,28 @@ void runTests(bool runSpanTests) {
         });
 
         test('with a child with an onLoad that throws', () async {
-          parentModule.eventList.clear();
-          childModule.eventList.clear();
+          parentModule.eventList?.clear();
+          childModule.eventList?.clear();
           childModule.onLoadDelay = const Duration(milliseconds: 50);
           childModule.onLoadError = testError;
 
           childModule.didLoad.listen((_) {},
-              onError: expectAsync1((error) {
+              onError: expectAsync1((dynamic error) {
                 expect(error, same(childModule.onLoadError));
               }, count: 1));
           parentModule.didLoadChildModule.listen((_) {},
-              onError: expectAsync1((error) {
+              onError: expectAsync1((dynamic error) {
                 expect(error, same(childModule.onLoadError));
               }, count: 1));
 
           // ignore: unawaited_futures
           parentModule
               .loadChildModule(childModule)
-              .catchError(expectAsync1((error) {
+              .catchError(expectAsync1((dynamic error) {
             expect(error, same(childModule.onLoadError));
           }));
           await childModule.willLoad.first;
-          await parentModule.unload().catchError(expectAsync1((error) {
+          await parentModule.unload().catchError(expectAsync1((dynamic error) {
             expect(error, same(childModule.onLoadError));
           }));
           expect(
@@ -2357,14 +2358,14 @@ void runTests(bool runSpanTests) {
         });
 
         test('with an onWillLoadChildModule that throws', () async {
-          parentModule.eventList.clear();
-          childModule.eventList.clear();
+          parentModule.eventList?.clear();
+          childModule.eventList?.clear();
           parentModule.onWillLoadChildModuleError = testError;
           childModule.onLoadDelay = const Duration(milliseconds: 50);
           // ignore: unawaited_futures
           parentModule
               .loadChildModule(childModule)
-              .catchError(expectAsync1((error) {
+              .catchError(expectAsync1((dynamic error) {
             expect(error, same(parentModule.onWillLoadChildModuleError));
           }));
           await parentModule.unload();
@@ -2484,8 +2485,8 @@ void runTests(bool runSpanTests) {
         'unloaded child module should be removed from lifecycle of parent module',
         () async {
       await parentModule.loadChildModule(childModule);
-      parentModule.eventList.clear();
-      childModule.eventList.clear();
+      parentModule.eventList?.clear();
+      childModule.eventList?.clear();
 
       await childModule.unload();
       expect(
@@ -2506,8 +2507,8 @@ void runTests(bool runSpanTests) {
             'onDidUnloadChildModule',
             'didUnloadChildModule'
           ]));
-      parentModule.eventList.clear();
-      childModule.eventList.clear();
+      parentModule.eventList?.clear();
+      childModule.eventList?.clear();
 
       await parentModule.unload();
       expect(
@@ -2529,8 +2530,8 @@ void runTests(bool runSpanTests) {
       expect(parentShouldUnload.messages, equals([]));
 
       await parentModule.loadChildModule(childModule);
-      parentModule.eventList.clear();
-      childModule.eventList.clear();
+      parentModule.eventList?.clear();
+      childModule.eventList?.clear();
 
       parentShouldUnload = parentModule.shouldUnload();
       expect(parentShouldUnload.shouldUnload, equals(false));
@@ -2552,8 +2553,8 @@ void runTests(bool runSpanTests) {
       expect(shouldUnloadRes.messages, equals([shouldUnloadError]));
 
       await parentModule.loadChildModule(childModule);
-      parentModule.eventList.clear();
-      childModule.eventList.clear();
+      parentModule.eventList?.clear();
+      childModule.eventList?.clear();
 
       shouldUnloadRes = parentModule.shouldUnload();
       expect(shouldUnloadRes.shouldUnload, equals(false));
@@ -2565,8 +2566,8 @@ void runTests(bool runSpanTests) {
   }, timeout: Timeout(Duration(seconds: 2)));
 
   group('without name with children', () {
-    TestLifecycleModule childModule;
-    UnnamedModule parentModule;
+    late TestLifecycleModule childModule;
+    late UnnamedModule parentModule;
     List<StreamSubscription> subs = [];
 
     setUp(() async {
@@ -2575,10 +2576,10 @@ void runTests(bool runSpanTests) {
 
       subs.add(getTestTracer()
           .onSpanFinish
-          .where((span) => !span.operationName.startsWith('child'))
+          .where((span) => !span.operationName!.startsWith('child'))
           .listen((span) {
         fail(
-            'Only the child module should have spans. Found: ${span.tags['module.name']}');
+            'Only the child module should have spans. Found: ${span.tags!['module.name']}');
       }));
 
       await parentModule.load();
@@ -2598,7 +2599,7 @@ void runTests(bool runSpanTests) {
             .where((span) => span.operationName == 'child.load')
             .listen(expectAsync1((span) {
           expect(span.parentContext, isNull);
-          expect(span.tags['custom.load.tag'], 'somevalue');
+          expect(span.tags!['custom.load.tag'], 'somevalue');
         })));
 
         await parentModule.loadChildModule(childModule);
@@ -2613,7 +2614,7 @@ void runTests(bool runSpanTests) {
             .where((span) => span.operationName == 'child.load')
             .listen(expectAsync1((span) {
           expect(span.parentContext, isNull);
-          expect(span.tags['error'], true);
+          expect(span.tags!['error'], true);
         })));
 
         expect(parentModule.loadChildModule(childModule),
@@ -2628,7 +2629,7 @@ void runTests(bool runSpanTests) {
             .where((span) => span.operationName == 'child.suspend')
             .listen(expectAsync1((span) {
           expect(span.parentContext, isNull);
-          expect(span.tags['custom.suspend.tag'], 'somevalue');
+          expect(span.tags!['custom.suspend.tag'], 'somevalue');
         })));
 
         await parentModule.suspend();
@@ -2645,7 +2646,7 @@ void runTests(bool runSpanTests) {
             .where((span) => span.operationName == 'child.suspend')
             .listen(expectAsync1((span) {
           expect(span.parentContext, isNull);
-          expect(span.tags['error'], true);
+          expect(span.tags!['error'], true);
         })));
 
         expect(
@@ -2661,7 +2662,7 @@ void runTests(bool runSpanTests) {
             .where((span) => span.operationName == 'child.resume')
             .listen(expectAsync1((span) {
           expect(span.parentContext, isNull);
-          expect(span.tags['custom.resume.tag'], 'somevalue');
+          expect(span.tags!['custom.resume.tag'], 'somevalue');
         })));
 
         await gotoState(parentModule, LifecycleState.suspended);
@@ -2679,7 +2680,7 @@ void runTests(bool runSpanTests) {
             .where((span) => span.operationName == 'child.resume')
             .listen(expectAsync1((span) {
           expect(span.parentContext, isNull);
-          expect(span.tags['error'], true);
+          expect(span.tags!['error'], true);
         })));
 
         await gotoState(parentModule, LifecycleState.suspended);
@@ -2694,7 +2695,7 @@ void runTests(bool runSpanTests) {
             .where((span) => span.operationName == 'child.unload')
             .listen(expectAsync1((span) {
           expect(span.parentContext, isNull);
-          expect(span.tags['custom.unload.tag'], 'somevalue');
+          expect(span.tags!['custom.unload.tag'], 'somevalue');
         })));
 
         await parentModule.unload();
@@ -2725,14 +2726,14 @@ void runTests(bool runSpanTests) {
         'should return a newline delimited string of all messages in the list via messagesAsString',
         () async {
       ShouldUnloadResult result = ShouldUnloadResult(false, 'mock message');
-      result.messages.add('mock message 2');
+      result.messages!.add('mock message 2');
       expect(result.messagesAsString(), equals('mock message\nmock message 2'));
     });
   });
 
   if (runSpanTests) {
     group('with an unnamed module', () {
-      UnnamedModule module;
+      late UnnamedModule module;
       setUp(() {
         module = UnnamedModule();
       });

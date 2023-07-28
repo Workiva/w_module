@@ -38,7 +38,7 @@ abstract class SimpleModule {
   /// the source of the mutation (e.g. external api or internal UI).  Likewise,
   /// module methods that expose internal state should usually use existing
   /// getter methods available on stores within the module.
-  Object get api => null;
+  Object? get api => null;
 
   /// The [components] object should contain all react-dart compatible UI
   /// component factory methods that a consumer can use to render module data.
@@ -54,7 +54,7 @@ abstract class SimpleModule {
   /// proper actions and stores props.  This ensures full functionality of the
   /// [components] without any external exposure of the requisite internal
   /// actions and stores.
-  ModuleComponents get components => null;
+  ModuleComponents? get components => null;
 
   /// The [events] object should contain all public streams that a consumer can
   /// listen to for notification of internal module state change.
@@ -69,12 +69,12 @@ abstract class SimpleModule {
   /// immediate response to actions.  This ensures that the internal
   /// unidirectional data flow is maintained and external [events] represent
   /// confirmed internal state changes.
-  Object get events => null;
+  Object? get events => null;
 }
 
 /// Standard [ModuleComponents] class. If a module implements a custom class
 /// for its components, it should extend [ModuleComponents].
 abstract class ModuleComponents {
   /// The default UI component
-  Object content() => null;
+  Object? content() => null;
 }

@@ -23,7 +23,7 @@ class TestModule extends Module {
 
 void main() {
   group('Module', () {
-    TestModule module;
+    late TestModule module;
 
     setUp(() {
       module = TestModule();
