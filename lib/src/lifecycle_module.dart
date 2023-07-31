@@ -58,7 +58,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   // Used by tracing to tell apart multiple instances of the same module
   int _instanceId = _nextId++;
 
-  List<LifecycleModule?> _childModules = [];
+  List<LifecycleModule> _childModules = [];
   late Logger _logger;
   String? _defaultName;
   LifecycleState? _previousState;
@@ -264,7 +264,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   }
 
   /// List of child components so that lifecycle can iterate over them as needed
-  Iterable<LifecycleModule?> get childModules => _childModules.toList();
+  Iterable<LifecycleModule> get childModules => _childModules.toList();
 
   /// The [LifecycleModule] was loaded.
   ///
@@ -715,7 +715,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     // collect results from all child modules and self
     List<ShouldUnloadResult> shouldUnloads = [];
     for (var child in _childModules) {
-      if (child!.isUnloading || child.isUnloaded || child.isOrWillBeDisposed) {
+      if (child.isUnloading || child.isUnloaded || child.isOrWillBeDisposed) {
         continue;
       }
       shouldUnloads.add(child.shouldUnload());
@@ -1032,7 +1032,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       List<Future<Null>> childResumeFutures = <Future<Null>>[];
       for (var child in _childModules.toList()) {
         childResumeFutures.add(Future.sync(() {
-          child!._parentContext = _activeSpan?.context;
+          child._parentContext = _activeSpan?.context;
           return child.resume().whenComplete(() {
             child._parentContext = null;
           });
@@ -1069,7 +1069,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       List<Future<Null>> childSuspendFutures = <Future<Null>>[];
       for (var child in _childModules.toList()) {
         childSuspendFutures.add(Future.sync(() async {
-          child!._parentContext = _activeSpan?.context;
+          child._parentContext = _activeSpan?.context;
           return child.suspend().whenComplete(() {
             child._parentContext = null;
           });
@@ -1117,7 +1117,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
       _willUnloadController.add(this);
       await Future.wait(_childModules.toList().map((child) {
-        child!._parentContext = _activeSpan?.context;
+        child._parentContext = _activeSpan?.context;
         return child.unload().whenComplete(() {
           child._parentContext = null;
         });

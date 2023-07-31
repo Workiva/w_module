@@ -18,6 +18,7 @@ import 'dart:async';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart' show protected;
 import 'package:mockito/mockito.dart';
+import 'package:opentracing/noop_tracer.dart';
 import 'package:opentracing/opentracing.dart';
 import 'package:test/test.dart';
 
@@ -183,7 +184,7 @@ class TestLifecycleModule extends LifecycleModule {
     if (onLoadError != null) {
       throw onLoadError!;
     }
-    if (activeSpan != null) {
+    if (activeSpan != null && activeSpan is! NoopSpan) {
       expect(activeSpan!.operationName, '$name.load');
       activeSpan!.setTag('custom.load.tag', 'somevalue');
     }
@@ -208,7 +209,7 @@ class TestLifecycleModule extends LifecycleModule {
     if (onUnloadError != null) {
       throw onUnloadError!;
     }
-    if (activeSpan != null) {
+    if (activeSpan != null && activeSpan is! NoopSpan) {
       expect(activeSpan!.operationName, '$name.unload');
       activeSpan!.setTag('custom.unload.tag', 'somevalue');
     }
@@ -222,7 +223,7 @@ class TestLifecycleModule extends LifecycleModule {
     if (onSuspendError != null) {
       throw onSuspendError!;
     }
-    if (activeSpan != null) {
+    if (activeSpan != null && activeSpan is! NoopSpan) {
       expect(activeSpan!.operationName, '$name.suspend');
       activeSpan!.setTag('custom.suspend.tag', 'somevalue');
     }
@@ -236,7 +237,7 @@ class TestLifecycleModule extends LifecycleModule {
     if (onResumeError != null) {
       throw onResumeError!;
     }
-    if (activeSpan != null) {
+    if (activeSpan != null && activeSpan is! NoopSpan) {
       expect(activeSpan!.operationName, '$name.resume');
       activeSpan!.setTag('custom.resume.tag', 'somevalue');
     }
@@ -360,9 +361,11 @@ void main() {
       runTests(true);
     });
     group('without globalTracer', () {
+      NoopTracer noopTracer;
       setUp(() {
-        initGlobalTracer(null);
-        assert(globalTracer() == null);
+        noopTracer = NoopTracer();
+        initGlobalTracer(noopTracer);
+        assert(globalTracer() == noopTracer);
       });
 
       runTests(false);
