@@ -25,5 +25,5 @@ dependency_validator:
     - mockito
 
 dependency_overrides:
-  w_module:
-    path: ../
+  w_module: ^3.0.0
+  w_transport: ^5.0.0
