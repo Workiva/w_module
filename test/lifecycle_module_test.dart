@@ -2729,7 +2729,7 @@ void runTests(bool runSpanTests) {
         'should return a newline delimited string of all messages in the list via messagesAsString',
         () async {
       ShouldUnloadResult result = ShouldUnloadResult(false, 'mock message');
-      result.messages!.add('mock message 2');
+      result.messages.add('mock message 2');
       expect(result.messagesAsString(), equals('mock message\nmock message 2'));
     });
   });

@@ -71,10 +71,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   DateTime? _startLoadTime;
 
   // Lifecycle event StreamControllers
-  StreamController<LifecycleModule?> _willLoadChildModuleController =
-      StreamController<LifecycleModule?>.broadcast();
-  StreamController<LifecycleModule?> _didLoadChildModuleController =
-      StreamController<LifecycleModule?>.broadcast();
+  StreamController<LifecycleModule> _willLoadChildModuleController =
+      StreamController<LifecycleModule>.broadcast();
+  StreamController<LifecycleModule> _didLoadChildModuleController =
+      StreamController<LifecycleModule>.broadcast();
 
   StreamController<LifecycleModule> _willLoadController =
       StreamController<LifecycleModule>.broadcast();
@@ -492,7 +492,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       return _buildDisposedOrDisposingResponse(methodName: 'loadChildModule');
     }
 
-    if (_childModules.contains(childModule)) {
+    if (childModule == null  || _childModules.contains(childModule)) {
       return Future.value(null);
     }
 
@@ -508,7 +508,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       _willLoadChildModuleController.add(childModule);
 
       final childModuleWillUnloadSub = listenToStream(
-          childModule!.willUnload, _onChildModuleWillUnload,
+          childModule.willUnload, _onChildModuleWillUnload,
           onError: _willUnloadChildModuleController.addError);
       final childModuleDidUnloadSub = listenToStream(
           childModule.didUnload, _onChildModuleDidUnload,
@@ -727,7 +727,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     for (var result in shouldUnloads) {
       if (!result.shouldUnload) {
         finalResult.shouldUnload = false;
-        finalResult.messages!.addAll(result.messages!);
+        finalResult.messages.addAll(result.messages);
       }
     }
     return finalResult;
@@ -1163,18 +1163,18 @@ class ModuleUnloadCanceledException implements Exception {
 /// A set of messages returned from the hierarchical application of shouldUnload
 class ShouldUnloadResult {
   bool shouldUnload;
-  List<String>? messages;
+  List<String> messages = [];
 
   ShouldUnloadResult([this.shouldUnload = true, String? message]) {
     messages = [];
     if (message != null) {
-      messages!.add(message);
+      messages.add(message);
     }
   }
 
   bool call() => shouldUnload;
 
   String messagesAsString() {
-    return messages!.join('\n');
+    return messages.join('\n');
   }
 }
