@@ -59,8 +59,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   int _instanceId = _nextId++;
 
   List<LifecycleModule> _childModules = [];
-  late Logger _logger;
-  String? _defaultName;
+  Logger? _memoLogger;
+  Logger get _logger =>
+      _memoLogger ??= Logger('w_module.LifecycleModule:$name');
+  late String _defaultName;
   LifecycleState? _previousState;
   LifecycleState? _state = LifecycleState.instantiated;
   Completer<Null>? _transition;
@@ -103,8 +105,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
-    _logger = Logger('w_module.LifecycleModule:$name');
-
     [
       _willLoadController,
       _didLoadController,
@@ -240,15 +240,15 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
           references: [tracer.followsFrom(_loadContext!)]..addAll(references),
           startTime: _startLoadTime,
           tags: _defaultTags..addAll(tags),
-        )!
-        .finish();
+        )
+        ?.finish();
 
     _startLoadTime = null;
   }
 
   /// Name of the module for identification in exceptions and debug messages.
   // ignore: unnecessary_getters_setters
-  String? get name => _defaultName;
+  String get name => _defaultName;
 
   Map<String, dynamic> get _defaultTags => {
         'span.kind': 'client',
@@ -260,7 +260,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   @deprecated
   // ignore: unnecessary_getters_setters
   set name(String? newName) {
-    _defaultName = newName;
+    if (newName != null) {
+      _defaultName = newName;
+    }
   }
 
   /// List of child components so that lifecycle can iterate over them as needed
@@ -279,7 +281,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   ///
   /// Any error or exception thrown during the parent [LifecycleModule]'s
   /// [onDidLoadChildModule] call will be emitted.
-  Stream<LifecycleModule?> get didLoadChildModule =>
+  Stream<LifecycleModule> get didLoadChildModule =>
       _didLoadChildModuleController.stream;
 
   /// The [LifecycleModule] was resumed.
@@ -323,7 +325,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   ///
   /// Any error or exception thrown during the parent [LifecycleModule]'s
   /// [onDidLoadChildModule] call will be emitted.
-  Stream<LifecycleModule?> get willLoadChildModule =>
+  Stream<LifecycleModule> get willLoadChildModule =>
       _willLoadChildModuleController.stream;
 
   /// A child [LifecycleModule] is about to be unloaded.
@@ -504,7 +506,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     }
 
     final completer = Completer<Null>();
-    onWillLoadChildModule(childModule).then((LifecycleModule? _) async {
+    onWillLoadChildModule(childModule).then((_) async {
       _willLoadChildModuleController.add(childModule);
 
       final childModuleWillUnloadSub = listenToStream(
@@ -820,11 +822,11 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
   /// Custom logic to be executed when a child module is to be loaded.
   @protected
-  Future<Null> onWillLoadChildModule(LifecycleModule? module) async {}
+  Future<Null> onWillLoadChildModule(LifecycleModule module) async {}
 
   /// Custom logic to be executed when a child module has been loaded.
   @protected
-  Future<Null> onDidLoadChildModule(LifecycleModule? module) async {}
+  Future<Null> onDidLoadChildModule(LifecycleModule module) async {}
 
   /// Custom logic to be executed when a child module is to be unloaded.
   @protected
@@ -1166,7 +1168,6 @@ class ShouldUnloadResult {
   List<String> messages = [];
 
   ShouldUnloadResult([this.shouldUnload = true, String? message]) {
-    messages = [];
     if (message != null) {
       messages.add(message);
     }
