@@ -492,7 +492,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       return _buildDisposedOrDisposingResponse(methodName: 'loadChildModule');
     }
 
-    if (childModule == null  || _childModules.contains(childModule)) {
+    if (childModule == null || _childModules.contains(childModule)) {
       return Future.value(null);
     }
 
