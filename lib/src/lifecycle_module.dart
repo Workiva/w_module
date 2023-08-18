@@ -203,8 +203,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   /// Any [tags] or [references] specified will be added to this span.
   @protected
   void specifyFirstUsefulState({
-    Map<String, dynamic>? tags = const {},
-    List<Reference>? references = const [],
+    Map<String, dynamic> tags = const {},
+    List<Reference> references = const [],
   }) =>
       specifyStartupTiming(
         StartupTimingType.firstUseful,
@@ -220,8 +220,8 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   @protected
   void specifyStartupTiming(
     StartupTimingType specifier, {
-    Map<String, dynamic>? tags = const {},
-    List<Reference>? references = const [],
+    Map<String, dynamic> tags = const {},
+    List<Reference> references = const [],
   }) {
     // Load didn't start
     if (_loadContext == null || _startLoadTime == null) {
@@ -237,9 +237,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     tracer
         .startSpan(
           '$name.${specifier.operationName}',
-          references: [tracer.followsFrom(_loadContext!)]..addAll(references!),
+          references: [tracer.followsFrom(_loadContext!)]..addAll(references),
           startTime: _startLoadTime,
-          tags: _defaultTags..addAll(tags!),
+          tags: _defaultTags..addAll(tags),
         )!
         .finish();
 

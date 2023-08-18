@@ -122,9 +122,9 @@ class TestLifecycleModule extends LifecycleModule {
   @override
   void specifyFirstUsefulState({
     // ignore: invalid_override_different_default_values_named
-    Map<String, dynamic>? tags = const {},
+    Map<String, dynamic> tags = const {},
     // ignore: invalid_override_different_default_values_named
-    List<Reference>? references = const [],
+    List<Reference> references = const [],
   }) =>
       super.specifyFirstUsefulState(tags: tags, references: references);
 
@@ -134,9 +134,9 @@ class TestLifecycleModule extends LifecycleModule {
   void specifyStartupTiming(
     StartupTimingType specifier, {
     // ignore: invalid_override_different_default_values_named
-    Map<String, dynamic>? tags = const {},
+    Map<String, dynamic> tags = const {},
     // ignore: invalid_override_different_default_values_named
-    List<Reference>? references = const [],
+    List<Reference> references = const [],
   }) =>
       super.specifyStartupTiming(specifier, tags: tags, references: references);
 
@@ -482,7 +482,7 @@ void runTests(bool runSpanTests) {
           void specifyTimingTest(
             StartupTimingType specifier,
             void specifyDelegate(
-                {Map<String, String>? tags, List<Reference>? references}),
+                {Map<String, String> tags, List<Reference> references}),
           ) {
             subs.add(getTestTracer()
                 .onSpanFinish
@@ -508,12 +508,15 @@ void runTests(bool runSpanTests) {
           ].forEach((specifier) {
             test('specifyStartupTiming for ${specifier.operationName}', () {
               specifyTimingTest(
-                  specifier,
-                  ({tags, references}) => module.specifyStartupTiming(
-                        specifier,
-                        tags: tags,
-                        references: references,
-                      ));
+                specifier,
+                ({Map<String, dynamic>? tags, List<Reference>? references}) {
+                  module.specifyStartupTiming(
+                    specifier,
+                    tags: tags ?? const {},
+                    references: references ?? const [],
+                  );
+                },
+              );
             });
           });
 
