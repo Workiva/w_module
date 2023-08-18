@@ -1,3 +1,9 @@
+## [3.0.0](https://github.com/Workiva/w_module/compare/2.0.5...3.0.0)
+
+_August 18, 2023_
+
+- **Improvement:** Updated to null safety
+
 ## [2.0.5](https://github.com/Workiva/w_module/compare/2.0.4...2.0.5)
 
 _December 13, 2018_
