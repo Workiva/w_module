@@ -16,7 +16,7 @@ dev_dependencies:
   over_react: ^4.4.0
   platform_detect: '>=1.4.2 <3.0.0'
   react: ^6.1.6
-  w_common: '>=2.0.0 <4.0.0'
+  w_common: ^3.0.0
   w_flux: ^2.10.21
   w_module:
 
