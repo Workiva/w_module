@@ -20,10 +20,6 @@ dev_dependencies:
   w_flux: ^2.10.21
   w_module:
 
-dependency_validator:
-  ignore:
-    - mockito
-
 dependency_overrides:
   w_module:
     path: ../
