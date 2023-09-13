@@ -18,8 +18,17 @@ dev_dependencies:
   react: ^6.1.6
   w_common: ^3.0.0
   w_flux: ^2.10.21
-  w_module:
+  w_module
+  workiva_dependency_constrainer:
+    hosted:
+      name: workiva_dependency_constrainer
+      url: https://pub.workiva.org
+    version: ^1.0.0:
 
 dependency_overrides:
   w_module:
     path: ../
+
+dependency_validator:
+  ignore:
+    - workiva_dependency_constrainer
