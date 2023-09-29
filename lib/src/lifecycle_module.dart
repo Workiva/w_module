@@ -528,7 +528,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       try {
         manageDisposable(childModule);
         _childModules.add(childModule);
-        _setParentContextOnChild(childModule, _loadContext);
+        childModule.parentContext = _loadContext;
 
         await childModule.load();
         try {
@@ -554,7 +554,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         _didLoadChildModuleController.addError(error, stackTrace);
         completer.completeError(error, stackTrace);
       } finally {
-        _setParentContextOnChild(childModule, null);
+        childModule.parentContext = null;
       }
     }).catchError((Object error, StackTrace stackTrace) {
       _logger.severe(
@@ -569,15 +569,11 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     return completer.future;
   }
 
-  /// This method is a workaround for the dangers of mock modules. A mock cannot implement a private member, so this will fail.
-  void _setParentContextOnChild(
-    LifecycleModule? childModule,
-    SpanContext? context,
-  ) {
-    try {
-      childModule?._parentContext = context;
-    } catch (e) {}
-  }
+  /// Provide a way for a module to update its children's parentContext that is compatible with mocking in 2.19.
+  /// 
+  /// This is only intended for use within this file and is marked protected.
+  @protected
+  set parentContext(SpanContext? context) => _parentContext = context;
 
   /// Public method to suspend the module.
   ///
@@ -1044,9 +1040,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       List<Future<Null>> childResumeFutures = <Future<Null>>[];
       for (var child in _childModules.toList()) {
         childResumeFutures.add(Future.sync(() {
-          _setParentContextOnChild(child, _activeSpan?.context);
+          child.parentContext = _activeSpan?.context;
           return child.resume().whenComplete(() {
-            _setParentContextOnChild(child, null);
+            child.parentContext = null;
           });
         }));
       }
@@ -1081,9 +1077,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       List<Future<Null>> childSuspendFutures = <Future<Null>>[];
       for (var child in _childModules.toList()) {
         childSuspendFutures.add(Future.sync(() async {
-          _setParentContextOnChild(child, _activeSpan?.context);
+          child.parentContext = _activeSpan?.context;
           return child.suspend().whenComplete(() {
-            _setParentContextOnChild(child, null);
+            child.parentContext = null;
           });
         }));
       }
@@ -1129,9 +1125,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
       _willUnloadController.add(this);
       await Future.wait(_childModules.toList().map((child) {
-        _setParentContextOnChild(child, _activeSpan?.context);
+        child.parentContext = _activeSpan?.context;
         return child.unload().whenComplete(() {
-          _setParentContextOnChild(child, null);
+          child.parentContext = null;
         });
       }));
       try {
