@@ -528,7 +528,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       try {
         manageDisposable(childModule);
         _childModules.add(childModule);
-        childModule._parentContext = _loadContext;
+        childModule.parentContext = _loadContext;
 
         await childModule.load();
         try {
@@ -554,7 +554,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
         _didLoadChildModuleController.addError(error, stackTrace);
         completer.completeError(error, stackTrace);
       } finally {
-        childModule._parentContext = null;
+        childModule.parentContext = null;
       }
     }).catchError((Object error, StackTrace stackTrace) {
       _logger.severe(
@@ -568,6 +568,12 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     return completer.future;
   }
+
+  /// Provide a way for a module to update its children's parentContext that is compatible with mocking in 2.19.
+  ///
+  /// This is only intended for use within this file and is marked protected.
+  @protected
+  set parentContext(SpanContext? context) => _parentContext = context;
 
   /// Public method to suspend the module.
   ///
@@ -1034,9 +1040,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       List<Future<Null>> childResumeFutures = <Future<Null>>[];
       for (var child in _childModules.toList()) {
         childResumeFutures.add(Future.sync(() {
-          child._parentContext = _activeSpan?.context;
+          child.parentContext = _activeSpan?.context;
           return child.resume().whenComplete(() {
-            child._parentContext = null;
+            child.parentContext = null;
           });
         }));
       }
@@ -1071,9 +1077,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       List<Future<Null>> childSuspendFutures = <Future<Null>>[];
       for (var child in _childModules.toList()) {
         childSuspendFutures.add(Future.sync(() async {
-          child._parentContext = _activeSpan?.context;
+          child.parentContext = _activeSpan?.context;
           return child.suspend().whenComplete(() {
-            child._parentContext = null;
+            child.parentContext = null;
           });
         }));
       }
@@ -1119,9 +1125,9 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
       _willUnloadController.add(this);
       await Future.wait(_childModules.toList().map((child) {
-        child._parentContext = _activeSpan?.context;
+        child.parentContext = _activeSpan?.context;
         return child.unload().whenComplete(() {
-          child._parentContext = null;
+          child.parentContext = null;
         });
       }));
       try {
