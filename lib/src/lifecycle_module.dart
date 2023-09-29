@@ -570,7 +570,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   }
 
   /// Provide a way for a module to update its children's parentContext that is compatible with mocking in 2.19.
-  /// 
+  ///
   /// This is only intended for use within this file and is marked protected.
   @protected
   set parentContext(SpanContext? context) => _parentContext = context;
