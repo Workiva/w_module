@@ -15,9 +15,9 @@ dev_dependencies:
   opentracing: ^1.0.1
   over_react: ^4.4.0
   platform_detect: '>=1.4.2 <3.0.0'
-  react: ^6.1.6
+  react: '>=6.1.6 <8.0.0'
   w_common: ^3.0.0
-  w_flux: ^2.10.21
+  w_flux: '>=2.10.21 <4.0.0'
   w_module:
 
 dependency_overrides:
