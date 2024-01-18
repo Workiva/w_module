@@ -85,8 +85,8 @@ class HierarchyComponents implements ModuleComponents {
 }
 
 class HierarchyActions {
-  final Action<Module> addChildModule = Action<Module>();
-  final Action<Module> removeChildModule = Action<Module>();
+  final ActionV2<Module> addChildModule = ActionV2<Module>();
+  final ActionV2<Module> removeChildModule = ActionV2<Module>();
 }
 
 class HierarchyStore extends Store {

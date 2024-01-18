@@ -49,7 +49,7 @@ class DataLoadAsyncModule extends Module {
     // trigger non-blocking async load of data
     listenToStream(_events.didLoadData.take(1),
         (_) => specifyStartupTiming(StartupTimingType.firstUseful));
-    _actions.loadData();
+    _actions.loadData(null);
     return Future.value();
   }
 }
@@ -66,7 +66,7 @@ class DataLoadAsyncComponents implements ModuleComponents {
 }
 
 class DataLoadAsyncActions {
-  final Action<Null> loadData = Action();
+  final ActionV2<Null> loadData = ActionV2();
 }
 
 DispatchKey _dispatchKey = DispatchKey('DataLoadAsync');
