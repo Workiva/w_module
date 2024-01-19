@@ -71,7 +71,7 @@ class PanelComponents implements ModuleComponents {
 }
 
 class PanelActions {
-  final Action<num> changeToPanel = Action<num>();
+  final ActionV2<num> changeToPanel = ActionV2<num>();
 }
 
 class PanelStore extends Store {

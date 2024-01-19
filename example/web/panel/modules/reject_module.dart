@@ -58,7 +58,7 @@ class RejectComponents implements ModuleComponents {
 }
 
 class RejectActions {
-  final Action<Null> toggleShouldUnload = Action();
+  final ActionV2<Null> toggleShouldUnload = ActionV2();
 }
 
 class RejectStore extends Store {
@@ -96,7 +96,7 @@ class _RejectComponent extends FluxComponent<RejectActions, RejectStore> {
           'type': 'checkbox',
           'label': 'shouldUnload',
           'checked': store.shouldUnload,
-          'onChange': (_) => actions.toggleShouldUnload()
+          'onChange': (_) => actions.toggleShouldUnload(null)
         }),
         'shouldUnload'
       ])

@@ -99,7 +99,7 @@ class RandomColorApi {
   }
 
   void changeBackgroundColor() {
-    _actions.changeBackgroundColor();
+    _actions.changeBackgroundColor(null);
   }
 
   String get currentBackgroundColor => _stores.backgroundColor;
@@ -121,8 +121,8 @@ class RandomColorComponents implements ModuleComponents {
 }
 
 class RandomColorActions {
-  final Action<Null> changeBackgroundColor = Action();
-  final Action<String> setBackgroundColor = Action();
+  final ActionV2<Null> changeBackgroundColor = ActionV2();
+  final ActionV2<String> setBackgroundColor = ActionV2();
 }
 
 class RandomColorStore extends Store {
@@ -176,7 +176,7 @@ class _RandomColorComponent
       'This module uses a flux pattern to change its background color.',
       react.button({
         'style': {'padding': '10px', 'margin': '10px'},
-        'onClick': (_) => actions.changeBackgroundColor()
+        'onClick': (_) => actions.changeBackgroundColor(null)
       }, 'Change Background Color'),
       react.button({
         'style': {'padding': '10px', 'margin': '10px'},
