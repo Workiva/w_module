@@ -23,3 +23,11 @@ dev_dependencies:
 dependency_overrides:
   w_module:
     path: ../
+  over_react:
+    git:
+      url: https://github.com/Workiva/over_react.git
+      ref: v5_wip
+  over_react_test:
+    git:
+      url: https://github.com/Workiva/over_react_test.git
+      ref: v3_wip
