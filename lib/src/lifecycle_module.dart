@@ -1124,12 +1124,16 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       _activeSpan = _startTransitionSpan('unload');
 
       _willUnloadController.add(this);
-      await Future.wait(_childModules.toList().map((child) {
-        child.parentContext = _activeSpan?.context;
-        return child.unload().whenComplete(() {
-          child.parentContext = null;
-        });
-      }));
+
+      while (_childModules.isNotEmpty) {
+        await Future.wait(_childModules.toList().map((child) {
+          child.parentContext = _activeSpan?.context;
+          return child.unload().whenComplete(() {
+            child.parentContext = null;
+          });
+        }));
+      }
+
       try {
         await onUnload();
       } catch (error, stackTrace) {
