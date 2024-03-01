@@ -879,6 +879,15 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   @override
   @protected
   Future<Null> onWillDispose() async {
+    // It is possible for child modules to be added to the list of children after unload
+    // but before dispose due to asynchrony. Continuing with dispose will cause these to
+    // be disposed which will trigger unload and cause exceptions due to the parent being
+    // partialy disposed. Ensure we give everything a chance to be unloaded before proceeding.
+    await Future.wait(_childModules
+        .toList()
+        .where((child) => !child.isUnloaded)
+        .map((child) => child.unload()));
+
     if (isInstantiated || isUnloaded) {
       return;
     }
