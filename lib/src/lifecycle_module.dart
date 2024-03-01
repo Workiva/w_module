@@ -1125,6 +1125,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
       _willUnloadController.add(this);
 
+      // We're looping here because it's possible for additional child modules to be added to this list while we are
+      // unloading the current items. While loadChildModule is guarded from adding new modules after unload starts, 
+      // it contains asynchronous elements that allow a module to be added to this list during the unload. 
+      // Note that items get removed from this list by an event handler listening to their didDispose stream.
       while (_childModules.isNotEmpty) {
         await Future.wait(_childModules.toList().map((child) {
           child.parentContext = _activeSpan?.context;
