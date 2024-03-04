@@ -1756,6 +1756,29 @@ void runTests(bool runSpanTests) {
             childModule.eventList, equals(['willLoad', 'onLoad', 'didLoad']));
       });
 
+      test('followed by parent unload causes child to dispose and never load',
+          () async {
+        parentModule.eventList?.clear();
+        final load = parentModule.loadChildModule(childModule);
+
+        await parentModule.unload();
+        await load;
+
+        expect(
+          parentModule.eventList,
+          equals([
+            'onWillLoadChildModule',
+            'onShouldUnload',
+            'willUnload',
+            'onUnload',
+            'didUnload',
+            'onDispose'
+          ]),
+        );
+
+        expect(childModule.eventList, equals(['onDispose']));
+      });
+
       test('should emit lifecycle log events', () async {
         expect(
             Logger.root.onRecord,
