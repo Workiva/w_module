@@ -1,3 +1,10 @@
+## [3.0.6](https://github.com/Workiva/w_module/compare/3.0.5...3.0.6)
+
+_March 4, 2024_
+
+- **Bug Fix:** A child module which loads during the unload of the parent
+  may cause BadState exceptions.
+
 ## [3.0.0](https://github.com/Workiva/w_module/compare/2.0.5...3.0.0)
 
 _August 18, 2023_
