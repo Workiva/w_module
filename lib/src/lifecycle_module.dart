@@ -507,6 +507,14 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
 
     final completer = Completer<Null>();
     onWillLoadChildModule(childModule).then((_) async {
+      // It is possible to reach this point due to the asynchrony of onWillLoadChildModule.
+      // In that case, simply do not load the child module and instead dispose it.
+      if (isUnloaded || isUnloading) {
+        await childModule.dispose();
+        completer.complete();
+        return;
+      }
+
       _willLoadChildModuleController.add(childModule);
 
       final childModuleWillUnloadSub = listenToStream(
