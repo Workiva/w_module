@@ -57,3 +57,7 @@ jobs:
       - name: Verify formatting
         run: dart run dart_dev format --check
         if: always() && steps.install.outcome == 'success'
+      - uses: anchore/sbom-action@v0
+        with:
+          path: ./
+          format: cyclonedx-json
