@@ -17,7 +17,7 @@ import 'dart:async';
 
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart' show protected;
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:opentracing/noop_tracer.dart';
 import 'package:opentracing/opentracing.dart';
 import 'package:test/test.dart';
