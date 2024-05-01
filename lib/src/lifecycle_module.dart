@@ -861,7 +861,7 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
   ///
   /// Any changes made in [onSuspend] can be reverted here.
   @protected
-  Future<Null> onResume() async {}
+  Future<void> onResume() async {}
 
   /// Custom logic to be executed during shouldUnload (consequently also in unload).
   ///
