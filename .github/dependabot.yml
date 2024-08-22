@@ -7,3 +7,8 @@ updates:
     groups:
       gha:
         patterns: ["*"]
+  - package-ecosystem: pub
+    versioning-strategy: increase
+    directory: /
+    schedule:
+      interval: weekly
