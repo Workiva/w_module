@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      gha:
+        patterns: ["*"]
+  - package-ecosystem: pub
+    versioning-strategy: increase
+    directory: /
+    schedule:
+      interval: weekly

@@ -1,0 +1,15 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  checks:
+    uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@v0.1.3
+  build:
+    uses: Workiva/gha-dart-oss/.github/workflows/build.yaml@v0.1.3
+  test:
+    uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@v0.1.3
