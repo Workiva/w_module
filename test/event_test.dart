@@ -28,10 +28,6 @@ void main() {
       event = Event<String>(key);
     });
 
-    test('should inherit from Stream', () {
-      expect(event is Stream, isTrue);
-    });
-
     test('should provide means to listen to the stream it was created from',
         () async {
       Completer completer = Completer();

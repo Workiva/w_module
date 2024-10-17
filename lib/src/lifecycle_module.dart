@@ -17,7 +17,7 @@ library w_module.src.lifecycle_module;
 import 'dart:async';
 
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart' show mustCallSuper, protected, required;
+import 'package:meta/meta.dart' show mustCallSuper, protected;
 import 'package:opentracing/opentracing.dart';
 import 'package:w_common/disposable.dart';
 
@@ -178,9 +178,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     }
 
     final tracer = globalTracer();
-    if (tracer == null) {
-      return null;
-    }
 
     List<Reference> references = [];
     if (_parentContext != null) {
@@ -230,9 +227,6 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
     }
 
     final tracer = globalTracer();
-    if (tracer == null) {
-      return null;
-    }
 
     tracer
         .startSpan(
