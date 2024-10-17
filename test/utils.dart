@@ -30,9 +30,6 @@ class _LogLevelMatcher extends Matcher {
 
   @override
   bool matches(dynamic record, Map matchState) {
-    if (_level == null) {
-      return false;
-    }
     if (record is LogRecord) {
       return record.level == _level;
     }
