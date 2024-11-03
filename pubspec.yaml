@@ -8,7 +8,7 @@ environment:
 
 dependencies:
   logging: ^1.0.0
-  meta: ^1.6.0
+  meta: ^1.16.0
   opentracing: ^1.0.1
   w_common: ^3.0.0
 
