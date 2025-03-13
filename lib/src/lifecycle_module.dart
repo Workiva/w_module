@@ -17,12 +17,16 @@ library w_module.src.lifecycle_module;
 import 'dart:async';
 
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart' show mustCallSuper, protected;
+import 'package:meta/meta.dart'
+    show mustCallSuper, protected, visibleForTesting;
 import 'package:opentracing/opentracing.dart';
 import 'package:w_common/disposable.dart';
 
 import 'package:w_module/src/simple_module.dart';
 import 'package:w_module/src/timing_specifiers.dart';
+
+@visibleForTesting
+Duration maxChildUnloadDuration = Duration(seconds: 30);
 
 /// Possible states a [LifecycleModule] may occupy.
 enum LifecycleState {
@@ -1128,7 +1132,10 @@ abstract class LifecycleModule extends SimpleModule with Disposable {
       _willUnloadController.add(this);
       await Future.wait(_childModules.toList().map((child) {
         child.parentContext = _activeSpan?.context;
-        return child.unload().whenComplete(() {
+        return child.unload().timeout(maxChildUnloadDuration, onTimeout: () {
+          _logger.warning(
+              'Child module may be stuck unloading: ${child.disposableTypeName}');
+        }).whenComplete(() {
           child.parentContext = null;
         });
       }));
