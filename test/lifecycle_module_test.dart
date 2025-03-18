@@ -261,6 +261,13 @@ class TestLifecycleModule extends LifecycleModule {
   }
 }
 
+class ModuleThatNeverUnloads extends LifecycleModule {
+  Completer<Null> _onUnload = Completer<Null>();
+
+  @override
+  Future<Null> onUnload() => _onUnload.future;
+}
+
 void expectInLifecycleState(LifecycleModule module, LifecycleState state) {
   var isInState = false;
   switch (state) {
@@ -2408,6 +2415,31 @@ void runTests(bool runSpanTests) {
                 'onDispose',
               ]));
           expect(childModule.eventList, isEmpty);
+        });
+
+        test('and warns if it takes too long', () async {
+          var originalDuration = maxChildUnloadDuration;
+          addTearDown(() {
+            maxChildUnloadDuration = originalDuration;
+          });
+          maxChildUnloadDuration = Duration(milliseconds: 10);
+
+          expect(
+              Logger.root.onRecord,
+              emitsThrough(
+                logRecord(
+                  level: Level.FINEST,
+                  message: contains('didUnloadChildModule'),
+                ),
+              ));
+
+          var badChildModule = ModuleThatNeverUnloads();
+          addTearDown(badChildModule._onUnload.complete);
+          await parentModule.loadChildModule(childModule);
+          await parentModule.loadChildModule(badChildModule);
+          await parentModule
+              .unload()
+              .timeout(Duration(milliseconds: 20), onTimeout: () {});
         });
       });
 
