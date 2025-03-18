@@ -262,8 +262,10 @@ class TestLifecycleModule extends LifecycleModule {
 }
 
 class ModuleThatNeverUnloads extends LifecycleModule {
+  Completer<Null> _onUnload = Completer<Null>();
+
   @override
-  Future<Null> onUnload() => Completer<Null>().future;
+  Future<Null> onUnload() => _onUnload.future;
 }
 
 void expectInLifecycleState(LifecycleModule module, LifecycleState state) {
@@ -2432,6 +2434,7 @@ void runTests(bool runSpanTests) {
               ));
 
           var badChildModule = ModuleThatNeverUnloads();
+          addTearDown(badChildModule._onUnload.complete);
           await parentModule.loadChildModule(childModule);
           await parentModule.loadChildModule(badChildModule);
           await parentModule
