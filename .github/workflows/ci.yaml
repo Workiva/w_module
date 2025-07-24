@@ -8,8 +8,8 @@ on:
 
 jobs:
   checks:
-    uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@v0.1.7
+    uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@v0.1.9
   build:
-    uses: Workiva/gha-dart-oss/.github/workflows/build.yaml@v0.1.7
+    uses: Workiva/gha-dart-oss/.github/workflows/build.yaml@v0.1.9
   test:
-    uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@v0.1.7
+    uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@v0.1.9
