@@ -1,3 +1,39 @@
+## [3.0.11](https://github.com/Workiva/w_module/compare/3.0.9...3.0.11)
+
+_February 24, 2026_
+
+- **Maintenance:** Set SDK constraint to '>=2.19.0 <4.0.0'
+
+## [3.0.10](https://github.com/Workiva/w_module/compare/3.0.9...3.0.10)
+
+_February 22, 2026_
+
+- **Bug Fix:** Fixed issues identified from the prior release.
+- **Maintenance:** Updated GHA workflows and dependency constraints, and rolled
+  React 18 to tests and example apps.
+
+## [3.0.9](https://github.com/Workiva/w_module/compare/3.0.8...3.0.9)
+
+_March 18, 2025_
+
+- **Improvement:** Log a warning and skip unloading a child module if it takes
+  too long to unload.
+
+## [3.0.8](https://github.com/Workiva/w_module/compare/3.0.7...3.0.8)
+
+_December 6, 2024_
+
+- **Improvement:** Updated `onResume` typing.
+- **Maintenance:** Applied CI/dependency modernization (GHA OSS/workflows,
+  mocktail migration, analysis options v2, and SDK/dependency bound updates).
+
+## [3.0.7](https://github.com/Workiva/w_module/compare/3.0.6...3.0.7)
+
+_March 29, 2024_
+
+- **Improvement:** Updated `over_react` dependencies to consume the null-safe
+  version.
+
 ## [3.0.6](https://github.com/Workiva/w_module/compare/3.0.5...3.0.6)
 
 _March 4, 2024_
