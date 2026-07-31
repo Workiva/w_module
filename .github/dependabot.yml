@@ -9,6 +9,10 @@ updates:
         patterns: ["*"]
   - package-ecosystem: pub
     versioning-strategy: increase
-    directory: /
+    directories:
+      - /
+      - /example
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 4
